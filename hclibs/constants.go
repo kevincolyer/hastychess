@@ -11,6 +11,7 @@ const STARTFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 // board and piece numbering suggestions from https://cis.uab.edu/hyatt/boardrep.html
 const MAXSEARCHDEPTH = 6  // for manual play - easier to know what you have done wrong
 const MAXSEARCHDEPTHX = 4 // for xboard
+const TTMAXSIZE = 100000  // when over this oldest tt nodes are culled back so tt is this size
 // const USEBOOK=false
 // const USETTABLE=true
 
@@ -38,7 +39,6 @@ const O_O_O = 16
 const O_O = 32
 const EPCAPTURE = 64
 
-
 const OPENING = 0
 const MIDGAME = 1
 const ENDGAME = 2
@@ -46,17 +46,16 @@ const ENDGAME = 2
 const QS = 0
 const KS = 1
 
-const CHECKMATE = 100000
+const CHECKMATE = 200000
 const STALEMATE = 50000
 const CHECK = 20000
-const NEGINF = -1000000
+const NEGINF = -1000001
 const INF = -NEGINF
 const POSINF = INF
 
-const TTEXACT =1
-const TTLOWER =2
-const TTUPPER =3
-
+const TTEXACT = 1
+const TTLOWER = 2
+const TTUPPER = 3
 
 // const A1  = 0
 // const A8  = 112
@@ -123,7 +122,7 @@ var GRID = [64]int{
 	A8, B8, C8, D8, E8, F8, G8, H8,
 }
 
-var REVGRID  = [64]int{ // this is actually how we display the board on a screen or in FEN - top down !
+var REVGRID = [64]int{ // this is actually how we display the board on a screen or in FEN - top down !
 	A8, B8, C8, D8, E8, F8, G8, H8,
 	A7, B7, C7, D7, E7, F7, G7, H7,
 	A6, B6, C6, D6, E6, F6, G6, H6,

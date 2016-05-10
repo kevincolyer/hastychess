@@ -21,16 +21,16 @@ func TestSearch(t *testing.T) {
 	p = FENToNewBoard("8/8/8/1k6/8/7Q/3R4/2K5 w - - 0 1") // for testing endings
 	tap.Diag("Testing for check")
 	for j := 0; j < 10; j++ {
-		pv := Search(p, 2, 4)
-		MakeMove(pv.moves[0], &p)
+		move, score := SearchRoot(p, 2, 4)
+		MakeMove(move, &p)
 		fmt.Println(&p)
 		moves := GenerateAllMoves(&p)
-		if pv.score == CHECKMATE && len(moves) == 0 {
-			tap.Ok(pv.score == CHECKMATE, "Found checkmate")
+		if score == CHECKMATE && len(moves) == 0 {
+			tap.Ok(score == CHECKMATE, "Found checkmate")
 			break
 		}
-		if pv.score == STALEMATE && len(moves) == 0 {
-			tap.Ok(pv.score == STALEMATE, "Found stalement - this is a problem!")
+		if score == STALEMATE && len(moves) == 0 {
+			tap.Ok(score == STALEMATE, "Found stalement - this is a problem!")
 			break
 		}
 		if len(moves) == 0 {
@@ -44,16 +44,16 @@ func TestSearch(t *testing.T) {
 	p = FENToNewBoard("5bnr/4p1pq/2Q1ppkr/7p/2P4P/8/PP1PPPP1/RNB1KBNR w KQ - 0 10") // for testing endings
 	fmt.Println(&p)
 	for j := 0; j < 10; j++ {
-		pv := Search(p, 2, 4)
-		MakeMove(pv.moves[0], &p)
+		move, score := SearchRoot(p, 2, 4)
+		MakeMove(move, &p)
 		fmt.Println(&p)
 		moves := GenerateAllMoves(&p)
-		if pv.score == CHECKMATE && len(moves) == 0 {
-			tap.Ok(pv.score == CHECKMATE, "Found checkmate - this is a problem")
+		if score == CHECKMATE && len(moves) == 0 {
+			tap.Ok(score == CHECKMATE, "Found checkmate - this is a problem")
 			break
 		}
-		if pv.score == STALEMATE && len(moves) == 0 {
-			tap.Ok(pv.score == STALEMATE, "Found stalement - this is what we want")
+		if score == STALEMATE && len(moves) == 0 {
+			tap.Ok(score == STALEMATE, "Found stalement - this is what we want")
 			break
 		}
 		if len(moves) == 0 {

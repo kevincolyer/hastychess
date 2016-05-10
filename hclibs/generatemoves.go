@@ -22,6 +22,38 @@ func GenerateAllMoves(p *Pos) (moves []Move) {
 	return
 }
 
+func GenerateAllPseudoMoves(p *Pos) (moves []Move) { // quicker than filtering all for check - can do that elsewhere...
+	for _, sq := range GRID {
+		if p.Board[sq] != EMPTY && p.Board[sq]>>3 == p.Side {
+			all := GenerateMoves(sq, p)
+			//fmt.Println(all)
+			moves = append(moves, all...)
+		}
+	}
+	return
+}
+
+func GenerateMovesForQSearch(p *Pos) (moves []Move) {
+	for _, sq := range GRID {
+		if p.Board[sq] != EMPTY && p.Board[sq]>>3 == p.Side {
+			all := GenerateMoves(sq, p)
+			//fmt.Println(all)
+			// filter moves for QS search - just return the noisy ones
+			for _, j := range all {
+				// test legality here...
+				if j.mtype == CAPTURE || j.mtype == PROMOTE { // || j.mtype==EPCAPTURE {
+					if is_legal_move(j, p) {
+
+						moves = append(moves, j)
+					}
+				}
+			}
+
+		}
+	}
+	return
+}
+
 func GenerateMoves(from int, p *Pos) (moves []Move) {
 
 	side := p.Side
@@ -349,7 +381,7 @@ func is_legal_move(m Move, p *Pos) (retval bool) {
 		eppawn = p.Board[epcap]
 		p.Board[epcap] = EMPTY
 	}
-	
+
 	////// perform tests...
 	if king == m.from { // if king, cant move king into check
 		if InCheck(m.to, side, p) {

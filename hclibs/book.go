@@ -1,104 +1,80 @@
 package hclibs
 
+import "strings"
+
+// import "fmt"
+
 func ChooseBookMove(p *Pos) (move Move, success bool) {
 
 	success = false
 	if GameUseBook == false {
 		return
 	}
-	// look up move in book here!
-	return
-
-	//
-	// sub choose_book_move(Position $p) is export  {
-	//     my Int $from
-	//     my Int $to
-	//     my Int $null
-	//     return (-1) if %book{$p.tt_key} !~~ :defined
-	//     my Str $curr_move = ~%book{$p.tt_key}.pick(1)
-	//     // say $curr_move.perl
-	//     ($from,$to,$null) = alg_to_move($curr_move)
-	//
-	//     my @m=generate_moves($from,$p)
+	// Are there one or more branches to pick
+	elem, ok := book[TtKey(p)]
+	if ok == false {
+		return
+	} // No
+	m := elem[Pick(len(elem))] // Choose one of one or more possible branches
+	allmoves := GenerateMoves(m.from, p)
 	// //         is this move in the list?
-	//     for @m -> @cm {
-	// //         yes - make it
-	//             if @cm[1]==$to {
-	//                 return $from, $to, @cm[2],@cm[3]
-	//             }
-	//         }
-	//     return (-1) // not in list
-	// }
-	//
+	for _, mv := range allmoves {
+		if m.to == mv.to && m.from == mv.from {
+			move = m
+			success = true
+			return
+		}
+	} //
+	return
 }
 
 func InitBook() {
 
-	//     %book=()
-
-	//     my $bf="book.dat"
-	//     if $bf.IO ~~ :e {
-	//         say "// loading external book"
-	//         my $b=open $bf,:r
-	//         for $b.lines -> $k, $v {
-	//             %book{$k}.push( $v.split(",") )
-	//         }
-	//         $b.close
-	//         return
-	//     }
-	//
-	//     say "// Problem loading book from file - loading manually..."
-	//     say "// loading book"
-
 	bookLoadInternal()
-
-	//     say "// book loaded"
-	//     my $b=open $bf, :w
-	//     for %book.kv -> $k,$v {
-	//         $b.say: $k ~ "\n" ~ $v.join(",")
-	//     }
-	//     $b.close
 	return
 }
 
 func book_addline(null int, moves string) {
-	//     say "// loading $moves"
-	//     my @moves=$moves.split(" ")
-	//     init_game
-	//     my Position $p = Position.new()
-	//     my Str $curr_move=shift @moves
-	//     my $tt_key=$p.tt_key
-	//     %book{$tt_key}.push($curr_move)
-	//     my Int $from
-	//     my Int $to
-	//     my Int $type
-	//     my Int $extra=0
-	//     my @m
-	//     while @moves {
-	// //         generate moves from curr_move
-	//         $curr_move  ~~ s/\?//
-	//         ($from,$to,$null)=alg_to_move($curr_move)
-	//
-	//         ////////////////////////////////
-	//         $type=QUIET $extra=0
-	//         $type=CAPTURE if $p.board[$to] != EMPTY
-	//         if $p.board[$from] +& 0x7 == P {
-	//             if $to-$from==30|-31 {
-	//             $type=ENPASSANT
-	//             $extra=($to+$from)/2
-	//             }
-	//             if $to-$from==-15|15|17|-17 and $p.board[$to] == EMPTY {
-	//                 $type=EPCAPTURE
-	//             }
-	//         }
-	//         if $p.board[$from] +& 0x7 == K {
-	//             $type = O_O_O if $to-$from == -2
-	//             $type = O_O   if $to-$from ==  2
-	//         }
-	//         make_move($from, $to, $type, $extra, $p)
-	//         $curr_move=shift @moves
-	//         %book{$p.tt_key}.push($curr_move)
-	//     }
+
+	moves = strings.TrimSpace(moves)
+	algmoves := strings.Split(moves, " ")
+	p := FENToNewBoard(STARTFEN)
+	ttkey := TtKey(&p)
+
+	i := 0
+	book[ttkey] = append(book[ttkey], AlgToMove(algmoves[i]))
+	MakeMove(AlgToMove(algmoves[i]), &p)
+
+	i++
+	var m Move
+	for ; i < len(algmoves); i++ {
+		m = AlgToMove(algmoves[i])
+		m.mtype = QUIET
+		if p.Board[m.to] != EMPTY {
+			m.mtype = CAPTURE
+		}
+		if p.Board[m.from]&7 == PAWN {
+			j := m.to - m.from
+			if j == -32 || j == 32 {
+				m.mtype = ENPASSANT
+				m.extra = (m.to + m.from) / 2
+			}
+			if p.Board[m.to] == EMPTY && (j == NE || j == NW || j == SE || j == SW) {
+				m.mtype = EPCAPTURE
+			}
+		}
+		if p.Board[m.from]&7 == KING {
+			if m.to-m.from == -2 {
+				m.mtype = O_O_O
+			}
+			if m.to-m.from == 2 {
+				m.mtype = O_O
+			}
+		}
+		ttkey = TtKey(&p)
+		book[ttkey] = append(book[ttkey], m)
+		MakeMove(m, &p)
+	}
 }
 
 func bookLoadInternal() {

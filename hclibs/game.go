@@ -5,39 +5,51 @@ import "fmt"
 import "strings"
 import "regexp"
 
-
 func GameInit() {
 	tt = make(map[string]TtData)
+	book = make(map[string][]Move)
+	if GameUseBook {
+		InitBook()
+	}
 	return
 }
 
-
 func Go(p *Pos) (res string) {
 	// computer makes moves now!
-	var pv PV
+	// 	var pv PV
 	var move Move
+	var score int
 	var success bool
 
 	StatNodes = 0
+	StatQNodes = 0
 	StatTtHits = 0
+	StatTtWrites = 0
+	StatTtUpdates = 0
+	StatUpperCuts = 0
+	StatLowerCuts = 0
+
+	StatTimeStart = 0 // not sure what type needed here
+	StatTimeElapsed = 0
 
 	//     my Int score = negamax(depth,p)
 	//     say p.board
 	move, success = ChooseBookMove(p)
 	if success == false {
-		//          for 1..depth -> Int i {
-		pv = Search(*(p), 2, GameDepthSearch) // global variable for depth of search...
-		res += fmt.Sprintf("# (score) PV=%v", pv.moves)
-		move = pv.moves[0]
+		move, score = SearchRoot(*(p), 2, GameDepthSearch) // global variable for depth of search...
 	} else {
 		res += fmt.Sprintf("# book move found")
 	}
 	if GameUseStats {
-		res += fmt.Sprintf("\n# STATS (Score %v | nodes %v | tt_hits %v (%v%%)  | tt writes %v | tt updates %v | tt size %v)\n", Comma(pv.score), Comma(StatNodes), Comma(StatTtHits), Commaf(float64(StatTtHits)/float64(StatNodes)*100) ,Comma(StatTtWrites), Comma(StatTtUpdates), Comma(len(tt)))
+		res += fmt.Sprintf("\n# STATS Score %v | nodes %v | qnodes %v (%v%%)| uppercuts %v | lowercuts %v |\n# STATS tt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v |\n", Comma(score), Comma(StatNodes), Comma(StatQNodes), Commaf(float64(StatQNodes)/float64(StatNodes+StatQNodes)*100), Comma(StatUpperCuts), Comma(StatLowerCuts), Comma(StatTtHits), Commaf(float64(StatTtHits)/float64(StatNodes)*100), Comma(StatTtWrites), Comma(StatTtUpdates), Comma(len(tt)), Comma(StatTtCulls))
 	}
-	res += fmt.Sprintf("move %v\n", MoveToAlg(move))
-	MakeMove(move, p)
-	return res + result(p)
+
+	res += result(p)
+	if GameOver == false {
+		res += fmt.Sprintf("move %v\n#\n", MoveToAlg(move))
+		MakeMove(move, p)
+	}
+	return
 }
 
 func result(p *Pos) (s string) {
@@ -46,11 +58,11 @@ func result(p *Pos) (s string) {
 
 	if nummoves == 0 {
 		GameOver = true
-		if p.InCheck == 0 {
+		if p.InCheck == BLACK {
 			win = "white"
 			lose = "black"
 		}
-		if p.InCheck == -1 {
+		if p.InCheck == WHITE {
 			win = "black"
 			lose = "white"
 		}
@@ -60,10 +72,8 @@ func result(p *Pos) (s string) {
 		} else {
 			s += fmt.Sprintf("result {%v}-{%v} {win mates}\n", win, lose)
 		}
-
 	}
 	if p.Fifty >= 50 {
-
 		GameOver = true
 		s += fmt.Sprintf("result 1/2 - 1/2 {draw - fifty move rule}\n")
 	}
@@ -102,7 +112,6 @@ func ParseUserMove(input string, p *Pos) (m Move, err string) {
 	moves := GenerateAllMoves(p)
 	for _, mv := range moves {
 		if m.from == mv.from && m.to == mv.to {
-
 			err = ""
 			if m.mtype == PROMOTE {
 				return

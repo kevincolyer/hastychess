@@ -75,16 +75,25 @@ func (a bymovescore) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a bymovescore) Less(i, j int) bool { return a[i].score > a[j].score } // descending search wanted (but for some reason ascending search gives better cuts?)
 ///////////////////////////////////////////////////////////////////////
 type TtData struct {
-	score int // score found
-	ply   int // ply first discovered at (to avoid loops)
-        nodetype int // TTEXACT TTUPPER OR TTLOWER
-        move Move
+	score    int // score found
+	ply      int // ply first discovered at (to avoid loops)
+	nodetype int // TTEXACT TTUPPER OR TTLOWER
+	move     Move
+	age      int64
 }
 
 var tt map[string]TtData
 
+////////////////////////////////////////////////////////////////////////
+// type Book struct {
+// 	moves []Move
+// }
+
+var book map[string][]Move
+
 // for stat gathering
 var StatNodes int
+var StatQNodes int
 var StatUpperCuts int
 var StatLowerCuts int
 
@@ -94,6 +103,8 @@ var StatTimeElapsed int
 var StatTtHits int
 var StatTtWrites int
 var StatTtUpdates int
+var StatTtCulls int
+var TtAgeCounter int64
 
 // for game
 var GameOver bool
@@ -105,8 +116,8 @@ var GameUseTt bool
 var GameUseStats bool
 
 func Comma(i int) string {
-    return humanize.Comma(int64(i))
+	return humanize.Comma(int64(i))
 }
 func Commaf(i float64) string {
-    return humanize.Comma(int64(i))
+	return humanize.Comma(int64(i))
 }

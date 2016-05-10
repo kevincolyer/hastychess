@@ -4,6 +4,7 @@ import "strings"
 import "fmt"
 import "os"
 import "strconv"
+import "math/rand"
 
 // import "math"
 
@@ -12,6 +13,9 @@ func Die(e string) {
 	os.Exit(1) // can't depend on panic
 }
 
+func Pick(i int) int {
+	return rand.Intn(i)
+}
 func FENToNewBoard(f string) Pos {
 	var p Pos
 	FENToBoard(f, &p)
@@ -244,7 +248,32 @@ func MoveToAlg(m Move) (s string) {
 	return
 }
 
+func AlgToMove(s string) (move Move) {
+	r := []rune(s)
+	//  fmt.Print(s+"----",len(r))
+	//  fmt.Println( string(r[0])+string(r[1])+string(r[2])+string(r[3]))
+	move.from = AlgToDec(string(r[0]) + string(r[1]))
+	move.to = AlgToDec(string(r[2]) + string(r[3]))
+	if len(r) == 5 {
+		//                 e:=string(s)[4]
+		e := r[4]
+		move.mtype = PROMOTE
+		if e == 'q' {
+			move.extra = QUEEN
+		}
+		if e == 'b' {
+			move.extra = BISHOP
+		}
+		if e == 'r' {
+			move.extra = ROOK
+		}
+		if e == 'n' {
+			move.extra = NIGHT
+		}
+	}
+	return
+}
+
 /* TODO
-func AlgToMove(string) int,int,int {}
 func AlgMove(from, to, type, extra int) string {}
 */

@@ -200,6 +200,11 @@ QUIT:
 				fmt.Println()
 				break next
 
+				// ignore when xboard tells me I have lost
+			case strings.HasPrefix(input, "result"):
+				fmt.Println()
+				break next
+
 			case strings.Contains(input, "xboard"):
 				fmt.Println()
 
@@ -217,6 +222,7 @@ QUIT:
 			case strings.Contains(input, "quit"):
 				quit = true
 				break QUIT
+
 			case strings.Contains(input, "move"):
 				fields := strings.Fields(input)
 				if len(fields) > 1 {
@@ -256,6 +262,15 @@ QUIT:
 			case strings.Contains(input, "new"):
 				p = hclibs.FENToNewBoard(hclibs.STARTFEN)
 				hclibs.GameOver = false
+				/*
+				   when "new" {
+				   init_game;
+				   $p=Position.new;
+				   $time=1;
+				   $otim=1;
+				   $forced=False;
+				   @stack=();
+				*/
 
 			case strings.Contains(input, "ping"):
 				fmt.Println("pong")
@@ -277,41 +292,31 @@ QUIT:
 				}
 				fmt.Printf("# Current depth is %d. Setting depth to %d.\n", hclibs.GameDepthSearch, d)
 				hclibs.GameDepthSearch = d
+
+			case strings.HasPrefix(input, "draw"):
+				fmt.Println("offer draw")
+				hclibs.GameOver = true
+				break next
+			/*
+			   when /$ setboard/ {
+			       $_ ~~ /$ setboard \s+ (.*)/;
+			       init_game;
+			       $p=Position.new(FEN => $0);
+			   }
+			   when "force" {
+			       $forced=True;                                            }*/
+
+			case strings.HasPrefix(input, "white"):
+				p.Side = hclibs.WHITE
+				break next
+
+			case strings.HasPrefix(input, "black"):
+				p.Side = hclibs.BLACK
+				break next
 				/*
-					                                         when "new" {
-					            init_game;
-					            $p=Position.new;
-					            $time=1;
-					            $otim=1;
-					            $forced=False;
-					            @stack=();
-					            $game_over=False;
-					        }
-					        when "draw" {
-					            say "offer draw";
-					            $game_over=True;
-					        }
-					        when /$ setboard/ {
-					            $_ ~~ /$ setboard \s+ (.*)/;
-					            init_game;
-					            $p=Position.new(FEN => $0);
-					        }
-					        when "force" {
-					            $forced=True;
-					        }
-					        when "white" {
-					            $p.side=WHITE;
-					        }
-					        when "black" {
-					            $p.side=BLACK;
-					        }
-					        when "go" {
-					            $forced=False;
-					            _go($depth, $p);
-					        }
-									        when /time/ { ... }
-					        when /otim/ { ... }
-					        when /post|random|hard|accepted|level/ {say "skip"; next; }
+				   when /time/ { ... }
+				   when /otim/ { ... }
+				   when /post|random|hard|accepted|level/ {say "skip"; next; }
 				*/
 			default:
 				fmt.Printf("# Error (unknown command): %v\n", input)
