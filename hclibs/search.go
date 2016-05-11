@@ -15,6 +15,7 @@ func SearchRoot(p Pos, initdepth, maxdepth int) (move Move, score int) {
 	///////// Checkmate and stalemate detection
 	consider := GenerateAllMoves(&p)
 	num2consider := len(consider)
+	gamestage := Gamestage(&p)
 	var mvscore []Movescore
 	// 	var score int
 	// 	fmt.Printf("num2consider %v\n", num2consider)
@@ -32,7 +33,7 @@ func SearchRoot(p Pos, initdepth, maxdepth int) (move Move, score int) {
 	if num2consider == 1 {
 		// if only one move to make, make it!
 		move = consider[0]
-		score = ClaudeShannonScore(&p, 1)
+		score = Eval(&p, 1, gamestage)
 		return
 	}
 	/////////// Get initial sort so we can get an left hand set of nodes
@@ -40,7 +41,7 @@ func SearchRoot(p Pos, initdepth, maxdepth int) (move Move, score int) {
 		q := p // copy p
 
 		MakeMove(consider[i], &q)
-		mvscore = append(mvscore, Movescore{consider[i], ClaudeShannonScore(&q, num2consider), ""})
+		mvscore = append(mvscore, Movescore{consider[i], Eval(&q, num2consider, gamestage), ""})
 		//pv = append(pv, PV{[]Move{Move{consider[i].from, consider[i].to, consider[i].mtype/*/*, consider[i].extra}}, NegaMaxAB(q, NEGINF, INF, initdepth), initdepth})
 	}
 	sort.Sort(bymovescore(mvscore))
@@ -56,25 +57,29 @@ func SearchRoot(p Pos, initdepth, maxdepth int) (move Move, score int) {
 		///////// Deeper sort -- iterative deepening
 		for i, _ := range mvscore {
 			// if the best is > 1/4 a pawn above next choice then give up search - done
-                        // and we have not found it in 4 searches...
-			if depth > 1 && max > mvscore[i].score+25 && i<5 {
+			// and we have not found it in 4 searches...
+			if depth > 2 && max > mvscore[i].score+25 { //&& i < 5 {
 				fmt.Println("# nothing better, splitting at index ", i)
 				break
 			}
 
 			q := p //copy p
 			MakeMove(mvscore[i].move, &q)
+			temp := NegaMaxAB(q, max-50, max+50, depth, true)
+			if temp <= max-50 || temp >= max+50 {
 
-                        mvscore[i].score = NegaMaxAB(q, NEGINF, INF, depth,true) // ALWAYS enter q search at every level leafnodes...
-//                         mvscore[i].score = NegaMaxAB(q, NEGINF, INF, depth,depth==maxdepth) // only enter q search at deepest leafnodes...
-// 			mvscore[i].score = NegaMaxAB(q, NEGINF, INF, depth, false)
+				temp = NegaMaxAB(q, NEGINF, INF, depth, true) // ALWAYS enter q search at every level leafnodes...
+			}
+			mvscore[i].score = temp
+			//                         mvscore[i].score = NegaMaxAB(q, NEGINF, INF, depth,depth==maxdepth) // only enter q search at deepest leafnodes...
+			// 			mvscore[i].score = NegaMaxAB(q, NEGINF, INF, depth, false)
 			// fmt.Printf("# %v\n", mvscore[i].score)
 			if mvscore[i].score > max {
 				max = mvscore[i].score
 				score = max
 				move = mvscore[i].move
 				if GameUseStats {
-					fmt.Printf("# Best move %v scored %v found at index %v\n", move, score,i)
+					fmt.Printf("# Best move %v scored %v found at index %v\n", move, score, i)
 				}
 			} // set new max
 		}
@@ -135,10 +140,10 @@ func NegaMaxAB(p Pos, alpha int, beta int, depth int, enterQuiesce bool) int {
 			}
 		}
 	}
-
+	gamestage := Gamestage(&p)
 	// if we have not looked at this position before then get a value for it
 	if val == NEGINF {
-		val = ClaudeShannonScore(&p, lenmoves) // material score
+		val = Eval(&p, lenmoves, gamestage) // material score
 	}
 
 	// checkmate and stalemate detection...
@@ -152,7 +157,7 @@ func NegaMaxAB(p Pos, alpha int, beta int, depth int, enterQuiesce bool) int {
 		}
 		if GameUseTt {
 			elem, ok = tt[ttkey]
-			if !ok || elem.ply < p.Ply {
+			if !ok || elem.ply <= p.Ply {
 				StatTtWrites++
 				tt[ttkey] = TtData{val, p.Ply, TTEXACT, Move{}, TtAgeCounter}
 				TtAgeCounter++
@@ -175,7 +180,7 @@ func NegaMaxAB(p Pos, alpha int, beta int, depth int, enterQuiesce bool) int {
 		// put exact score in TT here!!!!! if we are not using it already
 		if GameUseTt {
 			elem, ok = tt[ttkey]
-			if !ok || elem.ply < p.Ply {
+			if !ok || elem.ply <= p.Ply {
 				StatTtWrites++
 				tt[ttkey] = TtData{val, p.Ply, TTEXACT, Move{}, TtAgeCounter}
 				TtAgeCounter++
@@ -192,7 +197,7 @@ func NegaMaxAB(p Pos, alpha int, beta int, depth int, enterQuiesce bool) int {
 		q = p
 		MakeMove(m, &q)
 		ttkey = TtKey(&q)
-		css := ClaudeShannonScore(&q, lenmoves) // ??????????????? should this not be negated???????
+		css := Eval(&q, lenmoves, gamestage) // ??????????????? should this not be negated???????
 		consider = append(consider, Movescore{m, css, ttkey})
 	}
 	sort.Sort(bymovescore(consider)) // sort descending ??????????????????
@@ -217,7 +222,7 @@ func NegaMaxAB(p Pos, alpha int, beta int, depth int, enterQuiesce bool) int {
 			if GameUseTt {
 				elem, ok = tt[ttkey]
 				if ok {
-					if elem.ply < q.Ply {
+					if elem.ply <= q.Ply {
 						StatTtUpdates++
 					} else {
 						StatTtWrites++
@@ -258,9 +263,10 @@ func SearchQuiesce(p Pos, alpha, beta int, qdepth int) int {
 	// need a standpat score
 	var val int
 	var q Pos
-	val = ClaudeShannonScore(&p, 1) // custom evaluator here for QUIESENCE
+	gamestage := Gamestage(&p)
+	val = Eval(&p, 1, gamestage) // custom evaluator here for QUIESENCE
 	var mvscore []Movescore
-	        standpat := val
+	standpat := val
 	StatQNodes++
 
 	if val >= beta {
@@ -289,16 +295,15 @@ func SearchQuiesce(p Pos, alpha, beta int, qdepth int) int {
 	// loop over all moves, searching deeper until no moves left and all is "quiet" - return this score...)
 	for _, m := range mvscore {
 		// adjust each score for delta cut offs and badmoves skipping to next each time
-                // delta - if not promotion and not endgame and is a low scoring capture then continue
-                if m.move.mtype != PROMOTE && gamestage(&p) != ENDGAME && standpat+csshash[p.Board[m.move.to]]+200 < alpha {
-                        continue
-                } // delta cut qnodes from 20M to 640,000 in one case!
+		// delta - if not promotion and not endgame and is a low scoring capture then continue
+		if m.move.mtype != PROMOTE && Gamestage(&p) != ENDGAME && standpat+csshash[p.Board[m.move.to]]+200 < alpha {
+			continue
+		} // delta cut qnodes from 20M to 640,000 in one case!
 
 		// 		// badmoves - cut qnodes from 640,000 to 64,000
-		 		if p.Board[m.move.from]&7 == PAWN && m.move.mtype != PROMOTE {
-		 			continue
-		 		} // capture by pawn is ok
-		 		
+		if p.Board[m.move.from]&7 == PAWN && m.move.mtype != PROMOTE {
+			continue
+		} // capture by pawn is ok
 
 		// search deeper until quiet
 		// 		fmt.Println("search one deeper")
@@ -318,7 +323,7 @@ func SearchQuiesce(p Pos, alpha, beta int, qdepth int) int {
 	return alpha // nothing better than this to return
 }
 
-func gamestage(p *Pos) int {
+func Gamestage(p *Pos) int {
 	if p.TakenPieces[p.Side] > 12 {
 		return ENDGAME
 	}
