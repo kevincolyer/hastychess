@@ -1,5 +1,4 @@
-// tesing out TAP
-
+//Hastychess, Copyright (C) GPLv3, 2016, Kevin Colyer
 package hclibs
 
 // import "github.com/dex4er/go-tap"

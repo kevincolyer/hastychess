@@ -1,3 +1,4 @@
+//Hastychess, Copyright (C) GPLv3, 2016, Kevin Colyer
 package hclibs
 
 // useful routines for playing games against people or computer
