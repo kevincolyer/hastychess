@@ -56,3 +56,12 @@ func TestBoard(t *testing.T) {
 		t.Errorf("Internal representation of Board failed - has something changed?\n%v", FENToNewBoard(STARTFEN))
 	}
 }
+
+func TestBoardToFEN(t *testing.T) {
+	p := FENToNewBoard(STARTFEN)
+	comp := BoardToFEN(&p)
+
+	if comp != STARTFEN {
+		t.Errorf("Board does not match STARTFEN on roundtrip\n%v", comp)
+	}
+}

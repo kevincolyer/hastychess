@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	// 	"time"
 )
 
 func main() {
@@ -29,10 +30,13 @@ func main() {
 
 	switch {
 	case *(flagXboard):
+		hclibs.GameProtocol = hclibs.PROTOXBOARD
 		mainXboard()
 	case *(flagIcs):
+		hclibs.GameProtocol = hclibs.PROTOUCI
 		mainIcs()
 	case *(flagConsole):
+		hclibs.GameProtocol = hclibs.PROTOCONSOLE
 		mainConsole()
 	}
 	fmt.Println("Bye and thanks for playing!")
@@ -62,6 +66,7 @@ func mainConsole() {
 	}
 	quit := false
 	fmt.Print("> ")
+	hclibs.Control = make(chan string)
 	// main input loop
 QUIT:
 	for quit == false {
@@ -106,9 +111,10 @@ QUIT:
 				hclibs.GameForce = !hclibs.GameForce
 
 			case strings.Contains(input, "go") || hclibs.GameForce == true:
-				err = hclibs.Go(&p)
+				res, info := hclibs.Go(&p)
 				fmt.Println(&p)
-				fmt.Println(err)
+				fmt.Println(info)
+				fmt.Println(res)
 
 			case strings.Contains(input, "ping"):
 				fmt.Println("pong")
@@ -238,8 +244,7 @@ QUIT:
 				fmt.Println(err)
 
 				// make computer go
-				err = hclibs.Go(&p)
-				fmt.Println(err)
+				xboardGo(&p)
 
 			case re.MatchString(input):
 				move, err = hclibs.ParseUserMove(input, &p)
@@ -252,13 +257,10 @@ QUIT:
 				fmt.Println(err)
 
 				// make computer go
-				err = hclibs.Go(&p)
-				fmt.Println(err)
+				xboardGo(&p)
 
 			case strings.Contains(input, "go") || hclibs.GameForce == true:
-				err = hclibs.Go(&p)
-				//fmt.Println(&p)
-				fmt.Println(err)
+				xboardGo(&p)
 
 			case strings.Contains(input, "new"):
 				p = hclibs.FENToNewBoard(hclibs.STARTFEN)
@@ -327,7 +329,163 @@ QUIT:
 	}
 }
 
+func xboardGo(p *hclibs.Pos) {
+	if hclibs.Control == nil || hclibs.StopSearch() == true {
+
+		hclibs.Control = make(chan string)
+	}
+	res, info := hclibs.Go(p)
+	if hclibs.StopSearch() == false {
+		close(hclibs.Control)
+	}
+	fmt.Println(info)
+	fmt.Println(res)
+}
+
+/***************************************************************
+ * Use the UCI chess protocol
+ *
+ * lots of fun
+ * See: http://wbec-ridderkerk.nl/html/UCIProtocol.html
+ *
+ ***************************************************************/
+
 func mainIcs() {
-	fmt.Println("ICS mode not yet implimented")
+
+	version := 0.99
+	name := fmt.Sprintf("HastyChess v%v", version)
+	scanner := bufio.NewScanner(os.Stdin)
+	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
+
+	hclibs.GameUseBook = false // UCI gui does book - unless option below...
+
+	hclibs.GameOver = false
+	hclibs.GameDisplayOn = false
+	hclibs.GameDepthSearch = 4
+	hclibs.GameForce = false
+	/*if hclibs.GameDisplayOn {
+			fmt.Println(hclibs.BoardToStrWide(&p))
+	        }*/
+	// main input loop
+	for {
+		for scanner.Scan() {
+
+			input := strings.ToLower(strings.TrimSpace(scanner.Text()))
+			fmt.Printf("# echo server sent (%v)\n", input)
+			// 			time.Sleep(time.Second)
+			//fmt.Pri(ntf("You said [%v]\n", input)
+			switch {
+
+			case input == "uci":
+				fmt.Println("id name " + name + "\nid author Kevin Colyer 2016")
+				// Send options to GUI here...
+				//
+				//
+				fmt.Println("uciok")
+				continue
+
+			case strings.HasPrefix(input, "isready"):
+				fmt.Println("readyok")
+
+			case strings.HasPrefix(input, "quit"):
+				os.Exit(0)
+			case strings.HasPrefix(input, "ucinewgame"):
+				p = hclibs.FENToNewBoard(hclibs.STARTFEN)
+				hclibs.GameOver = false
+
+			case strings.HasPrefix(input, "go"):
+				go uciGo(input, &p)
+				//  lots of sub verbs here...
+				continue
+				// start searching now!
+
+			case input == "ping":
+				fmt.Println("pong")
+				continue
+				// start searching now!
+			case strings.HasPrefix(input, "stop"):
+				if hclibs.Control != nil {
+					close(hclibs.Control)
+				} // tells searches to finish
+				continue
+				// stop searching now!
+
+			case strings.HasPrefix(input, "position"):
+				uciPosition(input, &p)
+				// position fen moves...
+				// position startpos moves...
+				continue
+
+			}
+		}
+	}
+
+}
+
+func uciPosition(input string, p *hclibs.Pos) {
+	fen, moves := ParsePositionInput(input)
+	*p = hclibs.FENToNewBoard(fen)
+
+	for _, m := range moves {
+		/*if !hclibs.IsValidMove(m, p) {
+					fmt.Printf("info currmove %v (Sent bad move by server %v in %v)\n", m, m, moves)
+		        }*/
+		hclibs.MakeMove(m, p) // note no error checking here!!!
+	}
+}
+
+// parses a string "position <fen> <move>*" or "position startpos <move>*" returns
+// fen as string and slice of Move types.
+func ParsePositionInput(input string) (fen string, moves []hclibs.Move) {
+
+	re := regexp.MustCompile("[a-h][1-8][a-h][1-8][qbnr]?")
+
+	ef := 2 // end fen = start of moves (if any)
+	f := strings.Split(input, " ")
+	// can ignore first field == "position"
+
+	if f[1] == "startpos" {
+		fen = hclibs.STARTFEN
+	} else { //look ahead to moves - what is skipped is a fen
+		for ; ef < len(f); ef++ {
+			if f[ef] == "moves" {
+				break
+			}
+		}
+
+		fen = strings.Join(f[1:ef], " ")
+
+	}
+
+	for ; ef < len(f); ef++ {
+		if re.MatchString(f[ef]) {
+			moves = append(moves, hclibs.AlgToMove(f[ef]))
+		}
+
+	}
+	return
+}
+
+func uciGo(input string, p *hclibs.Pos) {
+	// position fen moves...
+	// position startpos moves...
+
+	if hclibs.Control != nil && hclibs.StopSearch() == false { // if channel still open, close it
+		close(hclibs.Control)
+	}
+	hclibs.Control = make(chan string)
+	go func() {
+		for m := range hclibs.Control {
+			fmt.Println(m)
+		} // send messages from search straight to console until channel closed
+	}()
+	// channel shut in "stop" command or at end of a search or at a time out...
+
+	// 	res,info:=hclibs.Go(p)
+	res, _ := hclibs.Go(p)
+	// we need to massage the bestmove
+	// not sure what to do with all our stats info. Could try to send it too.
+	// 	fmt.Println(info+"best"+res)
+	fmt.Println(res)
 	return
 }

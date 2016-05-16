@@ -15,7 +15,7 @@ func GameInit() {
 	return
 }
 
-func Go(p *Pos) (res string) {
+func Go(p *Pos) (res string, info string) {
 	// computer makes moves now!
 	// 	var pv PV
 	var move Move
@@ -38,16 +38,22 @@ func Go(p *Pos) (res string) {
 	move, success = ChooseBookMove(p)
 	if success == false {
 		move, score = SearchRoot(*(p), 2, GameDepthSearch) // global variable for depth of search...
+		if GameUseStats {
+			info += "# fen: (" + BoardToFEN(p) + ")"
+			info += fmt.Sprintf("\n# STATS Score %v | nodes %v | qnodes %v (%v%%)| uppercuts %v | lowercuts %v |\n# STATS tt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v |\n", Comma(score), Comma(StatNodes), Comma(StatQNodes), Comma(int((float64(StatQNodes) / float64(StatNodes+StatQNodes) * 100))), Comma(StatUpperCuts), Comma(StatLowerCuts), Comma(StatTtHits), Comma(int((float64(StatTtHits) / float64(StatNodes) * 100))), Comma(StatTtWrites), Comma(StatTtUpdates), Comma(len(tt)), Comma(StatTtCulls))
+		}
 	} else {
-		res += fmt.Sprintf("# book move found")
-	}
-	if GameUseStats {
-		res += fmt.Sprintf("\n# STATS Score %v | nodes %v | qnodes %v (%v%%)| uppercuts %v | lowercuts %v |\n# STATS tt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v |\n", Comma(score), Comma(StatNodes), Comma(StatQNodes), Commaf(float64(StatQNodes)/float64(StatNodes+StatQNodes)*100), Comma(StatUpperCuts), Comma(StatLowerCuts), Comma(StatTtHits), Commaf(float64(StatTtHits)/float64(StatNodes)*100), Comma(StatTtWrites), Comma(StatTtUpdates), Comma(len(tt)), Comma(StatTtCulls))
+		info += fmt.Sprintf("# book move found")
 	}
 
-	res += result(p)
+	info += result(p)
 	if GameOver == false {
-		res += fmt.Sprintf("move %v\n#\n", MoveToAlg(move))
+		res = fmt.Sprintf("move %v\n", MoveToAlg(move))
+		if UCI() {
+			res = "best" + res
+		} else {
+			res += "#\n"
+		}
 		MakeMove(move, p)
 	}
 	return
@@ -133,4 +139,14 @@ func MakeUserMove(m Move, p *Pos) (s string) {
 	MakeMove(m, p)
 	s = result(p)
 	return
+}
+
+func StopSearch() bool {
+	select {
+	case <-Control:
+		fmt.Print("detected search stop\n") // open channel means we can keep searching
+		return true
+	default:
+		return false
+	}
 }

@@ -54,16 +54,22 @@ func SearchRoot(p Pos, initdepth, maxdepth int) (move Move, score int) {
 
 	for depth := 2; depth <= maxdepth; depth++ {
 		sort.Sort(bymovescore(mvscore))
-		fmt.Printf("# searching to depth %d\n", depth)
+		if !UCI() {
+			fmt.Printf("# searching to depth %d\n", depth)
+		}
 		///////// Deeper sort -- iterative deepening
 		for i, _ := range mvscore {
 			// if the best is > 1/4 a pawn above next choice then give up search - done
 			// and we have not found it in 4 searches...
 			if depth > 2 && max > mvscore[i].score+25 { //&& i < 5 {
-				fmt.Println("# nothing better, splitting at index ", i)
+				if !UCI() {
+					fmt.Println("# nothing better, splitting at index ", i)
+				}
 				break
 			}
-
+			if StopSearch() {
+				return
+			} // someone signals we should stop
 			q := p //copy p
 			MakeMove(mvscore[i].move, &q)
 			temp := NegaMaxAB(q, max-50, max+50, depth, true)
@@ -80,13 +86,17 @@ func SearchRoot(p Pos, initdepth, maxdepth int) (move Move, score int) {
 				score = max
 				move = mvscore[i].move
 				if GameUseStats {
-					fmt.Printf("# Best move %v scored %v found at index %v\n", move, score, i)
+					if !UCI() {
+						fmt.Printf("# good move %v scored %v found at index %v\n", move, score, i)
+					}
 				}
 			} // set new max
 		}
 	}
 	///////////////////// finished search report and cleanup
-	fmt.Printf("# Chosen move %v score %v\n", move, Comma(score))
+	if !UCI() {
+		fmt.Printf("# Chosen move %v score %v\n", move, Comma(score))
+	}
 	// prune dead tt entries (from ply's in the past)
 	if GameUseTt {
 		StatTtCulls = 0
@@ -175,17 +185,24 @@ func NegaMaxAB(p Pos, alpha int, beta int, depth int, enterQuiesce bool) int {
 		if enterQuiesce {
 			val = SearchQuiesce(p, alpha, beta, 8)
 		}
-
+		tttype := TTEXACT
+		if val > beta {
+			tttype = TTUPPER
+		}
+		if val >= alpha {
+			tttype = TTLOWER
+		}
 		// 		fmt.Printf("leaving q search\n")
 		//
 		// put exact score in TT here!!!!! if we are not using it already
 		if GameUseTt {
-			elem, ok = tt[ttkey]
-			if !ok || elem.ply <= p.Ply {
-				StatTtWrites++
-				tt[ttkey] = TtData{val, p.Ply, TTEXACT, Move{}, TtAgeCounter}
-				TtAgeCounter++
-			}
+			// 			elem, ok = tt[ttkey]
+			// 			if !ok || elem.ply <= p.Ply {
+			// use always replace for q search (my choice)
+			StatTtWrites++
+			tt[ttkey] = TtData{val, p.Ply, tttype, Move{}, TtAgeCounter}
+			TtAgeCounter++
+			// 			}
 		}
 		return val
 
@@ -207,6 +224,9 @@ func NegaMaxAB(p Pos, alpha int, beta int, depth int, enterQuiesce bool) int {
 	// BETA == upper bound
 	bestmove = consider[0].move
 	for _, m := range consider {
+		if StopSearch() {
+			return alpha
+		} // someone signals we should stop
 		q = p
 		MakeMove(m.move, &q)
 		ttkey = m.ttkey
@@ -308,6 +328,9 @@ func SearchQuiesce(p Pos, alpha, beta int, qdepth int) int {
 
 		// search deeper until quiet
 		// 		fmt.Println("search one deeper")
+		if StopSearch() {
+			return alpha
+		} // someone signals we should stop
 		q = p
 		MakeMove(m.move, &q)
 		val = -SearchQuiesce(q, -beta, -alpha, qdepth-1)

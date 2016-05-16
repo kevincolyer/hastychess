@@ -72,6 +72,12 @@ const (
 	A8, B8, C8, D8, E8, F8, G8, H8 = iota<<4 + 0, iota<<4 + 1, iota<<4 + 2, iota<<4 + 3, iota<<4 + 4, iota<<4 + 5, iota<<4 + 6, iota<<4 + 7
 )
 
+const (
+	PROTOCONSOLE = iota + 1
+	PROTOXBOARD
+	PROTOUCI
+)
+
 const NORTH = 16
 const NN = 32
 const SOUTH = -16

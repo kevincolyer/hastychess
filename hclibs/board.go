@@ -23,6 +23,63 @@ func FENToNewBoard(f string) Pos {
 	return p
 }
 
+func BoardToFEN(p *Pos) string {
+
+	ptos := [...]string{".", "P", "N", "K", "-", "B", "R", "Q", "-", "p", "n", "k", "-", "b", "r", "q"}
+	var fen, castling, enpassant, side string
+
+	for rank := 7; rank >= 0; rank-- {
+		j := 0
+		for file := 0; file < 8; file++ {
+			if p.Board[rank<<4+file] == EMPTY {
+				j++
+				continue
+			}
+			if j > 0 {
+				fen += fmt.Sprintf("%d", j)
+				j = 0
+			}
+			fen += ptos[p.Board[rank<<4+file]]
+
+		}
+		if j == 8 {
+			fen += "8"
+		} // or ignore?
+		if rank > 0 {
+			fen += "/"
+		}
+	}
+
+	if p.Side == 0 {
+		side = "w"
+	} else {
+		side = "b"
+	}
+
+	if p.Castled[WHITE*2+KS] == false {
+		castling += "K"
+	}
+	if p.Castled[WHITE*2+QS] == false {
+		castling += "Q"
+	}
+	if p.Castled[BLACK*2+KS] == false {
+		castling += "k"
+	}
+	if p.Castled[BLACK*2+QS] == false {
+		castling += "q"
+	}
+	if castling == "" {
+		castling = "-"
+	}
+
+	enpassant = DecToAlg(p.EnPassant)
+	if p.EnPassant == -1 {
+		enpassant = "-"
+	}
+	//fmt.Println(fen)
+	return fmt.Sprintf("%s %s %s %s %d %d", fen, side, castling, enpassant, p.HalfMoveClock, p.FullMoveClock)
+}
+
 func FENToBoard(f string, p *Pos) *Pos {
 	// parse fen
 	fenfields := strings.Split(f, " ")

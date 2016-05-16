@@ -116,9 +116,22 @@ var GameUseBook bool
 var GameUseTt bool
 var GameUseStats bool
 
+type Proto int
+
+var GameProtocol Proto
+
+func UCI() bool {
+	if GameProtocol == PROTOUCI {
+		return true
+	}
+	return false
+}
+
 func Comma(i int) string {
 	return humanize.Comma(int64(i))
 }
 func Commaf(i float64) string {
 	return humanize.Comma(int64(i))
 }
+
+var Control chan string
