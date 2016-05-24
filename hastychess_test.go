@@ -3,7 +3,7 @@ package main
 
 import "github.com/dex4er/go-tap"
 import "testing"
-import "hastychess/hclibs"
+import "github.com/kevincolyer/hastychess/hclibs"
 import "fmt"
 
 func TestParsePositionInput(t *testing.T) {
