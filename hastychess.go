@@ -5,7 +5,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"hastychess/hclibs"
+	"github.com/kevincolyer/hastychess/hclibs"
 	"os"
 	"regexp"
 	"strconv"
