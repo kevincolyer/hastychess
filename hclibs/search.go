@@ -45,15 +45,15 @@ func SearchRoot(p Pos, initdepth, maxdepth int) (move Move, score int) {
 		mvscore = append(mvscore, Movescore{consider[i], Eval(&q, num2consider, gamestage), ""})
 		//pv = append(pv, PV{[]Move{Move{consider[i].from, consider[i].to, consider[i].mtype/*/*, consider[i].extra}}, NegaMaxAB(q, NEGINF, INF, initdepth), initdepth})
 	}
-	sort.Sort(bymovescore(mvscore))
+	// 	sort.Sort(bymovescore(mvscore))
 
-	max := mvscore[0].score
-	score = max
-	move = mvscore[0].move
 	//fmt.Printf("Max=%v, Min=%v\n",max,pv[len(pv)-1].score)
 
 	for depth := 2; depth <= maxdepth; depth++ {
 		sort.Sort(bymovescore(mvscore))
+		max := mvscore[0].score
+		score = max
+		move = mvscore[0].move
 		if !UCI() {
 			fmt.Printf("# searching to depth %d\n", depth)
 		}
@@ -61,7 +61,7 @@ func SearchRoot(p Pos, initdepth, maxdepth int) (move Move, score int) {
 		for i, _ := range mvscore {
 			// if the best is > 1/4 a pawn above next choice then give up search - done
 			// and we have not found it in 4 searches...
-			if depth > 2 && max > mvscore[i].score+25 { //&& i < 5 {
+			if depth > 2 && max > mvscore[i].score+25 && i < 4 {
 				if !UCI() {
 					fmt.Println("# nothing better, splitting at index ", i)
 				}
@@ -75,7 +75,7 @@ func SearchRoot(p Pos, initdepth, maxdepth int) (move Move, score int) {
 			temp := NegaMaxAB(q, max-50, max+50, depth, true)
 			if temp <= max-50 || temp >= max+50 {
 
-				temp = NegaMaxAB(q, NEGINF, INF, depth, true) // ALWAYS enter q search at every level leafnodes...
+				temp = NegaMaxAB(q, NEGINF, INF, depth, true) // broaden the search window - we found some values way beyond what was expected...
 			}
 			mvscore[i].score = temp
 			//                         mvscore[i].score = NegaMaxAB(q, NEGINF, INF, depth,depth==maxdepth) // only enter q search at deepest leafnodes...
@@ -85,10 +85,9 @@ func SearchRoot(p Pos, initdepth, maxdepth int) (move Move, score int) {
 				max = mvscore[i].score
 				score = max
 				move = mvscore[i].move
-				if GameUseStats {
-					if !UCI() {
-						fmt.Printf("# good move %v scored %v found at index %v\n", move, score, i)
-					}
+				if GameUseStats && !UCI() {
+					fmt.Printf("# good move %v scored %v found at index %v\n", move, score, i)
+
 				}
 			} // set new max
 		}
@@ -183,13 +182,13 @@ func NegaMaxAB(p Pos, alpha int, beta int, depth int, enterQuiesce bool) int {
 		// NEED QUIESCENCE SEARCH ONE LEVEL DEEPER HERE...
 		// 		fmt.Printf("Entering q search\n")
 		if enterQuiesce {
-			val = SearchQuiesce(p, alpha, beta, 8)
+			val = SearchQuiesce(p, alpha, beta, 12)
 		}
 		tttype := TTEXACT
 		if val > beta {
 			tttype = TTUPPER
 		}
-		if val >= alpha {
+		if val <= alpha {
 			tttype = TTLOWER
 		}
 		// 		fmt.Printf("leaving q search\n")
@@ -215,10 +214,10 @@ func NegaMaxAB(p Pos, alpha int, beta int, depth int, enterQuiesce bool) int {
 		q = p
 		MakeMove(m, &q)
 		ttkey = TtKey(&q)
-		css := Eval(&q, lenmoves, gamestage) // ??????????????? should this not be negated???????
+		css := Eval(&q, lenmoves, gamestage) // ??????????????? should this not be negated??????? No - these are my moves...
 		consider = append(consider, Movescore{m, css, ttkey})
 	}
-	sort.Sort(bymovescore(consider)) // sort descending ??????????????????
+	sort.Sort(bymovescore(consider)) // sort descending - bst moves first
 
 	// ALPHA == lower bound
 	// BETA == upper bound
@@ -272,6 +271,7 @@ func NegaMaxAB(p Pos, alpha int, beta int, depth int, enterQuiesce bool) int {
 		if !ok || elem.ply < q.Ply {
 			// if this search is deeper than prev then update
 			//  ore not seen before so add
+			tttype = TTLOWER
 			StatTtWrites++
 			tt[ttkey] = TtData{alpha, q.Ply, tttype, bestmove, TtAgeCounter}
 			TtAgeCounter++
@@ -285,7 +285,7 @@ func SearchQuiesce(p Pos, alpha, beta int, qdepth int) int {
 	var val int
 	var q Pos
 	gamestage := Gamestage(&p)
-	val = Eval(&p, 1, gamestage) // custom evaluator here for QUIESENCE
+	val = EvalQ(&p, 1, gamestage) // custom evaluator here for QUIESENCE
 	var mvscore []Movescore
 	standpat := val
 	StatQNodes++
@@ -293,7 +293,7 @@ func SearchQuiesce(p Pos, alpha, beta int, qdepth int) int {
 	if val >= beta {
 		return beta
 	}
-	if alpha < val {
+	if alpha <= val {
 		alpha = val
 	}
 	if qdepth == 0 {
@@ -308,7 +308,9 @@ func SearchQuiesce(p Pos, alpha, beta int, qdepth int) int {
 	// 	fmt.Printf("# QS: looking at ply %v (%v moves to consider: %v)\n", p.Ply, len(moves), moves)
 	// socre them by Most Valuable Victim - Least Valuable Aggressor
 	for _, i := range moves {
-		mvscore = append(mvscore, Movescore{i, MVVLVA(i, &p), ""})
+		mvscore = append(mvscore, Movescore{move: i,
+			score: MVVLVA(i, &p),
+			ttkey: ""})
 	}
 	// And order descending to provoke cuts
 	sort.Sort(bymovescore(mvscore))
@@ -324,7 +326,8 @@ func SearchQuiesce(p Pos, alpha, beta int, qdepth int) int {
 		// 		// badmoves - cut qnodes from 640,000 to 64,000
 		if p.Board[m.move.from]&7 == PAWN && m.move.mtype != PROMOTE {
 			continue
-		} // capture by pawn is ok
+		}
+		// capture by pawn is ok
 
 		// search deeper until quiet
 		// 		fmt.Println("search one deeper")
@@ -337,7 +340,7 @@ func SearchQuiesce(p Pos, alpha, beta int, qdepth int) int {
 		// 		fmt.Printf("returned from one deeper val = %v\n",val)
 
 		// adjust window
-		if val > alpha {
+		if val >= alpha {
 			if val > beta {
 				return beta
 			}

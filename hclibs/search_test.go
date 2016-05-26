@@ -7,7 +7,6 @@ import (
 	"testing"
 )
 
-
 func TestSearch(t *testing.T) {
 	p := FENToNewBoard(STARTFEN)
 	tap.Is(len(GenerateAllMoves(&p)), 20, "20 moves counted on a new board")

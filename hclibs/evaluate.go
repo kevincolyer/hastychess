@@ -21,7 +21,7 @@ func Eval(p *Pos, nummoves, gamestage int) int {
 }
 
 func EvalQ(p *Pos, nummoves, gamestage int) int {
-	return PstScore(p, gamestage)
+	return PstScore(p, gamestage) - 1 // -1 is so we don't trip the q search beta giving same score as normal eval.
 	// 	return ClaudeShannonScore(p, nummoves)
 }
 
@@ -36,6 +36,7 @@ var csshash = map[int]int{
 // Most Valuable Victim, Least Valuable Agressor
 func MVVLVA(m Move, p *Pos) int {
 	return csshash[p.Board[m.to]] + csshash[m.extra] - csshash[p.Board[m.from]] // If promotion then m.extra has value of piece we promote to, otherwise it is 0
+	// 	return -csshash[p.Board[m.to]] + csshash[m.extra] + csshash[p.Board[m.from]] // If promotion then m.extra has value of piece we promote to, otherwise it is 0
 	//     return csshash[p.Board[m.to]]-csshash[p.Board[m.from]] // If promotion then m.extra has value of piece we promote to, otherwise it is 0
 }
 
