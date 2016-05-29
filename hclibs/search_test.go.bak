@@ -3,8 +3,9 @@ package hclibs
 
 import (
 	"fmt"
-	"github.com/dex4er/go-tap"
 	"testing"
+
+	"github.com/dex4er/go-tap"
 )
 
 func TestSearch(t *testing.T) {
