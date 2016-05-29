@@ -3,11 +3,12 @@ package hclibs
 
 import (
 	"fmt"
-	"github.com/dex4er/go-tap"
 	"io/ioutil"
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/dex4er/go-tap"
 
 	"strconv"
 )

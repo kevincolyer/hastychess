@@ -5,11 +5,12 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"github.com/kevincolyer/hastychess/hclibs"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/kevincolyer/hastychess/hclibs"
 )
 
 func main() {

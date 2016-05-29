@@ -10,7 +10,7 @@ const STARTFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 // board and piece numbering suggestions from https://cis.uab.edu/hyatt/boardrep.html
 const MAXSEARCHDEPTH = 6  // for manual play - easier to know what you have done wrong
 const MAXSEARCHDEPTHX = 4 // for xboard
-const TTMAXSIZE = 100000  // when over this oldest tt nodes are culled back so tt is this size
+const TTMAXSIZE = 20      // (is 2^20=1048576 entries when over this oldest tt nodes are culled back so tt is this size
 // const USEBOOK=false
 // const USETTABLE=true
 
