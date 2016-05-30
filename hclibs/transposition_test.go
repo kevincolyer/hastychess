@@ -45,6 +45,14 @@ func TestInitHashSize(t *testing.T) {
 	tap.Is(Zhash.mask, uint64(size*1024*1024/8-1), "Is Zhash.mask correct?")
 }
 
-func TestTTZKey (t *testing.T){
-    // put function test in here!!!!!
-                                  }
+func TestTTZKey(t *testing.T) {
+	// put function test in here!!!!!
+	p := FENToNewBoard(STARTFEN)
+	key := TTZKey(&p)
+	data, err := TTPeek(key, TTHASH)
+	tap.Ok(err == false, "unitialised hash is empty")
+	TTPoke(key, TTHASH, TtData{score: 1})
+	data, err = TTPeek(key, TTHASH)
+	tap.Is(data.score, 1, "Retrieved data from TT table OK")
+
+}

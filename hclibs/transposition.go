@@ -40,7 +40,6 @@ var Zhash zhashstruct
 // how do I declare an array but set its size later?
 var tthash []TtData
 var qstthash []TtData
-
 var hashnext uint64 = 1
 
 func Rand64Reset() {
@@ -72,7 +71,39 @@ func init() {
 	Zhash.side[WHITE] = Rand64()
 }
 
-type TTZKey uint64
+//type TTZKey uint64
+
+func TTPeek(key uint64, hash int) (data TtData, err bool) {
+	err = false
+	key = key & Zhash.mask
+	switch hash {
+	case TTHASH:
+		if tthash[key] == data {
+			return
+		}
+		data = tthash[key]
+		err = true
+		return
+		//QSTTHASH
+		//PTTHASH
+		//ETTHASH
+	}
+	return
+}
+
+func TTPoke(key uint64, hash int, data TtData) {
+	key = key & Zhash.mask
+	switch hash {
+	case TTHASH:
+		tthash[key] = data
+		return
+		//QSTTHASH
+		//PTTHASH
+		//ETTHASH
+	}
+	return
+}
+
 // make TtKey - scan board for pieces, xor in, xor in castling states, xor in side to move and EP
 func TTZKey(p *Pos) (z uint64) {
 	for _, square := range GRID {
