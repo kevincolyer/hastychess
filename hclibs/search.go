@@ -208,6 +208,7 @@ func NegaMaxAB(p Pos, alpha int, beta int, depth int, enterQuiesce bool) int {
 	} // at a leaf // note at a leaf we can't detect stalemate - need to look deeper for that...
 
 	// EVALUATION
+	/* Dont think we need this - all this does is get a material score and sorts it...????
 	var consider []Movescore
 
 	for _, m := range moves {
@@ -220,15 +221,15 @@ func NegaMaxAB(p Pos, alpha int, beta int, depth int, enterQuiesce bool) int {
 	sort.Sort(bymovescore(consider)) // sort descending - bst moves first
 
 	// ALPHA == lower bound
-	// BETA == upper bound
-	bestmove = consider[0].move
-	for _, m := range consider {
+	// BETA == upper bound */
+	bestmove = moves[0]
+	for _, m := range moves {
 		if StopSearch() {
 			return alpha
 		} // someone signals we should stop
 		q = p
-		MakeMove(m.move, &q)
-		ttkey = m.ttkey
+		MakeMove(m, &q)
+		ttkey = TtKey( &q )
 
 		val = -NegaMaxAB(q, -beta, -alpha, depth-1, enterQuiesce)
 		// re-sort the moves here... from remaining moves, if one greater than beta move to next to be considered????????
@@ -248,7 +249,7 @@ func NegaMaxAB(p Pos, alpha int, beta int, depth int, enterQuiesce bool) int {
 						StatTtWrites++
 					}
 				} // if this search is deeper than prev then update
-				tt[ttkey] = TtData{val, q.Ply, tttype, m.move, TtAgeCounter}
+				tt[ttkey] = TtData{val, q.Ply, tttype, m, TtAgeCounter}
 				TtAgeCounter++
 			}
 			// end save in tt
@@ -257,7 +258,7 @@ func NegaMaxAB(p Pos, alpha int, beta int, depth int, enterQuiesce bool) int {
 		// found better value so reset LOWER BOUND
 		if val > bestval {
 			bestval = val
-			bestmove = m.move
+			bestmove = m
 			if val > alpha { // is better than lower bound so move that up and make a new lower bound
 				alpha = val
 				tttype = TTEXACT
