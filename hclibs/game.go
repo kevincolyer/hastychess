@@ -36,14 +36,16 @@ func Go(p *Pos) (res string, info string) {
 	//     my Int score = negamax(depth,p)
 	//     say p.board
 	move, success = ChooseBookMove(p)
-	if success == false {
-		move, score = SearchRoot(*(p), 2, GameDepthSearch) // global variable for depth of search...
+	if success == true {
+		info += fmt.Sprintf("# book move found")
+	} else {
+		// search root
+		move, score = SearchRoot(*(p), 1, GameDepthSearch) // global variable for depth of search...
+
 		if GameUseStats {
 			info += "# fen: (" + BoardToFEN(p) + ")"
 			info += fmt.Sprintf("\n# STATS Score %v | nodes %v | qnodes %v (%v%%)| uppercuts %v | lowercuts %v |\n# STATS tt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v |\n", Comma(score), Comma(StatNodes), Comma(StatQNodes), Comma(int((float64(StatQNodes) / float64(StatNodes+StatQNodes) * 100))), Comma(StatUpperCuts), Comma(StatLowerCuts), Comma(StatTtHits), Comma(int((float64(StatTtHits) / float64(StatNodes) * 100))), Comma(StatTtWrites), Comma(StatTtUpdates), Comma(len(tt)), Comma(StatTtCulls))
 		}
-	} else {
-		info += fmt.Sprintf("# book move found")
 	}
 
 	info += result(p)

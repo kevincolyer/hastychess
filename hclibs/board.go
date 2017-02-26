@@ -234,6 +234,29 @@ func (p *Pos) String() string {
 	return fmt.Sprintf("%s\n", BoardToStrWide(p))
 }
 
+func Side(piece int) int {
+	p := piece >> 3
+	if p == BLACK {
+		return BLACK
+	}
+	if p == WHITE {
+		return WHITE
+	}
+	Die(fmt.Sprintf("Side was passed a piece value of %v which is not possible!", piece))
+	return 0
+}
+
+func Xside(side int) int {
+	return 1 - side
+}
+func Onboard(i int) bool {
+	return i&0x88 == 0
+}
+
+func Offboard(i int) bool {
+	return i&0x88 != 0
+}
+
 func PieceColour(piece int) int {
 	if piece>>3 > 0 {
 		return BLACK

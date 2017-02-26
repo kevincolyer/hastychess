@@ -56,7 +56,7 @@ type bypv []PV
 
 func (a bypv) Len() int           { return len(a) }
 func (a bypv) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a bypv) Less(i, j int) bool { return a[i].score > a[j].score } // descending search
+func (a bypv) Less(i, j int) bool { return a[i].score > a[j].score } // the < means descending search
 
 // pretty printer for PV struct
 func (pv PV) String() string {
@@ -73,7 +73,7 @@ type bymovescore []Movescore
 
 func (a bymovescore) Len() int           { return len(a) }
 func (a bymovescore) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a bymovescore) Less(i, j int) bool { return a[i].score > a[j].score } // descending search wanted (but for some reason ascending search gives better cuts?)
+func (a bymovescore) Less(i, j int) bool { return a[i].score > a[j].score } // > means descending.
 ///////////////////////////////////////////////////////////////////////
 type TtData struct {
 	score    int // score found

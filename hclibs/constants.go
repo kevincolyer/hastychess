@@ -8,9 +8,10 @@ const WHITE = 0
 const STARTFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 // board and piece numbering suggestions from https://cis.uab.edu/hyatt/boardrep.html
-const MAXSEARCHDEPTH = 6  // for manual play - easier to know what you have done wrong
-const MAXSEARCHDEPTHX = 4 // for xboard
-const TTMAXSIZE = 20      // (is 2^20=1048576 entries when over this oldest tt nodes are culled back so tt is this size
+const MAXSEARCHDEPTH = 8  // for manual play - easier to know what you have done wrong
+const MAXSEARCHDEPTHX = 8 // for xboard
+const QUIESCEDEPTH = 10
+const TTMAXSIZE = 20 // (is 2^20=1048576 entries when over this oldest tt nodes are culled back so tt is this size
 const TTHASH = 1
 const QSTTHASH = 2
 const PTTHASH = 3
@@ -35,13 +36,25 @@ const rook = 6 + 8
 const queen = 7 + 8
 
 // used for mtype in struct move
-const QUIET = 0
-const CAPTURE = 2
-const PROMOTE = 4
-const ENPASSANT = 8
-const O_O_O = 16
-const O_O = 32
-const EPCAPTURE = 64
+// const QUIET = 0
+// const CAPTURE = 2
+// const PROMOTE = 4
+// const ENPASSANT = 8
+// const O_O_O = 16
+// const O_O = 32
+// const EPCAPTURE = 64
+
+// used for mtype in struct move
+// this is useful for ordering moves - ascending order is interesting for us.
+const (
+	CAPTURE   = 1 << iota
+	EPCAPTURE = 1 << iota
+	PROMOTE   = 1 << iota
+	O_O_O     = 1 << iota
+	O_O       = 1 << iota
+	ENPASSANT = 1 << iota
+	QUIET     = 1 << iota
+)
 
 const OPENING = 0
 const MIDGAME = 1

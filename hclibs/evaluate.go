@@ -1,7 +1,7 @@
 //Hastychess, Copyright (C) GPLv3, 2016, Kevin Colyer
 package hclibs
 
-// import "fmt"
+//import "fmt"
 
 // f(p) = 200(K-K')
 //        + 9(Q-Q')
@@ -42,55 +42,65 @@ func MVVLVA(m Move, p *Pos) int {
 
 func ClaudeShannonScore(p *Pos, totalmoves int) int {
 	side := p.Side
-	xside := 1 - side
+	xside := Xside(side)
 	incheck := p.InCheck
 	// 	enpassant := p.EnPassant
 	score := 0
 	var piece, up, dd, ss int
+	// K-K'
 	if incheck == xside {
 		score += CHECK
 	}
 	if incheck == side {
 		score -= CHECK
-	} // K-K'
+	}
 	// Material valuation
 	// could add bonuses at different game stages...
 	for _, i := range GRID {
 		piece = p.Board[i]
-		if piece != EMPTY {
-			if (piece >> 3) == side {
-				score += csshash[piece]
-			} else {
-				score -= csshash[piece]
-			}
+		if piece == EMPTY {
+			continue
+		}
 
-			// Pawn mobility additions
-			if piece&0x7 == PAWN {
-				if (piece >> 3) == WHITE {
-					up = NORTH
-				} else {
-					up = SOUTH
-				}
-				dd = i + up
-				ss = dd
-				// duubled
-				for dd&0x88 == 0 {
-					if p.Board[dd] == piece {
-						score -= 50
-					}
-					dd += up
-				}
-				//ss - blocked TODO blocked by what?
-				if ss&0x88 == 0 && EMPTY != p.Board[ss] && piece != p.Board[ss] {
-					score -= 50
-				} // blocked by opposite
-				//ii - isolated
-				for _, j := range QM {
-					if (i+j)&0x88 == 0 && piece == p.Board[i+j] {
-						score -= 50
-						break
-					}
-				}
+		// add the piece value if ours - subtract if theirs
+		if Side(piece) == side {
+			score += csshash[piece]
+		} else {
+			score -= csshash[piece]
+		}
+
+		if piece&0x7 != PAWN {
+			continue
+		}
+
+		// Pawn mobility additions
+		if Side(piece) == WHITE {
+			up = NORTH
+		} else {
+			up = SOUTH
+		}
+
+		// doubled pawns
+		dd = i + up
+		ss = dd
+		// start from this pawn and count upwards
+		// if still on board...
+		for Onboard(dd) {
+			if p.Board[dd] == piece {
+				score -= 50
+			} // one of our pawns
+			dd += up
+		}
+
+		//ss - blocked PAWNS TODO blocked by what?
+		if Onboard(ss) && EMPTY != p.Board[ss] && piece != p.Board[ss] {
+			score -= 50
+		} // blocked by opposite
+		//ii - isolated
+		for _, j := range QM {
+			if Onboard(i+j) && piece == p.Board[i+j] {
+				score -= 50
+				break
 			}
 		}
 	}
@@ -110,16 +120,17 @@ func PstScore(p *Pos, gamestage int) (score int) { // actually Pst and material 
 
 	piece := 0
 	for _, i := range GRID {
-		piece = p.Board[i]
-		if piece != EMPTY {
-			if (piece >> 3) == p.Side {
-				score += csshash[piece] + Pst[gamestage][piece][i]
-			} else {
-				score -= csshash[piece] - Pst[gamestage][piece][i]
-			}
+		if piece = p.Board[i]; piece == EMPTY {
+			continue
+		}
+
+		if Side(piece) == p.Side {
+			score += (csshash[piece] + Pst[gamestage][piece][i])
+		} else {
+			score -= (csshash[piece] + Pst[gamestage][piece][i])
 		}
 	}
-	if p.InCheck == 1-p.Side {
+	if p.InCheck == Xside(p.Side) {
 		score += 20000
 	} // opponant is in check
 	if p.InCheck == p.Side {

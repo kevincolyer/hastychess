@@ -52,14 +52,14 @@ func mainConsole() {
 	if e != nil {
 		panic("Regexp did not compile!")
 	}
-	version := 0.99
+	version := 1.0
 	fmt.Printf("Hello and welcome to HastyChess version %v\n\n", version)
 
 	scanner := bufio.NewScanner(os.Stdin)
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
 	hclibs.GameOver = false
 	hclibs.GameDisplayOn = true
-	hclibs.GameDepthSearch = 4
+	hclibs.GameDepthSearch = 6
 	hclibs.GameForce = false
 	if hclibs.GameDisplayOn {
 		fmt.Println(hclibs.BoardToStrWide(&p))
