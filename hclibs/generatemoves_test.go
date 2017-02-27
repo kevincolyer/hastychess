@@ -19,5 +19,4 @@ func TestPerftDivide(t *testing.T) {
 	tap.Is(len(GenerateAllMoves(&p)), 20, "20 moves counterd on a new board")
 
 	//tap.Is(123, 123, "Is")
-	//tap.DoneTesting()
 }

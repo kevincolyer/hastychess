@@ -72,7 +72,7 @@ func TestGenerateMoves(t *testing.T) {
 			fmt.Println(BoardToStrWide(&p))
 	*/
 	//DeepPerftTest(t)
-	//tap.DoneTesting()
+
 }
 
 func check(e error) {

@@ -25,6 +25,8 @@ func (mv Move) String() string {
 //     }
 //     return
 // }
+
+
 //////////////////////////////////////////////////////////////////////////
 type Pos struct {
 	FEN           string
@@ -45,7 +47,17 @@ type Pos struct {
 
 type History struct {
     move Move
-    pos Pos
+	TakenPieces   [2]int
+	Castled       [4]bool
+	King          [2]int
+	Side          int
+	InCheck       int // -1 == no side in check either 1 or 0
+	EnPassant     int // -1 == not in enpassant otherwise square to check
+	Fifty         int
+	FullMoveClock int
+	HalfMoveClock int
+//	Ply           int
+    
 }
 //////////////////////////////////////////////////////////////////////////
 //PV struct

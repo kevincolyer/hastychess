@@ -31,6 +31,7 @@ func TestRand64(t *testing.T) {
 		}
 	}
 	tap.Is(k, lim, "testing random number generator - all unique")
+
 }
 
 func TestInitHashSize(t *testing.T) {
@@ -43,6 +44,8 @@ func TestInitHashSize(t *testing.T) {
 	tap.Is(e, nil, "No error expected from function")
 	tap.Is(len(tthash), size*1024*1024/8, "Is tthash the length we expected?")
 	tap.Is(Zhash.mask, Hash(size*1024*1024/8-1), "Is Zhash.mask correct?")
+
+    
 }
 
 func TestTTZKey(t *testing.T) {
