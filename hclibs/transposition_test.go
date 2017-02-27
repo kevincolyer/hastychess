@@ -11,8 +11,8 @@ func TestRand64(t *testing.T) {
 	//tap.DoneTesting()
 	Rand64Reset()
 	lim := 1000
-	var a = make([]uint64, lim)
-	var b = make([]uint64, lim)
+	var a = make([]Hash, lim)
+	var b = make([]Hash, lim)
 	for i := 0; i < lim; i++ {
 		a[i] = Rand64()
 	}
@@ -42,7 +42,7 @@ func TestInitHashSize(t *testing.T) {
 	e := InitHashSize(size)
 	tap.Is(e, nil, "No error expected from function")
 	tap.Is(len(tthash), size*1024*1024/8, "Is tthash the length we expected?")
-	tap.Is(Zhash.mask, uint64(size*1024*1024/8-1), "Is Zhash.mask correct?")
+	tap.Is(Zhash.mask, Hash(size*1024*1024/8-1), "Is Zhash.mask correct?")
 }
 
 func TestTTZKey(t *testing.T) {

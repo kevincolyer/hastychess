@@ -130,7 +130,7 @@ func MakeMove(m Move, p *Pos) {
 	if p.Side == WHITE {
 		p.FullMoveClock++
 	} // incremented after blacks turn
-	p.History = append(p.History, Move{m.from, m.to, m.mtype, m.extra})
+	// p.History[p.Ply] = History{move: Move{m.from, m.to, m.mtype, m.extra} }
 	p.Ply++
 	return
 }

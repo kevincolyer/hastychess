@@ -14,6 +14,8 @@ import "strconv"
 func TestGenerateMoves(t *testing.T) {
 	//	tap.Ok(true, "Ok")
 	p := FENToNewBoard(STARTFEN)
+	tap.Is(IsValidMove(Move{A2, A3, QUIET, 0}, &p), true, "Testing IsValidMove - finds correct move")
+	tap.Is(IsValidMove(Move{A2, B3, 0, 0}, &p), false, "Testing IsValidMove - finds incorrect move")
 	//tap.Is("Aaa", "Aaa", "Is")
 	tap.Is(len(GenerateAllMoves(&p)), 20, "20 moves counted on a new board")
 	tap.Is(Perft(1, p), 20, "first test of perft")
@@ -22,8 +24,6 @@ func TestGenerateMoves(t *testing.T) {
 
 	tap.Is(Divide(4, p), 197281, "4th test of divide")
 	// 	tap.Is(123, 123, "Is")
-	tap.Is(IsValidMove(Move{A2, A3, 0, 0}, &p), true, "Testing IsValidMove - finds correct move")
-	tap.Is(IsValidMove(Move{A2, B3, 0, 0}, &p), false, "Testing IsValidMove - finds incorrect move")
 
 	dat, err := ioutil.ReadFile("perftsuite.epd")
 	check(err)

@@ -52,7 +52,7 @@ func TestBoardToStr(t *testing.T) {
 }
 func TestBoard(t *testing.T) {
 
-	if fmt.Sprintf("%v", FENToNewBoard(STARTFEN)) != `{ [6 2 5 7 3 5 2 6 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 9 9 9 9 9 9 9 9 0 0 0 0 0 0 0 0 14 10 13 15 11 13 10 14 0 0 0 0 0 0 0 0] [0 0] [false false false false] [4 116] 0 -1 -1 0 1 0 0 []}` {
+	if fmt.Sprintf("%v", FENToNewBoard(STARTFEN)) != `{ [6 2 5 7 3 5 2 6 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 9 9 9 9 9 9 9 9 0 0 0 0 0 0 0 0 14 10 13 15 11 13 10 14 0 0 0 0 0 0 0 0] [0 0] [false false false false] [4 116] 0 -1 -1 0 1 0 0 0}` {
 		t.Errorf("Internal representation of Board failed - has something changed?\n%v", FENToNewBoard(STARTFEN))
 	}
 }

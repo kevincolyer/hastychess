@@ -39,9 +39,14 @@ type Pos struct {
 	FullMoveClock int
 	HalfMoveClock int
 	Ply           int
-	History       []Move
+	Hash          Hash
+	//History       []Move
 }
 
+type History struct {
+    move Move
+    pos Pos
+}
 //////////////////////////////////////////////////////////////////////////
 //PV struct
 type PV struct { // intended to be used in a slice of PV slices

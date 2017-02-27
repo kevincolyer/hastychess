@@ -27,12 +27,14 @@ import "fmt"
 //
 //
 // }
+type Hash uint64
+
 type zhashstruct struct {
-	psq    [128][20]uint64
-	castle [4]uint64
-	side   [2]uint64
-	ep     [129]uint64 // have to add 1 to ep value to as -1 indicates we are not in ep
-	mask   uint64
+	psq    [128][20]Hash
+	castle [4]Hash
+	side   [2]Hash
+	ep     [129]Hash // have to add 1 to ep value to as -1 indicates we are not in ep
+	mask   Hash
 }
 
 var Zhash zhashstruct
@@ -40,14 +42,14 @@ var Zhash zhashstruct
 // how do I declare an array but set its size later?
 var tthash []TtData
 var qstthash []TtData
-var hashnext uint64 = 1
+var hashnext Hash = 1
 
 func Rand64Reset() {
 	hashnext = 1
 }
 
 // Rand64 generates uint64's and is pinched the one the cpw engine pinches from Sungorus!
-func Rand64() uint64 {
+func Rand64() Hash {
 
 	hashnext = hashnext*1103515245 + 12345
 	return hashnext
@@ -73,7 +75,7 @@ func init() {
 
 //type TTZKey uint64
 
-func TTPeek(key uint64, hash int) (data TtData, err bool) {
+func TTPeek(key Hash, hash int) (data TtData, err bool) {
 	err = false
 	key = key & Zhash.mask
 	switch hash {
@@ -91,7 +93,7 @@ func TTPeek(key uint64, hash int) (data TtData, err bool) {
 	return
 }
 
-func TTPoke(key uint64, hash int, data TtData) {
+func TTPoke(key Hash, hash int, data TtData) {
 	key = key & Zhash.mask
 	switch hash {
 	case TTHASH:
@@ -105,7 +107,7 @@ func TTPoke(key uint64, hash int, data TtData) {
 }
 
 // make TtKey - scan board for pieces, xor in, xor in castling states, xor in side to move and EP
-func TTZKey(p *Pos) (z uint64) {
+func TTZKey(p *Pos) (z Hash) {
 	for _, square := range GRID {
 		if p.Board[square] != EMPTY {
 			z = z ^ Zhash.psq[square][p.Board[square]]
@@ -148,7 +150,7 @@ func InitHashSize(size int) (e error) {
 		power++
 	}
 	size = 1 << (power - 1)
-	Zhash.mask = uint64(size - 1)
+	Zhash.mask = Hash(size - 1)
 	tthash = make([]TtData, size, size)
 	//	qstthash = make ([]TtData, size,size)
 	return
