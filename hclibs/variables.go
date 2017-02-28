@@ -26,7 +26,6 @@ func (mv Move) String() string {
 //     return
 // }
 
-
 //////////////////////////////////////////////////////////////////////////
 type Pos struct {
 	FEN           string
@@ -46,7 +45,7 @@ type Pos struct {
 }
 
 type History struct {
-    move Move
+	move          Move
 	TakenPieces   [2]int
 	Castled       [4]bool
 	King          [2]int
@@ -56,28 +55,30 @@ type History struct {
 	Fifty         int
 	FullMoveClock int
 	HalfMoveClock int
-//	Ply           int
-    
+	//	Ply           int
+
 }
+
 //////////////////////////////////////////////////////////////////////////
 //PV struct
-type PV struct { // intended to be used in a slice of PV slices
-	moves []Move
-	score int // for whole list of moves
-	depth int // depth searched to
+type PV struct { // PV array
+	moves [20]Move // too many perhaps depth x 2?
+	count int      // for whole list of moves
+	// 	depth int // depth searched to
 
 }
 
+/*
 // used to provide a sort of PV struct by nodes
 type bypv []PV
 
 func (a bypv) Len() int           { return len(a) }
 func (a bypv) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a bypv) Less(i, j int) bool { return a[i].score > a[j].score } // the < means descending search
+func (a bypv) Less(i, j int) bool { return a[i].score > a[j].score } // the < means descending search*/
 
 // pretty printer for PV struct
 func (pv PV) String() string {
-	return fmt.Sprintf("Score: %d (depth %d) %v:", pv.score, pv.depth, pv.moves)
+	return fmt.Sprintf("%v", pv.moves)
 }
 
 ///////////////////////////////////////////////////////////////////////

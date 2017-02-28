@@ -12,6 +12,7 @@ import (
 
 // THIS SHOULD BE SEARCH ROOT OR A WAY TO ALLOW ME TO PLUG IN DIFFERENT SEARCHES
 func SearchRoot(p Pos, initdepth, maxdepth int) (bestmove Move, bestscore int) {
+	var pv PV         // to collect our PV in
 	GameUseTt = false // TODO fix the broken tt!
 	enterQuiesce := false
 	///////// Checkmate and stalemate detection
@@ -43,15 +44,18 @@ func SearchRoot(p Pos, initdepth, maxdepth int) (bestmove Move, bestscore int) {
 	for i, _ := range consider {
 		mvscore = append(mvscore, Movescore{consider[i], NEGINF, ""})
 	}
-	OrderMoves(mvscore)
+	// need PV in here to start first moves off
+	OrderMoves(mvscore, &pv)
 	//         sort.Slice(mvscore, func( i,j int) bool { return mvscore[i].move.mtype < mvscore[j].move.mtype} )
 	bestscore = mvscore[0].score
 	bestscore = NEGINF + 100
 	bestmove = mvscore[0].move
+	pv.moves[0] = bestmove
 
 	//         fmt.Println(mvscore)
 
 	for depth := 1; depth <= maxdepth; depth++ {
+		var childpv PV
 		if !UCI() {
 			fmt.Printf("# searching to depth %d\n", depth)
 		}
@@ -80,7 +84,7 @@ func SearchRoot(p Pos, initdepth, maxdepth int) (bestmove Move, bestscore int) {
 			q := p //copy p
 			MakeMove(mvscore[i].move, &q)
 
-			score := NegaMaxAB(q, bestscore-50, bestscore+50, depth, enterQuiesce)
+			score := NegaMaxAB(q, bestscore-50, bestscore+50, depth, enterQuiesce, &childpv)
 			// TODO too much beardth at lower levels give qsearch explosion with poor move ordering...
 			// need to improve q search move ordering...
 			//   			if score <= bestscore-50 || score >= bestscore+50 {
@@ -94,9 +98,12 @@ func SearchRoot(p Pos, initdepth, maxdepth int) (bestmove Move, bestscore int) {
 				bestmove = mvscore[i].move
 
 				if GameUseStats && !UCI() {
-					fmt.Printf("# good move %v scored %v found at index %v\n", bestmove, bestscore, i)
+					fmt.Printf("# good move %v scored %v found at index %v\n# PV=%v count %v\n", bestmove, bestscore, i, pv, pv.count)
 				}
 			}
+			pv.moves[0] = bestmove
+			copy(pv.moves[1:], childpv.moves[:])
+			pv.count = childpv.count + 1
 		}
 		// now we have scores sort for the next round
 		sort.Sort(bymovescore(mvscore))
@@ -118,11 +125,12 @@ func SearchRoot(p Pos, initdepth, maxdepth int) (bestmove Move, bestscore int) {
 			}
 		}
 	}
+	fmt.Printf("(%v) = %v (count %v)\n", bestscore, pv, pv.count)
 	return
 }
 
-func NegaMaxAB(p Pos, alpha int, beta int, depth int, enterQuiesce bool) int {
-
+func NegaMaxAB(p Pos, alpha int, beta int, depth int, enterQuiesce bool, parentpv *PV) int {
+	var childpv PV
 	// i_alpha:= alpha // initial alpha
 	bestval := NEGINF // the value we hope to find and return
 	side := p.Side
@@ -215,6 +223,7 @@ func NegaMaxAB(p Pos, alpha int, beta int, depth int, enterQuiesce bool) int {
 			TtAgeCounter++
 			// 			}
 		}
+		parentpv.count = 0 // needed to prevent any extra copying onto stack
 		return bestval
 
 	} // at a leaf // note at a leaf we can't detect stalemate - need to look deeper for that...
@@ -224,6 +233,8 @@ func NegaMaxAB(p Pos, alpha int, beta int, depth int, enterQuiesce bool) int {
 	// ALPHA == lower bound
 	// BETA == upper bound */
 	bestmove = moves[0]
+	parentpv.moves[0] = bestmove
+	parentpv.count = 1
 
 	if bestval > alpha {
 		alpha = bestval
@@ -237,7 +248,7 @@ func NegaMaxAB(p Pos, alpha int, beta int, depth int, enterQuiesce bool) int {
 		MakeMove(m, &q)
 		ttkey = TtKey(&q)
 
-		val = -NegaMaxAB(q, -beta, -alpha, depth-1, enterQuiesce)
+		val = -NegaMaxAB(q, -beta, -alpha, depth-1, enterQuiesce, &childpv)
 		StatNodes++
 
 		// found a better UPPER BOUND
@@ -269,6 +280,14 @@ func NegaMaxAB(p Pos, alpha int, beta int, depth int, enterQuiesce bool) int {
 				tttype = TTEXACT
 				StatLowerCuts++
 			}
+			// push move onto stack of parent pv and add child after. increase the total length counter
+			parentpv.moves[0] = m
+
+			copy(parentpv.moves[1:], childpv.moves[:])
+			//  			copy(pv.moves[1:],childpv.moves)
+
+			parentpv.count = childpv.count + 1
+			//                         fmt.Println(pv)
 		}
 	} // END OF range over moves
 	// save in tt
@@ -364,7 +383,7 @@ func SearchQuiesce(p Pos, alpha, beta int, qdepth int) int {
 	return alpha // nothing better than this to return
 }
 
-func OrderMoves(mvscore []Movescore) bool {
+func OrderMoves(mvscore []Movescore, pv *PV) bool {
 	// can add in pv at top and also any other things to help
 	sort.Slice(mvscore, func(i, j int) bool { return mvscore[i].move.mtype < mvscore[j].move.mtype })
 	return true

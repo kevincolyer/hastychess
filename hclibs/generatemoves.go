@@ -418,7 +418,7 @@ func IsValidMove(m Move, p *Pos) bool {
 	moves := GenerateAllMoves(p)
 	for _, j := range moves {
 
-		if m == j  {
+		if m == j {
 			return true
 		}
 	}
