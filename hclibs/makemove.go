@@ -1,7 +1,7 @@
 //Hastychess, Copyright (C) GPLv3, 2016, Kevin Colyer
 package hclibs
 
-import "fmt"
+// import "fmt"
 
 func MakeMove(m Move, p *Pos) {
 
@@ -43,7 +43,7 @@ func MakeMove(m Move, p *Pos) {
 	} //unhash ONLY if square occupied!
 
 	if m.mtype == O_O_O { //  update castled (left)
-		fmt.Println("QS castle")
+		// 		fmt.Println("QS castle")
 		if from-to != 2 {
 			panic("QS castling error to and from")
 		}
@@ -62,7 +62,7 @@ func MakeMove(m Move, p *Pos) {
 		zhash = zhash ^ Zhash.psq[rookto][p.Board[rookto]] // hash
 	}
 	if m.mtype == O_O { //  update castled (right)
-		fmt.Println("KS castle")
+		// 		fmt.Println("KS castle")
 		if to-from != 2 {
 			panic("KS castling error to and from")
 		}
@@ -81,7 +81,7 @@ func MakeMove(m Move, p *Pos) {
 		zhash = zhash ^ Zhash.psq[rookto][p.Board[rookto]] //hash
 	}
 	if m.mtype == PROMOTE {
-		fmt.Println("Promote")
+		// 		fmt.Println("Promote")
 		fp = extra + (side << 3)
 		if tp != EMPTY {
 			// promote by capturing
@@ -90,7 +90,7 @@ func MakeMove(m Move, p *Pos) {
 		// let move below promote push it into right place
 	}
 	if m.mtype == EPCAPTURE {
-		fmt.Println("EPCapture")
+		// 		fmt.Println("EPCapture")
 		epcapture := to
 		// generate has already spotted this and created a taking move.
 		//         debug ==2 && say "epcapture";
@@ -111,7 +111,7 @@ func MakeMove(m Move, p *Pos) {
 	// set ep and update ep in hash
 	p.EnPassant = -1
 	if m.mtype == ENPASSANT {
-		fmt.Println("EP")
+		// 		fmt.Println("EP")
 		p.EnPassant = extra
 	}
 	// update new ep in hash
@@ -125,13 +125,13 @@ func MakeMove(m Move, p *Pos) {
 
 	// CAPTURE! update pieces for from
 	if tp != EMPTY { // Capturing
-		fmt.Println("Capturing")
+		// 		fmt.Println("Capturing")
 		history[hply].JustTaken = tp // record what was taken for unmakemove
 		p.TakenPieces[side]++        // increase the count of pawns
 		p.Fifty = -1
 	}
 	if m.mtype == QUIET {
-		fmt.Println("quiet")
+		// 		fmt.Println("quiet")
 	}
 
 	if fp == KING+(side<<3) {
@@ -173,23 +173,25 @@ func MakeMove(m Move, p *Pos) {
 	zhash = zhash ^ Zhash.side[p.Side]
 	p.Side = 1 - p.Side
 	zhash = zhash ^ Zhash.side[p.Side]
+
+	// Evalute if opponant is in check
 	p.InCheck = -1
 	// have to switch sides to get in_check to evaluate right
 	if InCheck(p.King[xside], xside, p) {
 		p.InCheck = xside
-	} // other side now in check?
+	}
 
 	if p.Side == WHITE {
 		p.FullMoveClock++
 	} // incremented after blacks turn
-	// p.History[p.Ply] = History{move: Move{m.from, m.to, m.mtype, m.extra} }
+
 	p.Ply++
 	// update hash
-	p.Hash = TTZKey(p)
-	if p.Hash != zhash {
-		fmt.Printf("Move %v for side %v\n%v\nCastled %v\n", m, p.Side, p, p.Castled)
-		panic("MakeMove: TTZKey hash does not match makemoves calculated hash!")
-	}
+	// 	p.Hash = TTZKey(p)
+	// 	if p.Hash != zhash {
+	// 		fmt.Printf("Move %v for side %v\n%v\nCastled %v\n", m, p.Side, p, p.Castled)
+	// 		panic("MakeMove: TTZKey hash does not match makemoves calculated hash!")
+	// 	}
 	return
 }
 
@@ -205,9 +207,9 @@ func UnMakeMove(m Move, p *Pos) bool {
 	switch m.mtype {
 	case QUIET, ENPASSANT:
 		{
+			//                         fmt.Println("Quiet or Enpassant")
 			p.Board[m.from] = p.Board[m.to]
 			p.Board[m.to] = EMPTY
-			//		fmt.Println("Quiet or Enpassant")
 		}
 	case CAPTURE:
 		{
@@ -280,10 +282,11 @@ func UnMakeMove(m Move, p *Pos) bool {
 	//  assert move correctly reset
 	p.Ply--
 	//
-	p.Hash = TTZKey(p)
-	if p.Hash != history[hply].Hash {
-		fmt.Printf("Move %v for side %v:\n%v\nCastled %v\n", m, p, Side, p, p.Castled)
-		panic("UnMakeMove did not give same position hash as stored in history array.")
-	}
+	p.Hash = history[hply].Hash // retrieve don't calculate! Phew!
+	// 	p.Hash = TTZKey(p)
+	// 	if p.Hash != history[hply].Hash {
+	// 		fmt.Printf("Move %v for side %v:\n%v\nCastled %v\n", m, p, Side, p, p.Castled)
+	// 		panic("UnMakeMove did not give same position hash as stored in history array.")
+	// 	}
 	return true
 }
