@@ -9,6 +9,7 @@ import "regexp"
 func GameInit() {
 	tt = make(map[string]TtData)
 	book = make(map[string][]Move)
+
 	if GameUseBook {
 		InitBook()
 	}

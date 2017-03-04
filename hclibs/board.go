@@ -196,6 +196,7 @@ func FENToBoard(f string, p *Pos) *Pos {
 	if InCheck(p.King[BLACK], BLACK, p) {
 		p.InCheck = BLACK
 	}
+	p.Hash = TTZKey(p)
 	return p
 }
 

@@ -21,6 +21,7 @@ const ETTHASH = 4
 // const USETTABLE=true
 
 // pawn=1, knight=2, king=3, bishop=5, rook=6 and queen=7
+//WHITE
 const EMPTY = 0
 const PAWN = 1
 const NIGHT = 2
@@ -28,6 +29,8 @@ const KING = 3
 const BISHOP = 5
 const ROOK = 6
 const QUEEN = 7
+
+//black
 const pawn = 1 + 8
 const night = 2 + 8
 const king = 3 + 8

@@ -18,11 +18,11 @@ func TestGenerateMoves(t *testing.T) {
 	tap.Is(IsValidMove(Move{A2, B3, 0, 0}, &p), false, "Testing IsValidMove - finds incorrect move")
 	//tap.Is("Aaa", "Aaa", "Is")
 	tap.Is(len(GenerateAllMoves(&p)), 20, "20 moves counted on a new board")
-	tap.Is(Perft(1, p), 20, "first test of perft")
-	tap.Is(Perft(2, p), 400, "2nd test of perft")
-	tap.Is(Perft(3, p), 8902, "third test of perft")
+	tap.Is(Perft(1, &p), 20, "first test of perft")
+	tap.Is(Perft(2, &p), 400, "2nd test of perft")
+	tap.Is(Perft(3, &p), 8902, "third test of perft")
 
-	tap.Is(Divide(4, p), 197281, "4th test of divide")
+	tap.Is(Divide(4, &p), 197281, "4th test of divide")
 	// 	tap.Is(123, 123, "Is")
 
 	dat, err := ioutil.ReadFile("perftsuite.epd")
@@ -48,7 +48,7 @@ func TestGenerateMoves(t *testing.T) {
 				fmt.Println("Error found ", err)
 			}
 			q := FENToNewBoard(fen)
-			tap.Is(Perft(d, q), comp, "line "+strconv.Itoa(l)+") "+fen+" depth "+test[0]+" is "+test[1])
+			tap.Is(Perft(d, &q), comp, "line "+strconv.Itoa(l)+") "+fen+" depth "+test[0]+" is "+test[1])
 		}
 	}
 	// 	p = FENToNewBoard("4k3/4p3/4K3/8/8/8/8/8 b - - 0 1")
@@ -84,6 +84,6 @@ func check(e error) {
 func BenchmarkPerft(b *testing.B) {
 
 	p := FENToNewBoard(STARTFEN)
-	nodes := Perft(4, p)
+	nodes := Perft(4, &p)
 	fmt.Println("Nodes " + strconv.Itoa(nodes))
 }

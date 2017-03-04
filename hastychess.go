@@ -130,7 +130,7 @@ QUIT:
 					fmt.Println("Please specify a number")
 					break next
 				}
-				hclibs.Divide(d, p)
+				hclibs.Divide(d, &p)
 
 			case strings.Contains(input, "perft"):
 				fields := strings.Fields(input)
@@ -143,7 +143,7 @@ QUIT:
 					fmt.Println("Please specify a number")
 					break next
 				}
-				nodes := hclibs.Perft(d, p)
+				nodes := hclibs.Perft(d, &p)
 				fmt.Printf("\nPerft to depth %v gives %v nodes\n", d, nodes)
 
 			case strings.Contains(input, "depth"):

@@ -47,6 +47,7 @@ type Pos struct {
 type History struct {
 	move          Move
 	TakenPieces   [2]int
+	JustTaken     int
 	Castled       [4]bool
 	King          [2]int
 	Side          int
@@ -55,9 +56,12 @@ type History struct {
 	Fifty         int
 	FullMoveClock int
 	HalfMoveClock int
+	Hash          Hash
 	//	Ply           int
 
 }
+
+var history [50]History // keep short for now to find bugs
 
 //////////////////////////////////////////////////////////////////////////
 //PV struct

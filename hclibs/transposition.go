@@ -93,9 +93,9 @@ func TTPeek(key Hash, hash int) (data TtData, err bool) {
 	return
 }
 
-func TTPoke(key Hash, hash int, data TtData) {
+func TTPoke(key Hash, hashtable int, data TtData) {
 	key = key & Zhash.mask
-	switch hash {
+	switch hashtable {
 	case TTHASH:
 		tthash[key] = data
 		return
@@ -108,11 +108,11 @@ func TTPoke(key Hash, hash int, data TtData) {
 
 // make TtKey - scan board for pieces, xor in, xor in castling states, xor in side to move and EP
 func TTZKey(p *Pos) (z Hash) {
-	for _, square := range GRID {
-		if p.Board[square] != EMPTY {
-			z = z ^ Zhash.psq[square][p.Board[square]]
-		}
-	}
+	// 	for _, square := range GRID {
+	// 		if p.Board[square] != EMPTY {
+	// 			z = z ^ Zhash.psq[square][p.Board[square]]
+	// 		}
+	// 	}
 
 	if p.Castled[QS] {
 		z = z ^ Zhash.castle[QS]
@@ -120,14 +120,14 @@ func TTZKey(p *Pos) (z Hash) {
 	if p.Castled[KS] {
 		z = z ^ Zhash.castle[KS]
 	}
-	if p.Castled[QS+p.Side*2] {
-		z = z ^ Zhash.castle[QS+p.Side*2]
+	if p.Castled[QS+2] {
+		z = z ^ Zhash.castle[QS+2]
 	}
-	if p.Castled[KS+p.Side*2] {
-		z = z ^ Zhash.castle[KS+p.Side*2]
+	if p.Castled[KS+2] {
+		z = z ^ Zhash.castle[KS+2]
 	}
 
-	z = z ^ Zhash.ep[p.EnPassant+1]
+	//	z = z ^ Zhash.ep[p.EnPassant+1]
 
 	z = z ^ Zhash.side[p.Side]
 	return

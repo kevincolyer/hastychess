@@ -14,18 +14,19 @@ import (
 )
 
 // total count of nodes of a given depth
-func Perft(depth int, p Pos) (nodes int) {
+func Perft(depth int, p *Pos) (nodes int) {
 
 	var moves []Move
 	if depth == 0 {
 		return 1
 	} // because b & w have turns...
-	moves = append(moves, GenerateAllMoves(&p)...)
+	moves = append(moves, GenerateAllMoves(p)...)
 
 	for _, m := range moves {
-		q := p
-		MakeMove(m, &q)
-		nodes += Perft(depth-1, q)
+		//q := p
+		MakeMove(m, p)
+		nodes += Perft(depth-1, p)
+		UnMakeMove(m, p)
 	}
 	// returning from perft;
 	return
@@ -51,21 +52,21 @@ func (a by) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a by) Less(i, j int) bool { return a[i].move < a[j].move }
 
 // the useful divide function shows counts of nodes for top level moves
-func Divide(depth int, p Pos) (nodes_total int) {
+func Divide(depth int, p *Pos) (nodes_total int) {
 
 	var moves []Move
 	var result []divide
 	if depth == 0 {
 		return 1
 	} // because b & w have turns...
-	moves = append(moves, GenerateAllMoves(&p)...)
+	moves = append(moves, GenerateAllMoves(p)...)
 	nodes := 0
 
 	for _, m := range moves {
-		q := p
-		MakeMove(m, &q)
-		nodes = Perft(depth-1, q)
 
+		MakeMove(m, p)
+		nodes = Perft(depth-1, p)
+		UnMakeMove(m, p)
 		result = append(result, divide{MoveToAlg(m), nodes})
 		nodes_total += nodes
 	}
@@ -102,7 +103,7 @@ func DeepPerftTest(t *testing.T) {
 				fmt.Println("Error found ", err)
 			}
 			q := FENToNewBoard(fen)
-			tap.Is(Perft(d, q), comp, "line "+strconv.Itoa(l)+") "+fen+" depth "+test[0]+" is "+test[1])
+			tap.Is(Perft(d, &q), comp, "line "+strconv.Itoa(l)+") "+fen+" depth "+test[0]+" is "+test[1])
 		}
 	}
 	tap.DoneTesting()
