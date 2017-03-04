@@ -64,9 +64,9 @@ func init() {
 			Zhash.psq[i][j] = Rand64()
 		}
 	}
-	Zhash.ep[i] = Rand64()
-	for i = 0; i < 4; i++ {
+	Zhash.ep[128] = Rand64()
 
+	for i = 0; i < 4; i++ {
 		Zhash.castle[i] = Rand64()
 	}
 	Zhash.side[BLACK] = Rand64()
@@ -108,26 +108,26 @@ func TTPoke(key Hash, hashtable int, data TtData) {
 
 // make TtKey - scan board for pieces, xor in, xor in castling states, xor in side to move and EP
 func TTZKey(p *Pos) (z Hash) {
-	// 	for _, square := range GRID {
-	// 		if p.Board[square] != EMPTY {
-	// 			z = z ^ Zhash.psq[square][p.Board[square]]
-	// 		}
-	// 	}
-
-	if p.Castled[QS] {
-		z = z ^ Zhash.castle[QS]
-	}
-	if p.Castled[KS] {
-		z = z ^ Zhash.castle[KS]
-	}
-	if p.Castled[QS+2] {
-		z = z ^ Zhash.castle[QS+2]
-	}
-	if p.Castled[KS+2] {
-		z = z ^ Zhash.castle[KS+2]
+	for _, square := range GRID {
+		if p.Board[square] != EMPTY {
+			z = z ^ Zhash.psq[square][p.Board[square]]
+		}
 	}
 
-	//	z = z ^ Zhash.ep[p.EnPassant+1]
+	if p.Castled[BLACK*2+QS] {
+		z = z ^ Zhash.castle[BLACK*2+QS]
+	}
+	if p.Castled[BLACK*2+KS] {
+		z = z ^ Zhash.castle[BLACK*2+KS]
+	}
+	if p.Castled[WHITE*2+QS] {
+		z = z ^ Zhash.castle[WHITE*2+QS]
+	}
+	if p.Castled[WHITE*2+KS] {
+		z = z ^ Zhash.castle[WHITE*2+KS]
+	}
+
+	z = z ^ Zhash.ep[p.EnPassant+1]
 
 	z = z ^ Zhash.side[p.Side]
 	return

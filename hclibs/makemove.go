@@ -34,45 +34,51 @@ func MakeMove(m Move, p *Pos) {
 	zhash := p.Hash              // for manipulating the hash with just the changes we need to make
 	//
 	if from == to && from == A1 {
-		panic("I've been given a nonsence move")
+		panic("I've been given a nonsense move")
 	}
 	// remove the FROM and TO squares from old hash ready to update with new values
-	//	zhash = zhash ^ Zhash.psq[from][p.Board[from]]
-	//	zhash = zhash ^ Zhash.psq[to][p.Board[to]]
+	zhash = zhash ^ Zhash.psq[from][p.Board[from]] // unhash piece
+	if p.Board[to] != EMPTY {
+		zhash = zhash ^ Zhash.psq[to][p.Board[to]]
+	} //unhash ONLY if square occupied!
 
 	if m.mtype == O_O_O { //  update castled (left)
 		fmt.Println("QS castle")
 		if from-to != 2 {
-			panic("castling error to and from")
+			panic("QS castling error to and from")
 		}
-		//         debug ==2 && say "O-O-O";
+		if p.Castled[side*2+KS] == false {
+			zhash = zhash ^ Zhash.castle[side*2+KS]
+		}
 		p.Castled[side*2+KS] = true
-		zhash = zhash ^ Zhash.castle[side*2+KS]
 		p.Castled[side*2+QS] = true // can't castle other side once castled!
 		zhash = zhash ^ Zhash.castle[side*2+QS]
-
-		rook := from - 4
-		p.Board[from-1] = p.Board[rook] // move rook to right of king
-		//		zhash = zhash ^ Zhash.psq[from-1][p.Board[from -1]]
-		p.Board[rook] = EMPTY
-		//		zhash = zhash ^ Zhash.psq[rook][p.Board[rook]]
+		// move rook
+		rookfrom := from - 4
+		rookto := from - 1
+		p.Board[rookto] = p.Board[rookfrom]                    // move rook to right of king
+		zhash = zhash ^ Zhash.psq[rookfrom][p.Board[rookfrom]] //unhash
+		p.Board[rookfrom] = EMPTY
+		zhash = zhash ^ Zhash.psq[rookto][p.Board[rookto]] // hash
 	}
 	if m.mtype == O_O { //  update castled (right)
 		fmt.Println("KS castle")
 		if to-from != 2 {
-			panic("castling error to and from")
+			panic("KS castling error to and from")
 		}
-		//         debug ==2 && say "O-O";
 		p.Castled[side*2+KS] = true
 		zhash = zhash ^ Zhash.castle[side*2+KS]
+		if p.Castled[side*2+QS] == false {
+			zhash = zhash ^ Zhash.castle[side*2+QS]
+		}
 		p.Castled[side*2+QS] = true // can't castle other side once castled!
-		zhash = zhash ^ Zhash.castle[side*2+QS]
-
-		rook := from + 3
-		p.Board[from+1] = p.Board[rook] // move rook to left of king
-		//		zhash = zhash ^ Zhash.psq[from-1][p.Board[from -1]]
-		p.Board[rook] = EMPTY
-		//		zhash = zhash ^ Zhash.psq[rook][p.Board[rook]]
+		// move rook
+		rookfrom := from + 3
+		rookto := from + 1
+		p.Board[rookto] = p.Board[rookfrom]                    // move rook to left of king
+		zhash = zhash ^ Zhash.psq[rookfrom][p.Board[rookfrom]] //unhash
+		p.Board[rookfrom] = EMPTY
+		zhash = zhash ^ Zhash.psq[rookto][p.Board[rookto]] //hash
 	}
 	if m.mtype == PROMOTE {
 		fmt.Println("Promote")
@@ -94,26 +100,28 @@ func MakeMove(m Move, p *Pos) {
 		} else {
 			epcapture += NORTH
 		} // Piece to take is vert above or below to
-		//		zhash = zhash ^ Zhash.psq[epcapture][p.Board[epcapture]]
-		p.Board[epcapture] = EMPTY // remove p from their list
-		p.TakenPieces[side]++      // increase the count of pawns
+		zhash = zhash ^ Zhash.psq[epcapture][p.Board[epcapture]] //unhash
+		p.Board[epcapture] = EMPTY                               // remove p from their list
+		p.TakenPieces[side]++                                    // increase the count of pawns
 		p.Fifty = -1
 	}
 
-	//	zhash = zhash ^ Zhash.ep[p.EnPassant+1]
+	// remove last ep from hash
+	zhash = zhash ^ Zhash.ep[history[hply].EnPassant+1]
+	// set ep and update ep in hash
 	p.EnPassant = -1
 	if m.mtype == ENPASSANT {
 		fmt.Println("EP")
 		p.EnPassant = extra
-		//		zhash = zhash ^ Zhash.ep[extra+1]
 	}
+	// update new ep in hash
+	zhash = zhash ^ Zhash.ep[p.EnPassant+1]
 
 	// move piece
+	// Dont hash empty squares
 	p.Board[from] = EMPTY
-	////	zhash = zhash ^ Zhash.psq[from][p.Board[from]] //new value // dont hash empty squares
 	p.Board[to] = fp
-	//	zhash = zhash ^ Zhash.psq[to][p.Board[to]] //new value
-	//     p.pieces[side][ p.pieces[side].grep-index(from) ]=to;
+	zhash = zhash ^ Zhash.psq[to][p.Board[to]] // hash new value
 
 	// CAPTURE! update pieces for from
 	if tp != EMPTY { // Capturing
@@ -121,7 +129,8 @@ func MakeMove(m Move, p *Pos) {
 		history[hply].JustTaken = tp // record what was taken for unmakemove
 		p.TakenPieces[side]++        // increase the count of pawns
 		p.Fifty = -1
-	} else {
+	}
+	if m.mtype == QUIET {
 		fmt.Println("quiet")
 	}
 
@@ -178,7 +187,8 @@ func MakeMove(m Move, p *Pos) {
 	// update hash
 	p.Hash = TTZKey(p)
 	if p.Hash != zhash {
-		panic("TTZKey hash does not match makemoves calculated hash!")
+		fmt.Printf("Move %v for side %v\n%v\nCastled %v\n", m, p.Side, p, p.Castled)
+		panic("MakeMove: TTZKey hash does not match makemoves calculated hash!")
 	}
 	return
 }
@@ -272,7 +282,7 @@ func UnMakeMove(m Move, p *Pos) bool {
 	//
 	p.Hash = TTZKey(p)
 	if p.Hash != history[hply].Hash {
-		fmt.Println(m, "\n", p)
+		fmt.Printf("Move %v for side %v:\n%v\nCastled %v\n", m, p, Side, p, p.Castled)
 		panic("UnMakeMove did not give same position hash as stored in history array.")
 	}
 	return true
