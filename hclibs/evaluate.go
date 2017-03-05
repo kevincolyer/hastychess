@@ -1,7 +1,7 @@
 //Hastychess, Copyright (C) GPLv3, 2016, Kevin Colyer
 package hclibs
 
-//import "fmt"
+// import "fmt"
 
 // f(p) = 200(K-K')
 //        + 9(Q-Q')
@@ -17,7 +17,7 @@ package hclibs
 
 func Eval(p *Pos, nummoves, gamestage int) int {
 	return PstScore(p, gamestage)
-	// 	return ClaudeShannonScore(p, nummoves)
+	//		return ClaudeShannonScore(p, nummoves)
 }
 
 func EvalQ(p *Pos, nummoves, gamestage int) int {
@@ -116,11 +116,13 @@ func ClaudeShannonScore(p *Pos, totalmoves int) int {
 	return score
 }
 
+// TODO test coverage here!!!!
 func PstScore(p *Pos, gamestage int) (score int) { // actually Pst and material score
 
 	piece := 0
 	for _, i := range GRID {
-		if piece = p.Board[i]; piece == EMPTY {
+		piece = p.Board[i]
+		if piece == EMPTY {
 			continue
 		}
 
@@ -131,49 +133,17 @@ func PstScore(p *Pos, gamestage int) (score int) { // actually Pst and material 
 		}
 	}
 	if p.InCheck == Xside(p.Side) {
-		score += 20000
+		score += CHECK
 	} // opponant is in check
 	if p.InCheck == p.Side {
-		score -= 20000
+		score -= CHECK
 	} // i am in check :-(
 	return score
 }
 
-//
-// sub Pst_score_delta (Int from, Int to, Int gamestage, Position p) returns Int {
-//     ENTER { if TUNING { my n ='evaluate::Pst_score_delta' ;%tuning{n}[2]= now; %tuning{n}[0] //=0; %tuning{n}[1] //=0 } }
-//     LEAVE { if TUNING { my n ='evaluate::Pst_score_delta' ;my dur = now - %tuning{n}[2]; %tuning{n}[0]+=dur; %tuning{n}[1]++; } }
-//     //fake a move
-//      score=0;
-//      fp=p.Board[from];
-//      tp=p.Board[to];
-//
-//     p.Board[from]=EMPTY;
-//     p.Board[to]=fp;
-//     score += 20_000 * king_is_in_check( p.king[p.xside], p );
-//
-//     // restore
-//     p.Board[from]=fp;
-//     p.Board[to]=tp;
-//
-//     // use Pst: add the to square moving score for the piece moving (for the gamestage)
-//     score += Pst[ gamestage ][ fp ][ to ];
-//     score -= Pst[ gamestage ][ fp ][ from ];
-//
-// //     // if pawn promotes
-// //     if fp==P and from +& 0x7 == 7  {
-// //         //// argh want type here!
-// //     }
-// //     // if castling ...
-//
-//     // add the piece score if we are capturing
-//     score += %csshash{ tp } if tp != EMPTY;
-//     return score;
-// }
-//
 func loadPst(i []int) (board [128]int) {
 	k := 0
-	for _, j := range GRID {
+	for _, j := range REVGRID { // beacuse pst below is reversed
 		board[j] = i[k]
 		k++
 	}
@@ -182,7 +152,7 @@ func loadPst(i []int) (board [128]int) {
 
 func loadPstRev(i []int) (board [128]int) {
 	k := 0
-	for _, j := range REVGRID {
+	for _, j := range GRID { // beacuse pst below is reversed
 		board[j] = i[k]
 		k++
 	}
@@ -192,7 +162,7 @@ func loadPstRev(i []int) (board [128]int) {
 // piece square table is for 3 phases of game, 12 different pieces and the game board squares for each
 var Pst [3][16][128]int
 
-// set up piece square table
+// set up piece square table: Note this is like display and not how internal rep is!
 func init() {
 	var i []int
 
@@ -218,10 +188,10 @@ func init() {
 	i = []int{
 		-50, -40, -30, -30, -30, -30, -40, -50,
 		-40, -20, 0, 0, 0, 0, -20, -40,
-		-30, 0, 10, 15, 15, 10, 0, -30,
+		-30, 0, 15, 15, 15, 15, 0, -30,
 		-30, 5, 15, 20, 20, 15, 5, -30,
 		-30, 0, 15, 20, 20, 15, 0, -30,
-		-30, 5, 10, 15, 15, 10, 5, -30,
+		-30, 5, 15, 15, 15, 15, 5, -30,
 		-40, -20, 0, 5, 5, 0, -20, -40,
 		-50, -40, -30, -30, -30, -30, -40, -50,
 	}
@@ -297,8 +267,8 @@ func init() {
 		0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0,
-		20, 20, 0, 0, 0, 0, 20, 20,
-		20, 30, 10, 0, 0, 10, 30, 20,
+		0, 0, 0, 0, 0, 0, 0, 0,
+		20, 50, 10, 0, 0, 10, 50, 20,
 	}
 	Pst[OPENING][KING] = loadPst(i)
 	Pst[OPENING][king] = loadPstRev(i)
@@ -330,5 +300,5 @@ func init() {
 	}
 	Pst[ENDGAME][KING] = loadPst(i)
 	Pst[ENDGAME][king] = loadPstRev(i)
-
+	//         fmt.Println(Pst)
 }

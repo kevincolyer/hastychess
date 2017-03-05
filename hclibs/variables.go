@@ -89,7 +89,6 @@ func (pv PV) String() string {
 type Movescore struct {
 	move  Move
 	score int
-	ttkey string
 }
 type bymovescore []Movescore
 

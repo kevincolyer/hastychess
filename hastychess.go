@@ -59,7 +59,7 @@ func mainConsole() {
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
 	hclibs.GameOver = false
 	hclibs.GameDisplayOn = true
-	hclibs.GameDepthSearch = 6
+	hclibs.GameDepthSearch = 4
 	hclibs.GameForce = false
 	if hclibs.GameDisplayOn {
 		fmt.Println(hclibs.BoardToStrWide(&p))

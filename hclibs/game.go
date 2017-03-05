@@ -7,7 +7,10 @@ import "strings"
 import "regexp"
 
 func GameInit() {
-	tt = make(map[string]TtData)
+	//tt = make(map[string]TtData)
+	if err := InitHashSize(8); err != nil {
+		panic(err)
+	}
 	book = make(map[string][]Move)
 
 	if GameUseBook {
@@ -41,7 +44,7 @@ func Go(p *Pos) (res string, info string) {
 		info += fmt.Sprintf("# book move found")
 	} else {
 		// search root
-		move, score = SearchRoot(*(p), 1, GameDepthSearch) // global variable for depth of search...
+		move, score = SearchRoot(p, GameDepthSearch) // global variable for depth of search...
 
 		if GameUseStats {
 			info += "# fen: (" + BoardToFEN(p) + ")"

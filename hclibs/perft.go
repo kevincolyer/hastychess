@@ -33,6 +33,26 @@ func Perft(depth int, p *Pos) (nodes int) {
 
 }
 
+// Uses TT to do the same thing
+func TTPerft(depth int, p *Pos) (nodes int) {
+
+	var moves []Move
+	if depth == 0 {
+		return 1
+	} // because b & w have turns...
+	moves = append(moves, GenerateAllMoves(p)...)
+
+	for _, m := range moves {
+		//q := p
+		MakeMove(m, p)
+		nodes += Perft(depth-1, p)
+		UnMakeMove(m, p)
+	}
+	// returning from perft;
+	return
+
+}
+
 // helper structs for divide
 type divide struct {
 	move  string

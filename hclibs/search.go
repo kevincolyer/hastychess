@@ -2,13 +2,90 @@
 package hclibs
 
 import (
-	//	"fmt"
+	"fmt"
 	"sort"
 )
 
 // THIS SHOULD BE SEARCH ROOT OR A WAY TO ALLOW ME TO PLUG IN DIFFERENT SEARCHES
-func SearchRoot(p Pos, initdepth, maxdepth int) (bestmove Move, bestscore int) {
+func SearchRoot(p *Pos, maxdepth int) (bestmove Move, bestscore int) {
+	/*
+	   // 1. get all moves to consider
+	   // 1a. check that we are not in checkmate or stalemate
+	   // 2. give a rough order
+	   // 3a. if iterative deepening loop from depth 2 to max depth in turn, sorting best score descending
+	   // 4. loop all moves to consider
+	   // 5. make move
+	   // 6. negamax search the moves (or negamaxab or negascout) to depth
+	   // 7. if found best move record score and move to return
+	   // 8. loop back to 4 or 3a.
+	   // 9. return best move and score
+	*/
+	bestscore = NEGINF
+	bestmove = Move{}
+	//     var pv []PV
+
+	consider := GenerateAllMoves(p)
+
+	// 1a. check that we are not in checkmate or stalemate
+	if len(consider) == 0 {
+		if p.InCheck == p.Side {
+			bestscore = CHECKMATE
+		} else {
+			bestscore = STALEMATE
+		}
+		return
+	}
+
+	// 2. give a rough order
+	fmt.Println(consider)
+	OrderMoves(consider, p)
+	fmt.Println(consider)
+
+	// 3a. if iterative deepening loop from depth 2 to max depth in turn, sorting best score descending
+	depth := maxdepth
+
+	for _, move := range consider {
+		MakeMove(move, p)
+		val := negamax(depth, p)
+		UnMakeMove(move, p)
+
+		if val > bestscore {
+			bestmove = move
+			bestscore = val
+			fmt.Printf("found bestscore %v move %v\n", bestscore, bestmove)
+		}
+	}
 	return
+}
+
+// classical negamax search: negated minimax. This does no pruning!!!!
+// It will search the entire search space until if finds the best move
+func negamax(depth int, p *Pos) int {
+
+	if depth == 0 {
+		return Eval(p, 1, Gamestage(p))
+	}
+	max := NEGINF
+
+	consider := GenerateAllMoves(p)
+	if len(consider) == 0 {
+		if p.InCheck > 0 {
+			return CHECKMATE
+		}
+		return STALEMATE
+	}
+	OrderMoves(consider, p)
+
+	for _, move := range consider {
+		MakeMove(move, p)
+		score := -negamax(depth-1, p)
+		StatNodes++
+		UnMakeMove(move, p)
+		if score > max {
+			max = score
+		}
+	}
+	return max
 }
 
 //func SearchQuiesce(p Pos, alpha, beta int, qdepth int) int {
@@ -89,9 +166,12 @@ func SearchRoot(p Pos, initdepth, maxdepth int) (bestmove Move, bestscore int) {
 // 	return alpha // nothing better than this to return
 // }
 
-func OrderMoves(mvscore []Movescore, pv *PV) bool {
+func OrderMoves(moves []Move, p *Pos) bool {
 	// can add in pv at top and also any other things to help
-	sort.Slice(mvscore, func(i, j int) bool { return mvscore[i].move.mtype < mvscore[j].move.mtype })
+	// order by move type (capture and promotion first down to quiet moves)
+	// todo: sub sort by captured piece value // pv // any other factor!
+	//sort.Slice(moves, func(i, j int) bool { return p.Board[moves[i].from] > p.Board[moves[j].from] }) // by piece type descending
+	sort.Slice(moves, func(i, j int) bool { return moves[i].mtype < moves[j].mtype }) // by move type ascending
 	return true
 }
 
