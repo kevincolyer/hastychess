@@ -30,14 +30,22 @@ func TestPstScore(t *testing.T) {
 
 	p = FENToNewBoard("8/5k2/8/8/8/8/5K2/8 w KkqQ - 0 1") // symetrical for test
 	tap.Is(PstScore(&p, Gamestage(&p)), 0, "Kings in end game zero sum")
-	fmt.Println(&p)
 
 	MakeMove(Move{from: F2, to: F1}, &p)
 	p.Side = WHITE
 	tap.Is(Pst[ENDGAME][KING][F1], -30, "is PSQ f1 for king end game what I expect?")
 	tap.Is(Pst[ENDGAME][KING][F2], 0, "is PSQ f2 for king end game what I expect?")
 	tap.Is(PstScore(&p, Gamestage(&p)), -30, "Kings in end game = -30")
+
+	// test check
+	p = FENToNewBoard("8/5k2/8/8/8/5Q2/5K2/8 w KkqQ - 0 1") // symetrical for test
 	fmt.Println(&p)
+	tap.Is(PstScore(&p, Gamestage(&p)) > CHECK, true, "Black is in check - true?")
+	// test as black that black is in check
+	p = FENToNewBoard("8/5k2/8/8/8/5Q2/5K2/8 b KkqQ - 0 1") // symetrical for test
+	fmt.Println(&p)
+	tap.Is(PstScore(&p, Gamestage(&p)) < -CHECK, true, "Black is in check - true?")
+	fmt.Println(PstScore(&p, Gamestage(&p)))
 
 }
 
