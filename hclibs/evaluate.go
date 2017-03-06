@@ -25,11 +25,12 @@ func EvalQ(p *Pos, nummoves, gamestage int) int {
 	// 	return ClaudeShannonScore(p, nummoves)
 }
 
+// see https://chessprogramming.wikispaces.com/Simplified+evaluation+function for these values
 var csshash = map[int]int{
 	QUEEN: 900, queen: 900,
 	ROOK: 500, rook: 500,
-	BISHOP: 300, bishop: 300,
-	NIGHT: 300, night: 300,
+	BISHOP: 330, bishop: 330,
+	NIGHT: 320, night: 320,
 	PAWN: 100, pawn: 100,
 	KING: 0, king: 0} // ignore kings as evaluated elsewhere...
 
@@ -132,12 +133,14 @@ func PstScore(p *Pos, gamestage int) (score int) { // actually Pst and material 
 			score -= (csshash[piece] + Pst[gamestage][piece][i])
 		}
 	}
+	// opponant is in check
 	if p.InCheck == Xside(p.Side) {
 		score += CHECK
-	} // opponant is in check
+	}
+	// i am in check :-(
 	if p.InCheck == p.Side {
 		score -= CHECK
-	} // i am in check :-(
+	}
 	return score
 }
 
@@ -301,4 +304,14 @@ func init() {
 	Pst[ENDGAME][KING] = loadPst(i)
 	Pst[ENDGAME][king] = loadPstRev(i)
 	//         fmt.Println(Pst)
+}
+
+func Gamestage(p *Pos) int {
+	if p.TakenPieces[p.Side] > 12 {
+		return ENDGAME
+	}
+	if p.TakenPieces[p.Side] > 4 {
+		return MIDGAME
+	}
+	return OPENING
 }

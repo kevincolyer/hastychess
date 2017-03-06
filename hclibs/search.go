@@ -174,13 +174,3 @@ func OrderMoves(moves []Move, p *Pos) bool {
 	sort.Slice(moves, func(i, j int) bool { return moves[i].mtype < moves[j].mtype }) // by move type ascending
 	return true
 }
-
-func Gamestage(p *Pos) int {
-	if p.TakenPieces[p.Side] > 12 {
-		return ENDGAME
-	}
-	if p.TakenPieces[p.Side] > 4 {
-		return MIDGAME
-	}
-	return OPENING
-}

@@ -65,3 +65,13 @@ func TestBoardToFEN(t *testing.T) {
 		t.Errorf("Board does not match STARTFEN on roundtrip\n%v", comp)
 	}
 }
+
+func TestSide(t *testing.T) {
+	if Side(PAWN) != WHITE {
+		t.Error("Side does not guess piece colour corretly - white")
+	}
+	if Side(pawn) != BLACK {
+		t.Error("Side does not guess piece colour corretly - black")
+	}
+
+}
