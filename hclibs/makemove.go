@@ -15,7 +15,7 @@ func MakeMove(m Move, p *Pos) {
 	to := m.to
 	extra := m.extra
 	side := p.Side
-	xside := 1 - side
+	//xside := 1 - side
 	//fmt.Print(p)
 	hply := p.Ply
 	// copy current move into history array
@@ -176,9 +176,10 @@ func MakeMove(m Move, p *Pos) {
 
 	// Evalute if opponant is in check
 	p.InCheck = -1
-	// have to switch sides to get in_check to evaluate right
-	if InCheck(p.King[xside], xside, p) {
-		p.InCheck = xside
+	// have  just swapped sides so see if in check
+
+	if InCheck(p.King[side], side, p) {
+		p.InCheck = side
 	}
 
 	if p.Side == WHITE {

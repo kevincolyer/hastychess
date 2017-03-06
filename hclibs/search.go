@@ -43,10 +43,11 @@ func SearchRoot(p *Pos, maxdepth int) (bestmove Move, bestscore int) {
 
 	// 3a. if iterative deepening loop from depth 2 to max depth in turn, sorting best score descending
 	depth := maxdepth
-
+	//         depth =1
 	for _, move := range consider {
 		MakeMove(move, p)
-		val := negamax(depth, p)
+		val := -negamax(depth, p) // need neg here as we switch sides in make move and evaluation happens relative to side
+		fmt.Printf("move %v scored %v\n", move, val)
 		UnMakeMove(move, p)
 
 		if val > bestscore {
@@ -62,7 +63,8 @@ func SearchRoot(p *Pos, maxdepth int) (bestmove Move, bestscore int) {
 // It will search the entire search space until if finds the best move
 func negamax(depth int, p *Pos) int {
 
-	if depth == 0 {
+	StatNodes++
+	if depth == 0 || StatNodes > PREVENTEXPLOSION {
 		return Eval(p, 1, Gamestage(p))
 	}
 	max := NEGINF
@@ -79,7 +81,6 @@ func negamax(depth int, p *Pos) int {
 	for _, move := range consider {
 		MakeMove(move, p)
 		score := -negamax(depth-1, p)
-		StatNodes++
 		UnMakeMove(move, p)
 		if score > max {
 			max = score

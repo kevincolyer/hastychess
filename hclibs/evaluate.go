@@ -123,14 +123,12 @@ func PstScore(p *Pos, gamestage int) (score int) { // actually Pst and material 
 	piece := 0
 	for _, i := range GRID {
 		piece = p.Board[i]
-		if piece == EMPTY {
-			continue
-		}
-
-		if Side(piece) == p.Side {
-			score += (csshash[piece] + Pst[gamestage][piece][i])
-		} else {
-			score -= (csshash[piece] + Pst[gamestage][piece][i])
+		if piece != EMPTY {
+			if Side(piece) == p.Side {
+				score += (csshash[piece] + Pst[gamestage][piece][i])
+			} else {
+				score -= (csshash[piece] + Pst[gamestage][piece][i])
+			}
 		}
 	}
 	// opponant is in check

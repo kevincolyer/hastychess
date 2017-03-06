@@ -20,3 +20,7 @@ func TestPerftDivide(t *testing.T) {
 
 	//tap.Is(123, 123, "Is")
 }
+
+func TestIncheck(t *testing.T) {
+	tap.Fail("No test for this function!!!!! cost you dearly!!!!!")
+}

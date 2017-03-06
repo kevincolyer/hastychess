@@ -61,7 +61,7 @@ type History struct {
 
 }
 
-var history [50]History // keep short for now to find bugs
+var history [100]History // keep short for now to find bugs
 
 //////////////////////////////////////////////////////////////////////////
 //PV struct
