@@ -1,6 +1,8 @@
 //Hastychess, Copyright (C) GPLv3, 2016, Kevin Colyer
 package hclibs
 
+// Versioning
+const VERSION =1.01 // "Annihilator!"
 // import "fmt"
 
 const BLACK = 1
