@@ -18,6 +18,9 @@ func MakeMove(m Move, p *Pos) {
 	//xside := 1 - side
 	//fmt.Print(p)
 	hply := p.Ply
+	if hply > len(history) {
+		Die("# History array is too small to hold the game!!!")
+	}
 	// copy current move into history array
 	history[hply].move = m
 	history[hply].TakenPieces = p.TakenPieces
@@ -34,7 +37,7 @@ func MakeMove(m Move, p *Pos) {
 	zhash := p.Hash              // for manipulating the hash with just the changes we need to make
 	//
 	if from == to && from == A1 {
-		panic("I've been given a nonsense move")
+		panic("# MakeMove has given a nil/nonsense move")
 	}
 	// remove the FROM and TO squares from old hash ready to update with new values
 	zhash = zhash ^ Zhash.psq[from][p.Board[from]] // unhash piece

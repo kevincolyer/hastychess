@@ -150,7 +150,7 @@ func MakeUserMove(m Move, p *Pos) (s string) {
 func StopSearch() bool {
 	select {
 	case <-Control:
-		fmt.Print("detected search stop\n") // open channel means we can keep searching
+		fmt.Print("# detected search stop\n") // open channel means we can keep searching
 		return true
 	default:
 		return false

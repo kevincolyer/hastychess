@@ -75,3 +75,26 @@ func TestSide(t *testing.T) {
 	}
 
 }
+
+func TestMoveToAlg(t *testing.T) {
+	if MoveToAlg(Move{from: A2, to: A3}) != "a2a3" {
+		t.Error("quiet move alg incorrect (poor move struct)")
+	}
+	if MoveToAlg(Move{from: A2, to: A3, mtype: QUIET}) != "a2a3" {
+		t.Error("quiet move alg incorrect")
+	}
+	if MoveToAlg(Move{from: A2, to: A3, mtype: CAPTURE}) != "a2a3" {
+		t.Error("capture move alg incorrect")
+	}
+	if MoveToAlg(Move{from: A2, to: A3, mtype: EPCAPTURE}) != "a2a3" {
+		t.Error("epcapture move alg incorrect")
+	}
+	if MoveToAlg(Move{from: A7, to: A8, mtype: PROMOTE, extra: QUEEN}) != "a7a8q" {
+		t.Error("Promote to queen (white) incorrect")
+	}
+
+	if MoveToAlg(Move{from: A7, to: A8, mtype: PROMOTE, extra: queen}) != "a7a8q" {
+		t.Errorf("Promote to queen (black) incorrect %v", MoveToAlg(Move{from: A7, to: A8, mtype: PROMOTE, extra: queen}))
+	}
+
+}

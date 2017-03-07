@@ -52,7 +52,7 @@ func mainConsole() {
 	if e != nil {
 		panic("Regexp did not compile!")
 	}
-// 	version := 1.0
+	// 	version := 1.0
 	fmt.Printf("Hello and welcome to HastyChess version %v\n\n", hclibs.VERSION)
 
 	scanner := bufio.NewScanner(os.Stdin)
@@ -177,7 +177,7 @@ func mainXboard() {
 	if e != nil {
 		panic("Regexp did not compile!")
 	}
-// 	version := 0.99
+	// 	version := 0.99
 	name := fmt.Sprintf("HastyChess v%v", hclibs.VERSION)
 	fmt.Printf("Hello and welcome to %v\n\n", name)
 
@@ -352,7 +352,7 @@ func xboardGo(p *hclibs.Pos) {
 
 func mainIcs() {
 
-// 	version := 0.99
+	// 	version := 0.99
 	name := fmt.Sprintf("HastyChess v%v", hclibs.VERSION)
 	scanner := bufio.NewScanner(os.Stdin)
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)

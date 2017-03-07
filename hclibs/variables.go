@@ -10,6 +10,7 @@ type Move struct {
 	to    int
 	mtype int // uses constants defined in constants.go
 	extra int
+	score int
 }
 
 func (mv Move) String() string {
@@ -61,7 +62,7 @@ type History struct {
 
 }
 
-var history [100]History // keep short for now to find bugs
+var history [1000]History
 
 //////////////////////////////////////////////////////////////////////////
 //PV struct

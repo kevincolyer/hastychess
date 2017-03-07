@@ -37,24 +37,37 @@ func SearchRoot(p *Pos, maxdepth int) (bestmove Move, bestscore int) {
 	}
 
 	// 2. give a rough order
-	fmt.Println(consider)
+	fmt.Printf("# %v\n", consider)
 	OrderMoves(consider, p)
-	fmt.Println(consider)
+	fmt.Printf("# %v\n", consider)
 
 	// 3a. if iterative deepening loop from depth 2 to max depth in turn, sorting best score descending
 	depth := maxdepth
-	//         depth =1
-	for _, move := range consider {
-		MakeMove(move, p)
-		val := -negamax(depth, p) // need neg here as we switch sides in make move and evaluation happens relative to side
-		fmt.Printf("move %v scored %v\n", move, val)
-		UnMakeMove(move, p)
+	// 	         depth =1
+	for depth = 1; depth <= maxdepth; depth++ {
+		count := 0
+		fmt.Printf("# Searching to depth %v\n", depth)
+		for _, move := range consider {
+			//negamax sorts ENTIRE search space! With iterative deepening and some pruning we can cut the search space down.
+			// so if done shallow search and looked at about 4 moves already and current move looks no better than best break and search deeper...
+			if depth > 2 && count > 4 && move.score+50 < bestscore {
+				break
+			}
+			MakeMove(move, p)
+			val := -negamax(depth, p) // need neg here as we switch sides in make move and evaluation happens relative to side
+			fmt.Printf("# move %v scored %v\n", move, val)
+			UnMakeMove(move, p)
+			move.score = val // update for next round of sorting when iterative deepening. Do after unmakemove as the move score change is recorded in history array
 
-		if val > bestscore {
-			bestmove = move
-			bestscore = val
-			fmt.Printf("found bestscore %v move %v\n", bestscore, bestmove)
+			if val > bestscore {
+				bestmove = move
+				bestscore = val
+				fmt.Printf("# found bestscore %v move %v\n", bestscore, bestmove)
+			}
+			count++
 		}
+		// re-sort for next loop when iterative deepening
+		sort.Slice(consider, func(i, j int) bool { return consider[i].score > consider[j].score }) // by score type descending
 	}
 	return
 }
@@ -171,7 +184,12 @@ func OrderMoves(moves []Move, p *Pos) bool {
 	// can add in pv at top and also any other things to help
 	// order by move type (capture and promotion first down to quiet moves)
 	// todo: sub sort by captured piece value // pv // any other factor!
+	for i := range moves {
+		moves[i].score = moves[i].mtype + p.Board[moves[i].from]*2 // type of move + which piece is moving
+		// boost PV to top here
+	}
 	//sort.Slice(moves, func(i, j int) bool { return p.Board[moves[i].from] > p.Board[moves[j].from] }) // by piece type descending
-	sort.Slice(moves, func(i, j int) bool { return moves[i].mtype < moves[j].mtype }) // by move type ascending
+	//sort.Slice(moves, func(i, j int) bool { return moves[i].mtype < moves[j].mtype }) // by move type ascending
+	sort.Slice(moves, func(i, j int) bool { return moves[i].score > moves[j].score }) // by score type descending
 	return true
 }

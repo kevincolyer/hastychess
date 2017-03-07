@@ -324,8 +324,8 @@ func MhDistance(from, to int) int {
 func MoveToAlg(m Move) (s string) {
 	ptos := [...]string{".", "P", "N", "K", "-", "B", "R", "Q", "-", "p", "n", "k", "-", "b", "r", "q"}
 	s = DecToAlg(m.from) + DecToAlg(m.to)
-	if m.mtype&PROMOTE > 0 {
-		s += ptos[m.extra] // this will show whites symbols, but that is ok. In MakeMove the correct piece is shown.
+	if m.mtype == PROMOTE {
+		s += strings.ToLower(ptos[m.extra]) // force to lowe because xboard etc expect lower case in promotions?
 	}
 	return
 }

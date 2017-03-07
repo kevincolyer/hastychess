@@ -2,7 +2,7 @@
 package hclibs
 
 // Versioning
-const VERSION =1.01 // "Annihilator!"
+const VERSION = 1.01 // "Annihilator!"
 // import "fmt"
 
 const BLACK = 1
@@ -53,13 +53,13 @@ const queen = 7 + 8
 // used for mtype in struct move
 // this is useful for ordering moves - ascending order is interesting for us.
 const (
-	CAPTURE   = 1 << iota
-	EPCAPTURE = 1 << iota
-	PROMOTE   = 1 << iota
-	O_O_O     = 1 << iota
-	O_O       = 1 << iota
-	ENPASSANT = 1 << iota
-	QUIET     = 1 << iota
+	QUIET     = 0
+	ENPASSANT = 1
+	O_O_O     = 100
+	O_O       = 101
+	EPCAPTURE = 200
+	CAPTURE   = 201
+	PROMOTE   = 300
 )
 
 const OPENING = 0

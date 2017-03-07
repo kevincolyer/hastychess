@@ -72,7 +72,7 @@ func GenerateMoves(from int, p *Pos) (moves []Move) {
 			if (from+m)&0x88 == 0 { // not off board
 				pc = p.Board[from+m]
 				if pc == EMPTY || (((pc >> 3) == xside) && ((pc & 7) != KING)) {
-					moves = append(moves, Move{from, from + m, move_type(pc, xside), 0}) // ! capture king
+					moves = append(moves, Move{from: from, to: from + m, mtype: move_type(pc, xside), extra: 0}) // ! capture king
 				}
 			}
 		}
@@ -84,26 +84,23 @@ func GenerateMoves(from int, p *Pos) (moves []Move) {
 				pc = p.Board[from+m]
 
 				if !InCheck(from+m, side, p) && (pc == EMPTY || (pc>>3) == xside) && !king_is_near(from+m, p) {
-					moves = append(moves, Move{from, from + m, move_type(pc, xside), 0})
+					moves = append(moves, Move{from: from, to: from + m, mtype: move_type(pc, xside), extra: 0})
 				}
 			}
 		}
-		//             debug ==2 && say "normal possible kings moves " ~ @moves.perl
-		//say "p.InCheck "~ p.InCheck.perl
-		//say "p.side " ~ p.side
 		// bug below - as side=0 == black then if InCheck !=-1 but set to zero on initialisation then this is a problem!!!!! Solved in Board - set to -1
 		if p.InCheck != side { //&& (p.Castled[side*2+KS] == false || p.Castled[side*2+QS] == false) { // CASTLING//
 
 			if p.Castled[side*2+KS] == false { // kingsside
 				if EMPTY == p.Board[from+1] && EMPTY == p.Board[from+2] && !InCheck(from+1, side, p) && !InCheck(from+2, side, p) && !king_is_near(from+2, p) {
 
-					moves = append(moves, Move{from, from + 2, O_O, 0})
+					moves = append(moves, Move{from: from, to: from + 2, mtype: O_O, extra: 0})
 				}
 			}
 			if p.Castled[side*2+QS] == false { // queens side
 				if EMPTY == p.Board[from-1] && EMPTY == p.Board[from-2] && EMPTY == p.Board[from-3] && !InCheck(from-1, side, p) && !InCheck(from-2, side, p) && !king_is_near(from-2, p) {
 
-					moves = append(moves, Move{from, from - 2, O_O_O, 0})
+					moves = append(moves, Move{from: from, to: from - 2, mtype: O_O_O, extra: 0})
 				}
 			}
 		}
@@ -149,9 +146,9 @@ func GenerateMoves(from int, p *Pos) (moves []Move) {
 					//                         my type=
 					if (from >> 4) == promfile {
 						// 4 possible promotions
-						moves = append(moves, Move{from, to, PROMOTE, QUEEN}, Move{from, to, PROMOTE, BISHOP}, Move{from, to, PROMOTE, ROOK}, Move{from, to, PROMOTE, NIGHT})
+						moves = append(moves, Move{from: from, to: to, mtype: PROMOTE, extra: QUEEN}, Move{from: from, to: to, mtype: PROMOTE, extra: BISHOP}, Move{from: from, to: to, mtype: PROMOTE, extra: ROOK}, Move{from: from, to: to, mtype: PROMOTE, extra: NIGHT})
 					} else {
-						moves = append(moves, Move{from, to, move_type(pc, xside), 0})
+						moves = append(moves, Move{from: from, to: to, mtype: move_type(pc, xside), extra: 0})
 					} // capture || check || promote
 				}
 			}
@@ -185,10 +182,10 @@ func GenerateMoves(from int, p *Pos) (moves []Move) {
 			if p.EnPassant > -1 && file == epfile { // empty or -1?
 				//                     debug ==2 && say "considering epcapture for p.en_passant"
 				if from+m[0] == p.EnPassant { // ep to one side
-					moves = append(moves, Move{from, from + m[0], EPCAPTURE, 0})
+					moves = append(moves, Move{from: from, to: from + m[0], mtype: EPCAPTURE, extra: 0})
 				}
 				if from+m[1] == p.EnPassant { // ep to other side
-					moves = append(moves, Move{from, from + m[1], EPCAPTURE, 0})
+					moves = append(moves, Move{from: from, to: from + m[1], mtype: EPCAPTURE, extra: 0})
 				}
 				// || ! at all (too far away)
 			}
@@ -202,7 +199,7 @@ func GenerateMoves(from int, p *Pos) (moves []Move) {
 			if i == 3 {
 
 				if p.Board[from+m[2]] == EMPTY { // blocked in between inital && double move forward
-					moves = append(moves, Move{from, to, ENPASSANT, from + m[2]})
+					moves = append(moves, Move{from: from, to: to, mtype: ENPASSANT, extra: from + m[2]})
 
 					break
 				}
@@ -213,13 +210,13 @@ func GenerateMoves(from int, p *Pos) (moves []Move) {
 			// promotions
 			if file == promfile {
 				// 4 possible promotions
-				moves = append(moves, Move{from, to, PROMOTE, QUEEN}, Move{from, to, PROMOTE, BISHOP}, Move{from, to, PROMOTE, ROOK}, Move{from, to, PROMOTE, NIGHT})
+				moves = append(moves, Move{from: from, to: to, mtype: PROMOTE, extra: QUEEN}, Move{from: from, to: to, mtype: PROMOTE, extra: BISHOP}, Move{from: from, to: to, mtype: PROMOTE, extra: ROOK}, Move{from: from, to: to, mtype: PROMOTE, extra: NIGHT})
 
 				break
 			}
 
 			// just push on ahead - default
-			moves = append(moves, Move{from, to, QUIET, 0}) // default move
+			moves = append(moves, Move{from: from, to: to, mtype: QUIET, extra: 0}) // default move
 
 			i++
 		}
@@ -337,10 +334,10 @@ func slider_moves(from int, p *Pos, dirs []int) (moves []Move) {
 				break
 			} // one of ours, too far!
 			if piece != EMPTY {
-				moves = append(moves, Move{from, n, CAPTURE, 0})
+				moves = append(moves, Move{from: from, to: n, mtype: CAPTURE, extra: 0})
 				break
 			}
-			moves = append(moves, Move{from, n, QUIET, 0})
+			moves = append(moves, Move{from: from, to: n, mtype: QUIET, extra: 0})
 			n += m
 		}
 	}
