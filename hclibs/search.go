@@ -36,7 +36,7 @@ func SearchRoot(p Pos, initdepth, maxdepth int) (bestmove Move, bestscore int) {
 	if considercount == 1 {
 		// if only one move to make, make it!
 		bestmove = consider[0]
-		bestscore = Eval(&p, 1, gamestage)
+		bestscore = -Eval(&p, 1, gamestage)
 		return
 	}
 	/////////// Get initial sort so we can get an left hand set of nodes
