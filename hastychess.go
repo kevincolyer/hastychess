@@ -5,12 +5,12 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"github.com/kevincolyer/hastychess/hclibs"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
-
-	"github.com/kevincolyer/hastychess/hclibs"
+	"time"
 )
 
 func main() {
@@ -143,8 +143,11 @@ QUIT:
 					fmt.Println("Please specify a number")
 					break next
 				}
+				start := time.Now()
 				nodes := hclibs.Perft(d, &p)
-				fmt.Printf("\nPerft to depth %v gives %v nodes\n", d, nodes)
+				elapsed := time.Since(start)
+				fmt.Printf("\nPerft to depth %v gives %v nodes ", d, hclibs.Comma(nodes))
+				fmt.Printf("(nps: %v)\n", hclibs.Comma(int(float64(nodes)/elapsed.Seconds())))
 
 			case strings.Contains(input, "depth"):
 				//  case strings.Contains(input,"fen") || strings.Contains(input,"setboard"):

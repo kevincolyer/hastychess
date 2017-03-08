@@ -5,6 +5,7 @@ package hclibs
 import "fmt"
 import "strings"
 import "regexp"
+import "time"
 
 func GameInit() {
 	//tt = make(map[string]TtData)
@@ -44,11 +45,14 @@ func Go(p *Pos) (res string, info string) {
 		info += fmt.Sprintf("# book move found")
 	} else {
 		// search root
+		start := time.Now()
+		// some computation
 		move, score = SearchRoot(p, GameDepthSearch) // global variable for depth of search...
+		elapsed := time.Since(start)
 
 		if GameUseStats {
 			info += "# fen: (" + BoardToFEN(p) + ")"
-			info += fmt.Sprintf("\n# STATS Score %v | nodes %v | qnodes %v (%v%%)| uppercuts %v | lowercuts %v |\n# STATS tt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v |\n", Comma(score), Comma(StatNodes), Comma(StatQNodes), Comma(int((float64(StatQNodes) / float64(StatNodes+StatQNodes) * 100))), Comma(StatUpperCuts), Comma(StatLowerCuts), Comma(StatTtHits), Comma(int((float64(StatTtHits) / float64(StatNodes) * 100))), Comma(StatTtWrites), Comma(StatTtUpdates), Comma(len(tt)), Comma(StatTtCulls))
+			info += fmt.Sprintf("\n# STATS Score %v | nodes %v | qnodes %v (%v%%)| nps %v | uppercuts %v | lowercuts %v |\n# STATS tt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v |\n", Comma(score), Comma(StatNodes), Comma(StatQNodes), Comma(int((float64(StatQNodes) / float64(StatNodes+StatQNodes) * 100))), Comma(int(float64(StatNodes+StatQNodes)/elapsed.Seconds())), Comma(StatUpperCuts), Comma(StatLowerCuts), Comma(StatTtHits), Comma(int((float64(StatTtHits) / float64(StatNodes) * 100))), Comma(StatTtWrites), Comma(StatTtUpdates), Comma(len(tt)), Comma(StatTtCulls))
 		}
 	}
 
