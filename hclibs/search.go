@@ -102,13 +102,11 @@ func negamax(depth int, p *Pos) int {
 	return max
 }
 
-//func SearchQuiesce(p Pos, alpha, beta int, qdepth int) int {
+//func SearchQuiesce(p *Pos, alpha, beta int, qdepth int) int {
 // 	// need a standpat score
-// 	var val int
-// 	var q Pos
-// 	gamestage := Gamestage(&p)
-// 	val = EvalQ(&p, 1, gamestage) // custom evaluator here for QUIESENCE
 // 	var mvscore []Movescore
+// 	gamestage := Gamestage(&p)
+// 	val := EvalQ(&p, 1, gamestage) // custom evaluator here for QUIESENCE
 // 	standpat := val
 // 	StatQNodes++
 //
