@@ -7,7 +7,7 @@ import (
 )
 
 // THIS SHOULD BE SEARCH ROOT OR A WAY TO ALLOW ME TO PLUG IN DIFFERENT SEARCHES
-func SearchRoot(p *Pos, maxdepth int) (bestmove Move, bestscore int) {
+func SearchRoot(p *Pos, maxdepth int, globalpv *PV) (bestmove Move, bestscore int) {
 	/*
 	   // 1. get all moves to consider
 	   // 1a. check that we are not in checkmate or stalemate
@@ -20,9 +20,6 @@ func SearchRoot(p *Pos, maxdepth int) (bestmove Move, bestscore int) {
 	   // 8. loop back to 4 or 3a.
 	   // 9. return best move and score
 	*/
-	bestscore = NEGINF
-	bestmove = Move{}
-	//     var pv []PV
 
 	consider := GenerateAllMoves(p)
 
@@ -37,32 +34,47 @@ func SearchRoot(p *Pos, maxdepth int) (bestmove Move, bestscore int) {
 	}
 
 	// 2. give a rough order
-	fmt.Printf("# %v\n", consider)
-	OrderMoves(consider, p)
-	fmt.Printf("# %v\n", consider)
+	// 	OrderMoves(consider, p)
+	OrderMoves(consider, p, globalpv)
+	fmt.Printf("# moves to consider: %v\n", consider)
+	bestscore = NEGINF
+	bestmove = consider[0]
+	// reset pv
+	globalpv.count = 1
+	globalpv.moves[0] = bestmove
 
 	// 3a. if iterative deepening loop from depth 2 to max depth in turn, sorting best score descending
-	depth := maxdepth
-	// 	         depth =1
-	for depth = 1; depth <= maxdepth; depth++ {
+	//depth := maxdepth
+	globalpv.ply = p.Ply // syncronise new PV
+	for depth := 2; depth < maxdepth+1; depth++ {
+		var childpv PV
 		count := 0
-		fmt.Printf("# Searching to depth %v\n", depth)
+		// 		fmt.Printf("# Searching to depth %v\n", depth)
 		for _, move := range consider {
 			//negamax sorts ENTIRE search space! With iterative deepening and some pruning we can cut the search space down.
 			// so if done shallow search and looked at about 4 moves already and current move looks no better than best break and search deeper...
-			if depth > 2 && count > 4 && move.score+50 < bestscore {
+			if depth > 2 && count > 3 && move.score < bestscore+25 {
 				break
 			}
 			MakeMove(move, p)
-			val := -negamax(depth, p) // need neg here as we switch sides in make move and evaluation happens relative to side
-			fmt.Printf("# move %v scored %v\n", move, val)
+			val := -negamax(depth, p, &childpv) // need neg here as we switch sides in make move and evaluation happens relative to side
+			//fmt.Printf("# move %v scored %v\n", move, val)
 			UnMakeMove(move, p)
+			if StatNodes > PREVENTEXPLOSION {
+				return
+			}
 			move.score = val // update for next round of sorting when iterative deepening. Do after unmakemove as the move score change is recorded in history array
 
-			if val > bestscore {
+			if val >= bestscore {
 				bestmove = move
 				bestscore = val
-				fmt.Printf("# found bestscore %v move %v\n", bestscore, bestmove)
+				//fmt.Printf("# found bestscore %v move %v\n", bestscore, bestmove)
+				//update PV (stack based)
+				globalpv.moves[0] = bestmove
+				copy(globalpv.moves[1:], childpv.moves[:])
+				globalpv.count = childpv.count + 1
+				//                         if val==bestscore {fmt.Printf("# depth: %v score: %v pv: %v\n", depth,bestscore,globalpv)}
+				fmt.Printf("# depth: %v score: %v pv: %v\n", depth, bestscore, globalpv)
 			}
 			count++
 		}
@@ -74,10 +86,12 @@ func SearchRoot(p *Pos, maxdepth int) (bestmove Move, bestscore int) {
 
 // classical negamax search: negated minimax. This does no pruning!!!!
 // It will search the entire search space until if finds the best move
-func negamax(depth int, p *Pos) int {
+func negamax(depth int, p *Pos, parentpv *PV) int {
+	var childpv PV
 
 	StatNodes++
 	if depth == 0 || StatNodes > PREVENTEXPLOSION {
+		parentpv.count = 0 // reset because we are at a leaf...
 		return Eval(p, 1, Gamestage(p))
 	}
 	max := NEGINF
@@ -89,15 +103,25 @@ func negamax(depth int, p *Pos) int {
 		}
 		return STALEMATE
 	}
-	OrderMoves(consider, p)
+	OrderMoves(consider, p, parentpv)
+	//         childpv.moves[0]=consider[0]
+	bestmove := consider[0]
+	parentpv.moves[0] = bestmove // incase we don't find anything better set first move to return
+	parentpv.count = 1
 
 	for _, move := range consider {
 		MakeMove(move, p)
-		score := -negamax(depth-1, p)
+		score := -negamax(depth-1, p, &childpv)
 		UnMakeMove(move, p)
 		if score > max {
 			max = score
+			bestmove = move
+			// update PV on stack
+			parentpv.moves[0] = bestmove
+			copy(parentpv.moves[1:], childpv.moves[:])
+			parentpv.count = childpv.count + 1
 		}
+
 	}
 	return max
 }
@@ -178,12 +202,20 @@ func negamax(depth int, p *Pos) int {
 // 	return alpha // nothing better than this to return
 // }
 
-func OrderMoves(moves []Move, p *Pos) bool {
+func OrderMoves(moves []Move, p *Pos, pv *PV) bool {
 	// can add in pv at top and also any other things to help
 	// order by move type (capture and promotion first down to quiet moves)
 	// todo: sub sort by captured piece value // pv // any other factor!
+
+	plydelta := p.Ply - pv.ply
+
 	for i := range moves {
 		moves[i].score = moves[i].mtype + p.Board[moves[i].from]*2 // type of move + which piece is moving
+		// push pv to top of list
+		if moves[i].from == pv.moves[plydelta].from && moves[i].to == pv.moves[plydelta].to && moves[i].extra == pv.moves[plydelta].extra {
+			//fmt.Printf("pv hit Plydelta=%v pv.count=%v\n",plydelta,pv.count)
+			moves[i].score = PVBONUS
+		}
 		// boost PV to top here
 	}
 	//sort.Slice(moves, func(i, j int) bool { return p.Board[moves[i].from] > p.Board[moves[j].from] }) // by piece type descending

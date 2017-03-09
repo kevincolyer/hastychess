@@ -60,6 +60,8 @@ const (
 	EPCAPTURE = 200
 	CAPTURE   = 201
 	PROMOTE   = 300
+
+	PVBONUS = 500
 )
 
 const OPENING = 0

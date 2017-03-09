@@ -20,6 +20,8 @@ func GameInit() {
 	return
 }
 
+var pv PV
+
 func Go(p *Pos) (res string, info string) {
 	// computer makes moves now!
 	// 	var pv PV
@@ -45,9 +47,18 @@ func Go(p *Pos) (res string, info string) {
 		info += fmt.Sprintf("# book move found")
 	} else {
 		// search root
+		// adjust pv if filled
+		if pv.count > 0 {
+			for pv.ply < p.Ply && pv.count > 0 {
+				pv.ply++ // walking forward up plies
+				pv.count--
+				copy(pv.moves[0:], pv.moves[1:]) // shift movelist up by one
+				fmt.Printf("pv chomp p.ply=%v, pv.ply=%v -- %v\n", p.Ply, pv.ply, pv)
+			}
+		}
 		start := time.Now()
 		// some computation
-		move, score = SearchRoot(p, GameDepthSearch) // global variable for depth of search...
+		move, score = SearchRoot(p, GameDepthSearch, &pv) // global variable for depth of search...
 		elapsed := time.Since(start)
 
 		if GameUseStats {

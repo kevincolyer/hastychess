@@ -69,21 +69,13 @@ var history [1000]History
 type PV struct { // PV array
 	moves [20]Move // too many perhaps depth x 2?
 	count int      // for whole list of moves
-	// 	depth int // depth searched to
+	ply   int      // to syncronise the ply level
 
 }
 
-/*
-// used to provide a sort of PV struct by nodes
-type bypv []PV
-
-func (a bypv) Len() int           { return len(a) }
-func (a bypv) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a bypv) Less(i, j int) bool { return a[i].score > a[j].score } // the < means descending search*/
-
 // pretty printer for PV struct
 func (pv PV) String() string {
-	return fmt.Sprintf("%v", pv.moves)
+	return fmt.Sprintf("%v", pv.moves[:pv.count-1])
 }
 
 ///////////////////////////////////////////////////////////////////////
