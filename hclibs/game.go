@@ -44,7 +44,9 @@ func Go(p *Pos) (res string, info string) {
 	//     say p.board
 	move, success = ChooseBookMove(p)
 	if success == true {
-		info += fmt.Sprintf("# book move found")
+		if GameProtocol == PROTOCONSOLE {
+			info += fmt.Sprintf("# book move found")
+		}
 	} else {
 		// search root
 		// adjust pv if filled
@@ -53,15 +55,20 @@ func Go(p *Pos) (res string, info string) {
 				pv.ply++ // walking forward up plies
 				pv.count--
 				copy(pv.moves[0:], pv.moves[1:]) // shift movelist up by one
-				fmt.Printf("pv chomp p.ply=%v, pv.ply=%v -- %v\n", p.Ply, pv.ply, pv)
+				if GameProtocol == PROTOCONSOLE {
+					fmt.Printf("# pv chomp p.ply=%v, pv.ply=%v -- %v\n", p.Ply, pv.ply, pv)
+				}
 			}
 		}
+		if pv.ply > p.Ply {
+			pv.ply = p.Ply
+		} // in case reset game - pv is global (yuk) and not reset so far
 		start := time.Now()
 		// some computation
 		move, score = SearchRoot(p, GameDepthSearch, &pv) // global variable for depth of search...
 		elapsed := time.Since(start)
 
-		if GameUseStats {
+		if GameUseStats && GameProtocol == PROTOCONSOLE {
 			info += "# fen: (" + BoardToFEN(p) + ")"
 			info += fmt.Sprintf("\n# STATS Score %v | nodes %v | qnodes %v (%v%%)| nps %v | uppercuts %v | lowercuts %v |\n# STATS tt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v |\n", Comma(score), Comma(StatNodes), Comma(StatQNodes), Comma(int((float64(StatQNodes) / float64(StatNodes+StatQNodes) * 100))), Comma(int(float64(StatNodes+StatQNodes)/elapsed.Seconds())), Comma(StatUpperCuts), Comma(StatLowerCuts), Comma(StatTtHits), Comma(int((float64(StatTtHits) / float64(StatNodes) * 100))), Comma(StatTtWrites), Comma(StatTtUpdates), Comma(len(tt)), Comma(StatTtCulls))
 		}

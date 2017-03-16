@@ -16,6 +16,7 @@ import (
 func main() {
 	var flagXboard = flag.Bool("xboard", false, "Select xboard mode")
 	var flagIcs = flag.Bool("ics", false, "Select ics server mode")
+	var flagUci = flag.Bool("uci", false, "Select UCI (ics) server mode (same as -ics)")
 	var flagConsole = flag.Bool("console", true, "Select console mode")
 	var flagStats = flag.Bool("stats", true, "Enable printing of statistics")
 	var flagUseBook = flag.Bool("book", true, "Enable the use of built in book moves")
@@ -33,6 +34,9 @@ func main() {
 		hclibs.GameProtocol = hclibs.PROTOXBOARD
 		mainXboard()
 	case *(flagIcs):
+		hclibs.GameProtocol = hclibs.PROTOUCI
+		mainIcs()
+	case *(flagUci):
 		hclibs.GameProtocol = hclibs.PROTOUCI
 		mainIcs()
 	case *(flagConsole):
