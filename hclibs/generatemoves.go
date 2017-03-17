@@ -227,6 +227,51 @@ func GenerateMoves(from int, p *Pos) (moves []Move) {
 	return
 }
 
+// Helper functions for generate
+func move_type(piece, xside int) int {
+	if piece == EMPTY {
+		return QUIET
+	}
+	if (piece >> 3) != xside {
+		return QUIET
+	} // (our side) needed for sliders
+	return CAPTURE
+}
+
+// Helper function for generate
+func slider_moves(from int, p *Pos, dirs []int) (moves []Move) {
+
+	side := p.Side
+	xside := 1 - side
+	n := 0
+	piece := 0
+	for _, m := range dirs {
+		n = m + from
+		// follow a ray
+		for (n & 0x88) == 0 {
+			piece = p.Board[n]
+			if piece == KING+(xside<<3) {
+				break
+			} // if king then too far
+			if piece != EMPTY && (piece>>3) == side {
+				break
+			} // one of ours, too far!
+			if piece != EMPTY {
+				moves = append(moves, Move{from: from, to: n, mtype: CAPTURE, extra: 0})
+				break
+			}
+			moves = append(moves, Move{from: from, to: n, mtype: QUIET, extra: 0})
+			n += m
+		}
+	}
+	return
+}
+
+// Answers question: Am I in check? Side needs to be opponent for a true answer
+// does not do a sanity check that the square king refers to is filled OR which colour king is there!!!! 
+// So looking at a white king from black's perspective will answer TRUE if a white piece "attacking"" is encountered!
+// use with caution!
+
 func InCheck(king, side int, p *Pos) bool {
 	// ?????returns no, yes, stalemate, checkmate? looks from OTHER side perspective
 
@@ -307,42 +352,6 @@ func king_is_near(look int, p *Pos) bool {
 	return false
 }
 
-func move_type(piece, xside int) int {
-	if piece == EMPTY {
-		return QUIET
-	}
-	if (piece >> 3) != xside {
-		return QUIET
-	} // (our side) needed for sliders
-	return CAPTURE
-}
-func slider_moves(from int, p *Pos, dirs []int) (moves []Move) {
-
-	side := p.Side
-	xside := 1 - side
-	n := 0
-	piece := 0
-	for _, m := range dirs {
-		n = m + from
-		// follow a ray
-		for (n & 0x88) == 0 {
-			piece = p.Board[n]
-			if piece == KING+(xside<<3) {
-				break
-			} // if king then too far
-			if piece != EMPTY && (piece>>3) == side {
-				break
-			} // one of ours, too far!
-			if piece != EMPTY {
-				moves = append(moves, Move{from: from, to: n, mtype: CAPTURE, extra: 0})
-				break
-			}
-			moves = append(moves, Move{from: from, to: n, mtype: QUIET, extra: 0})
-			n += m
-		}
-	}
-	return
-}
 
 func is_legal_move(m Move, p *Pos) (retval bool) {
 

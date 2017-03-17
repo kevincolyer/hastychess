@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"github.com/fatih/color"
 	"github.com/kevincolyer/hastychess/hclibs"
 	"os"
 	"regexp"
@@ -21,7 +22,12 @@ func main() {
 	var flagStats = flag.Bool("stats", true, "Enable printing of statistics")
 	var flagUseBook = flag.Bool("book", true, "Enable the use of built in book moves")
 	var flagUseTt = flag.Bool("tt", true, "Enable the use of Transposition Tables")
+	var flagNoColor = flag.Bool("no-color", false, "Disable color output")
 	flag.Parse()
+
+	if *flagNoColor {
+		color.NoColor = true // disables colorized output
+	}
 
 	hclibs.GameUseTt = *(flagUseTt)
 	hclibs.GameUseStats = *(flagStats)
@@ -32,12 +38,15 @@ func main() {
 	switch {
 	case *(flagXboard):
 		hclibs.GameProtocol = hclibs.PROTOXBOARD
+		color.NoColor = true
 		mainXboard()
 	case *(flagIcs):
 		hclibs.GameProtocol = hclibs.PROTOUCI
+		color.NoColor = true
 		mainIcs()
 	case *(flagUci):
 		hclibs.GameProtocol = hclibs.PROTOUCI
+		color.NoColor = true
 		mainIcs()
 	case *(flagConsole):
 		hclibs.GameProtocol = hclibs.PROTOCONSOLE
@@ -50,6 +59,7 @@ func main() {
 func mainConsole() {
 
 	var err string
+	var result string
 	var move hclibs.Move
 
 	re, e := regexp.Compile("[a-h][1-8][a-h][1-8][qbnr]?")
@@ -57,7 +67,9 @@ func mainConsole() {
 		panic("Regexp did not compile!")
 	}
 	// 	version := 1.0
-	fmt.Printf("Hello and welcome to HastyChess version %v\n\n", hclibs.VERSION)
+	hiwhite:= color.New(color.FgHiWhite).PrintfFunc()
+	hiwhite("Hello and welcome to HastyChess version %v\n\n",hclibs.VERSION )
+        
 
 	scanner := bufio.NewScanner(os.Stdin)
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
@@ -66,7 +78,7 @@ func mainConsole() {
 	hclibs.GameDepthSearch = 4
 	hclibs.GameForce = false
 	if hclibs.GameDisplayOn {
-		fmt.Println(hclibs.BoardToStrWide(&p))
+		fmt.Println(&p)
 	}
 	quit := false
 	fmt.Print("> ")
@@ -92,9 +104,9 @@ QUIT:
 						break next
 					}
 				}
-				err = hclibs.MakeUserMove(move, &p)
-				fmt.Println(hclibs.BoardToStrWide(&p))
-				fmt.Println(err)
+				result = hclibs.MakeUserMove(move, &p)
+				fmt.Println(&p)
+				fmt.Println(result)
 
 			case re.MatchString(input):
 				move, err = hclibs.ParseUserMove(input, &p)
@@ -102,14 +114,14 @@ QUIT:
 					fmt.Println(err)
 					break next
 				}
-				err = hclibs.MakeUserMove(move, &p)
-				fmt.Println(hclibs.BoardToStrWide(&p))
-				fmt.Println(err)
+				result = hclibs.MakeUserMove(move, &p)
+				fmt.Println(&p)
+				fmt.Println(result)
 
 			case strings.Contains(input, "new"):
 				p = hclibs.FENToNewBoard(hclibs.STARTFEN)
 				hclibs.GameOver = false
-				fmt.Println(hclibs.BoardToStrWide(&p))
+				fmt.Println(&p)
 
 			case strings.Contains(input, "auto"):
 				hclibs.GameForce = !hclibs.GameForce
@@ -178,6 +190,7 @@ QUIT:
 
 func mainXboard() {
 	var err string
+	var result string
 	var move hclibs.Move
 
 	re, e := regexp.Compile("[a-h][1-8][a-h][1-8][qbnr]?")
@@ -197,7 +210,7 @@ func mainXboard() {
 	hclibs.GameDepthSearch = 4
 	hclibs.GameForce = false
 	if hclibs.GameDisplayOn {
-		fmt.Println(hclibs.BoardToStrWide(&p))
+		fmt.Println(&p)
 	}
 	quit := false
 	// main input loop
@@ -246,9 +259,8 @@ QUIT:
 						break next
 					}
 				}
-				err = hclibs.MakeUserMove(move, &p)
-				//fmt.Println(hclibs.BoardToStrWide(&p))
-				fmt.Println(err)
+				result = hclibs.MakeUserMove(move, &p)
+				fmt.Println(result)
 
 				// make computer go
 				xboardGo(&p)
@@ -259,9 +271,8 @@ QUIT:
 					fmt.Println(err)
 					break next
 				}
-				err = hclibs.MakeUserMove(move, &p)
-				//fmt.Println(hclibs.BoardToStrWide(&p))
-				fmt.Println(err)
+				result = hclibs.MakeUserMove(move, &p)
+				fmt.Println(result)
 
 				// make computer go
 				xboardGo(&p)
@@ -370,9 +381,6 @@ func mainIcs() {
 	hclibs.GameDisplayOn = false
 	hclibs.GameDepthSearch = 4
 	hclibs.GameForce = false
-	/*if hclibs.GameDisplayOn {
-			fmt.Println(hclibs.BoardToStrWide(&p))
-	        }*/
 	// main input loop
 	for {
 		for scanner.Scan() {
@@ -396,6 +404,7 @@ func mainIcs() {
 
 			case strings.HasPrefix(input, "quit"):
 				os.Exit(0)
+
 			case strings.HasPrefix(input, "ucinewgame"):
 				p = hclibs.FENToNewBoard(hclibs.STARTFEN)
 				hclibs.GameOver = false

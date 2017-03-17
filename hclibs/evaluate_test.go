@@ -45,7 +45,7 @@ func TestPstScore(t *testing.T) {
 	p = FENToNewBoard("8/5k2/8/8/8/5Q2/5K2/8 b KkqQ - 0 1") // symetrical for test
 	fmt.Println(&p)
 	tap.Is(PstScore(&p, Gamestage(&p)) < -CHECK, true, "Black is in check - true?")
-	fmt.Println(PstScore(&p, Gamestage(&p)))
+	//fmt.Println(PstScore(&p, Gamestage(&p)))
 
 }
 

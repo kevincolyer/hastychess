@@ -6,6 +6,7 @@ import "fmt"
 import "os"
 import "strconv"
 import "math/rand"
+import "github.com/fatih/color"
 
 // import "math"
 
@@ -215,6 +216,38 @@ func BoardToStr(p *Pos) string {
 	return s
 }
 
+func BoardToStrColour(p *Pos) string {
+	ptos := [...]string{" ", "P", "N", "K", "-", "B", "R", "Q", "-", "p", "n", "k", "-", "b", "r", "q"}
+	var s string
+	tog := false                       // true==black square
+	whitepc:= color.New(color.FgHiWhite).SprintFunc()
+	whitesq:= color.New(color.BgRed).SprintFunc()
+	blackpc:= color.New(color.FgWhite).SprintFunc()
+	blacksq:= color.New(color.BgBlack).SprintFunc()
+	for rank := 7; rank >= 0; rank-- { // reverse order
+		s += fmt.Sprintf(" %v  ", rank+1)
+
+		for file := 0; file < 8; file++ {
+			pc := ptos[p.Board[rank<<4+file]]
+			if strings.ToUpper(pc)==pc {
+				pc = whitepc(pc+" ")
+			} else {
+				pc = blackpc(pc+" ")
+			}
+			if tog {
+				s += whitesq(" " + pc)
+			} else {
+				s += blacksq(" " + pc)
+			}
+			tog = !tog
+		}
+		s += "\n"
+                tog =!tog
+	}
+	s += "\n     A  B  C  D  E  F  G  H\n"
+	return s
+}
+
 func BoardToStrWide(p *Pos) string {
 	ptos := [...]string{".", "P", "N", "K", "-", "B", "R", "Q", "-", "p", "n", "k", "-", "b", "r", "q"}
 	var s string
@@ -232,7 +265,8 @@ func BoardToStrWide(p *Pos) string {
 }
 
 func (p *Pos) String() string {
-	return fmt.Sprintf("%s\n", BoardToStrWide(p))
+        if color.NoColor == false { return BoardToStrColour(p) }
+	return BoardToStrWide(p)
 }
 
 func Side(piece int) int {

@@ -40,8 +40,6 @@ func Go(p *Pos) (res string, info string) {
 	StatTimeStart = 0 // not sure what type needed here
 	StatTimeElapsed = 0
 
-	//     my Int score = negamax(depth,p)
-	//     say p.board
 	move, success = ChooseBookMove(p)
 	if success == true {
 		if GameProtocol == PROTOCONSOLE {
@@ -70,6 +68,7 @@ func Go(p *Pos) (res string, info string) {
 
 		if GameUseStats && GameProtocol == PROTOCONSOLE {
 			info += "# fen: (" + BoardToFEN(p) + ")"
+			info += fmt.Sprintf("\n# PV %v", pv)
 			info += fmt.Sprintf("\n# STATS Score %v | nodes %v | qnodes %v (%v%%)| nps %v | uppercuts %v | lowercuts %v |\n# STATS tt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v |\n", Comma(score), Comma(StatNodes), Comma(StatQNodes), Comma(int((float64(StatQNodes) / float64(StatNodes+StatQNodes) * 100))), Comma(int(float64(StatNodes+StatQNodes)/elapsed.Seconds())), Comma(StatUpperCuts), Comma(StatLowerCuts), Comma(StatTtHits), Comma(int((float64(StatTtHits) / float64(StatNodes) * 100))), Comma(StatTtWrites), Comma(StatTtUpdates), Comma(len(tt)), Comma(StatTtCulls))
 		}
 	}
@@ -88,6 +87,10 @@ func Go(p *Pos) (res string, info string) {
 }
 
 func result(p *Pos) (s string) {
+	// ICS handles winning and losing. Plus sending these strings to KDE Knights crashes it!
+	if GameProtocol == PROTOUCI {
+		return
+	}
 	var win, lose string
 	nummoves := len(GenerateAllMoves(p))
 
@@ -159,7 +162,7 @@ func ParseUserMove(input string, p *Pos) (m Move, err string) {
 }
 
 func MakeUserMove(m Move, p *Pos) (s string) {
-	s = ""
+
 	if GameOver == true {
 		s = "Game Over"
 		return
@@ -172,7 +175,9 @@ func MakeUserMove(m Move, p *Pos) (s string) {
 func StopSearch() bool {
 	select {
 	case <-Control:
-		fmt.Print("# detected search stop\n") // open channel means we can keep searching
+		if !UCI() {
+			fmt.Print("# detected search stop\n")
+		} // open channel means we can keep searching
 		return true
 	default:
 		return false

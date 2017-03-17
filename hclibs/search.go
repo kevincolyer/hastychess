@@ -88,7 +88,10 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV) (bestmove Move, bestscore in
 			if val > alpha {
 				alpha = val
 			}
-			//  			if val > beta { bestscore = beta; break } // return beta as not found better
+			// stop search as found better
+			if val > beta {
+				break
+			}
 
 			count++
 		}
@@ -116,6 +119,8 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool) 
 	StatNodes++
 	if depth == 0 || StatNodes > PREVENTEXPLOSION {
 		parentpv.count = 0 // reset because we are at a leaf...
+
+		// Quiese?
 		if enterquiesce {
 			return SearchQuiesce(p, alpha, beta, QUIESCEDEPTH)
 		} else {
@@ -131,19 +136,24 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool) 
 		}
 		return STALEMATE
 	}
+
 	OrderMoves(consider, p, parentpv)
-	//         childpv.moves[0]=consider[0]
+
+	// reset PV and choose the
 	bestmove := consider[0]
-	parentpv.moves[0] = bestmove // incase we don't find anything better set first move to return
+	parentpv.moves[0] = bestmove // in case we don't find anything better set first move to return
 	parentpv.count = 1
 
 	for _, move := range consider {
+
 		MakeMove(move, p)
 		score := -negamaxab(-beta, -alpha, depth-1, p, &childpv, enterquiesce)
 		UnMakeMove(move, p)
+
 		if score > max {
 			max = score
 			bestmove = move
+
 			// update PV on stack
 			parentpv.moves[0] = bestmove
 			copy(parentpv.moves[1:], childpv.moves[:])
@@ -160,69 +170,65 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool) 
 }
 
 func SearchQuiesce(p *Pos, alpha, beta int, qdepth int) int {
-	// need a standpat score
-	// 	var moves []Move
 	gamestage := Gamestage(p)
-	val := EvalQ(p, 1, gamestage) // custom evaluator here for QUIESENCE
-	standpat := val
 	StatQNodes++
 
+	// need a standpat score
+	val := EvalQ(p, 1, gamestage) // custom evaluator here for QUIESENCE TODO
+	standpat := val
+
+	// is move worse than previous worst?
 	if val >= beta {
 		return beta
 	}
+	// is move less good than previous best?
 	if alpha <= val {
 		alpha = val
 	}
 
-	// prevent search explosion while testing TODO remove!
-
-	if StatQNodes > PREVENTEXPLOSION {
+	// finish searching:
+	// to prevent search explosion while testing TODO remove!
+	// when at end of search
+	// someone signals we should stop
+	if StatQNodes > PREVENTEXPLOSION/4 || qdepth == 0 || StopSearch() {
 		// 		fmt.Println("# Qnode explosion - bottling!")
 		return alpha
-
 	}
-	if qdepth == 0 {
-		return alpha
-	} // cant search too deep
+
 	// get moves - but only captures and promotions
-	// 	if GameProtocol==PROTOCONSOLE { fmt.Printf("# Qsearch depth %v\n",QUIESCEDEPTH-qdepth)}
 	moves := GenerateMovesForQSearch(p)
+	// nothing more to search...
 	if len(moves) == 0 {
 		return alpha
-	} // nothing more to search...
-	// score them
-	// 	fmt.Printf("# QS: looking at ply %v (%v moves to consider: %v)\n", p.Ply, len(moves), moves)
-	// socre them by Most Valuable Victim - Least Valuable Aggressor
+	}
+
+	// score them by Most Valuable Victim - Least Valuable Aggressor
 	for i := range moves {
 		moves[i].score = MVVLVA(moves[i], p)
 	}
 	// And order descending to provoke cuts
 	sort.Slice(moves, func(i, j int) bool { return moves[i].score > moves[j].score }) // by score type descending
-	//         fmt.Printf("alpha= %v, beta=%v, val=%v, movescore=%v\n",alpha,beta,val,mvscore)
+
 	// loop over all moves, searching deeper until no moves left and all is "quiet" - return this score...)
 	for _, m := range moves {
 		// adjust each score for delta cut offs and badmoves skipping to next each time
 		// delta - if not promotion and not endgame and is a low scoring capture then continue
-		if m.mtype != PROMOTE && Gamestage(p) != ENDGAME && standpat+csshash[p.Board[m.to]]+200 < alpha {
+		// delta cut qnodes from 20M to 640,000 in one case!
+		if m.mtype != PROMOTE && gamestage != ENDGAME && standpat+csshash[p.Board[m.to]]+200 < alpha {
 			continue
-		} // delta cut qnodes from 20M to 640,000 in one case!
+		}
 
-		// 		// badmoves - cut qnodes from 640,000 to 64,000
+		// badmoves - cut qnodes from 640,000 to 64,000
+		// capture by pawn is ok so skip
 		if p.Board[m.from]&7 == PAWN && m.mtype != PROMOTE {
 			continue
 		}
-		// capture by pawn is ok
 
 		// search deeper until quiet
-		// 		fmt.Println("search one deeper")
-		if StopSearch() {
-			return alpha
-		} // someone signals we should stop
-
 		MakeMove(m, p)
 		val = -SearchQuiesce(p, -beta, -alpha, qdepth-1)
-		// 		fmt.Printf("returned from one deeper val = %v\n",val)
 		UnMakeMove(m, p)
+
 		// adjust window
 		if val >= alpha {
 			if val > beta {
@@ -231,28 +237,28 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int) int {
 			alpha = val
 		}
 	}
-	return alpha // nothing better than this to return
+	return alpha
 }
 
 func OrderMoves(moves []Move, p *Pos, pv *PV) bool {
-	// can add in pv at top and also any other things to help
 	// order by move type (capture and promotion first down to quiet moves)
-	// todo: sub sort by captured piece value // pv // any other factor!
-
-	plydelta := p.Ply - pv.ply
+	// 	plydelta := p.Ply - pv.ply
 	//         if plydelta<0 {panic("this should not be!")}
 	for i := range moves {
 		moves[i].score = moves[i].mtype + p.Board[moves[i].from]*2 // type of move + which piece is moving
-		// push pv to top of list
-		// 		fmt.Println(pv, plydelta)
-		if moves[i].from == pv.moves[plydelta].from && moves[i].to == pv.moves[plydelta].to && moves[i].extra == pv.moves[plydelta].extra {
-			//fmt.Printf("pv hit Plydelta=%v pv.count=%v\n",plydelta,pv.count)
-			moves[i].score = PVBONUS
-		}
+
 		// boost PV to top here
+		// if moves[i].from == pv.moves[plydelta].from && moves[i].to == pv.moves[plydelta].to && moves[i].extra == pv.moves[plydelta].extra {
+
+		// cycle through pv to boost all moves in current move list to top
+		for _, m := range pv.moves {
+
+			if moves[i].from == m.from && moves[i].to == m.to && moves[i].extra == m.extra {
+				moves[i].score += PVBONUS
+			}
+		}
 	}
-	//sort.Slice(moves, func(i, j int) bool { return p.Board[moves[i].from] > p.Board[moves[j].from] }) // by piece type descending
-	//sort.Slice(moves, func(i, j int) bool { return moves[i].mtype < moves[j].mtype }) // by move type ascending
-	sort.Slice(moves, func(i, j int) bool { return moves[i].score > moves[j].score }) // by score type descending
+
+	sort.Slice(moves, func(i, j int) bool { return moves[i].score > moves[j].score }) // descending
 	return true
 }
