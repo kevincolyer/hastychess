@@ -1,13 +1,9 @@
 //Hastychess, Copyright (C) GPLv3, 2016, Kevin Colyer
 package hclibs
 
-import "fmt"
+// import "fmt"
 import "github.com/dex4er/go-tap"
 import "testing"
-
-// import "strings"
-
-//import "fmt"
 
 func TestPstScore(t *testing.T) {
 
@@ -38,14 +34,14 @@ func TestPstScore(t *testing.T) {
 	tap.Is(PstScore(&p, Gamestage(&p)), -30, "Kings in end game = -30")
 
 	// test check
-	p = FENToNewBoard("8/5k2/8/8/8/5Q2/5K2/8 w KkqQ - 0 1") // symetrical for test
-	fmt.Println(&p)
-	tap.Is(PstScore(&p, Gamestage(&p)) > CHECK, true, "Black is in check - true?")
-	// test as black that black is in check
-	p = FENToNewBoard("8/5k2/8/8/8/5Q2/5K2/8 b KkqQ - 0 1") // symetrical for test
-	fmt.Println(&p)
-	tap.Is(PstScore(&p, Gamestage(&p)) < -CHECK, true, "Black is in check - true?")
-	//fmt.Println(PstScore(&p, Gamestage(&p)))
+	// 	p = FENToNewBoard("8/5k2/8/8/8/5Q2/5K2/8 w KkqQ - 0 1") // symetrical for test
+	// 	fmt.Println(&p)
+	// 	tap.Is(PstScore(&p, Gamestage(&p)) > CHECK, true, "Black is in check - true?")
+	// 	// test as black that black is in check
+	// 	p = FENToNewBoard("8/5k2/8/8/8/5Q2/5K2/8 b KkqQ - 0 1") // symetrical for test
+	// 	fmt.Println(&p)
+	// 	tap.Is(PstScore(&p, Gamestage(&p)) < -CHECK, true, "Black is in check - true?")
+	// 	//fmt.Println(PstScore(&p, Gamestage(&p)))
 
 }
 
