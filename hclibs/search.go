@@ -4,10 +4,15 @@ package hclibs
 import (
 	"fmt"
 	"sort"
+        "time"
 )
 
+func  Milliseconds(d time.Duration) int {
+    return int(d.Nanoseconds()/1000000)
+}
+
 // THIS SHOULD BE SEARCH ROOT OR A WAY TO ALLOW ME TO PLUG IN DIFFERENT SEARCHES
-func SearchRoot(p *Pos, maxdepth int, globalpv *PV) (bestmove Move, bestscore int) {
+func SearchRoot(p *Pos, maxdepth int, globalpv *PV,starttime time.Time) (bestmove Move, bestscore int) {
 	/*
 	   // 1. get all moves to consider
 	   // 1a. check that we are not in checkmate or stalemate
@@ -54,6 +59,7 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV) (bestmove Move, bestscore in
 		enterquiesce := (depth == maxdepth)
 		childpv := PV{ply: p.Ply + 1}
 		count := 0
+		
 		if GameProtocol == PROTOCONSOLE {
 			fmt.Printf("# Searching to depth %v\n", depth)
 		}
@@ -67,10 +73,11 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV) (bestmove Move, bestscore in
 			val := -negamaxab(alpha, beta, depth, p, &childpv, enterquiesce) // need neg here as we switch sides in make move and evaluation happens relative to side
 			//fmt.Printf("# move %v scored %v\n", move, val)
 			UnMakeMove(move, p)
+			move.score = val // update for next round of sorting when iterative deepening. Do after unmakemove as the move score change is recorded in history array
+                        
 			if StatNodes > PREVENTEXPLOSION {
 				return
 			}
-			move.score = val // update for next round of sorting when iterative deepening. Do after unmakemove as the move score change is recorded in history array
 
 			if val >= bestscore {
 				bestmove = move
@@ -84,6 +91,7 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV) (bestmove Move, bestscore in
 				if GameProtocol == PROTOCONSOLE {
 					fmt.Printf("# depth: %v score: %v pv: %v\n", depth, bestscore, globalpv)
 				}
+				
 			}
 			if val > alpha {
 				alpha = val
@@ -107,6 +115,10 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV) (bestmove Move, bestscore in
 			alpha = consider[0].score - 50
 			beta = consider[0].score + 50
 		}
+                elapsed:=time.Since(starttime)
+		if UCI()  {
+                                    fmt.Printf("info depth %v score cp %v time %v nodes %v nps %v pv %v\n",depth,bestscore, Milliseconds(elapsed), StatNodes+StatQNodes, int(float64(StatNodes+StatQNodes)/elapsed.Seconds()),globalpv)
+                                }
 	}
 	return
 }

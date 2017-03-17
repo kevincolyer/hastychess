@@ -63,7 +63,7 @@ func Go(p *Pos) (res string, info string) {
 		} // in case reset game - pv is global (yuk) and not reset so far
 		start := time.Now()
 		// some computation
-		move, score = SearchRoot(p, GameDepthSearch, &pv) // global variable for depth of search...
+		move, score = SearchRoot(p, GameDepthSearch, &pv,start) // global variable for depth of search...
 		elapsed := time.Since(start)
 
 		if GameUseStats && GameProtocol == PROTOCONSOLE {
