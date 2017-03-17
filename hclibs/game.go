@@ -63,7 +63,7 @@ func Go(p *Pos) (res string, info string) {
 		} // in case reset game - pv is global (yuk) and not reset so far
 		start := time.Now()
 		// some computation
-		move, score = SearchRoot(p, GameDepthSearch, &pv,start) // global variable for depth of search...
+		move, score = SearchRoot(p, GameDepthSearch, &pv, start) // global variable for depth of search...
 		elapsed := time.Since(start)
 
 		if GameUseStats && GameProtocol == PROTOCONSOLE {
@@ -78,9 +78,9 @@ func Go(p *Pos) (res string, info string) {
 		res = fmt.Sprintf("move %v\n", MoveToAlg(move))
 		if UCI() {
 			res = "best" + res
-		} else {
+		} /*else {
 			res += "#\n"
-		}
+		}*/
 		MakeMove(move, p)
 	}
 	return
@@ -119,14 +119,14 @@ func result(p *Pos) (s string) {
 }
 
 func ParseUserMove(input string, p *Pos) (m Move, err string) {
-	err = "# Not a valid move"
+	err = "Illegal move: " + input
 	input = strings.ToLower(strings.TrimSpace(input))
 	re, e := regexp.Compile("[a-h][1-8][a-h][1-8][qbnr]?")
 	if e != nil {
 		panic("Regexp did not compile!")
 	}
 	if re.MatchString(input) == false {
-		err = "# Unparseable"
+		err = "Error (unparseable as user move): " + input
 		return
 	}
 	str := strings.Split(input, "")

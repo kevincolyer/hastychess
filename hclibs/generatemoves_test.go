@@ -22,17 +22,17 @@ func TestPerftDivide(t *testing.T) {
 }
 
 func TestInCheck(t *testing.T) {
-// 	tap.Fail("No test for this function!!!!! cost you dearly!!!!!")
-        p := FENToNewBoard("8/5k2/8/8/8/5Q2/5K2/8 w KkqQ - 0 1") // symetrical for test
+	// 	tap.Fail("No test for this function!!!!! cost you dearly!!!!!")
+	p := FENToNewBoard("8/5k2/8/8/8/5Q2/5K2/8 w KkqQ - 0 1") // symetrical for test
 	fmt.Println(&p)
-        tap.Is(p.Side==WHITE,true,"White to play")
-        tap.Is(InCheck(p.King[BLACK],WHITE,&p),false,"Black King is in check (from white)")
-        tap.Is(InCheck(p.King[BLACK],BLACK,&p),true,"I as black am in check on the black kings square") // I as black am in check on the black kings square
-        tap.Is(InCheck(p.King[WHITE],WHITE,&p),false,"White King is NOT in check (from white)")
-        tap.Is(InCheck(p.King[WHITE],BLACK,&p),true,"White King is in check (from black)") // not what you might expect!
-        
-        // checking for theoretical check on empty square
-        tap.Is(InCheck(E7,BLACK,&p),false,"I as black am NOT in check on the square E7") 
-        tap.Is(InCheck(H5,BLACK,&p),true,"I as black am  in check on the square H5") 
+	tap.Is(p.Side == WHITE, true, "White to play")
+	tap.Is(InCheck(p.King[BLACK], WHITE, &p), false, "Black King is in check (from white)")
+	tap.Is(InCheck(p.King[BLACK], BLACK, &p), true, "I as black am in check on the black kings square") // I as black am in check on the black kings square
+	tap.Is(InCheck(p.King[WHITE], WHITE, &p), false, "White King is NOT in check (from white)")
+	tap.Is(InCheck(p.King[WHITE], BLACK, &p), true, "White King is in check (from black)") // not what you might expect!
+
+	// checking for theoretical check on empty square
+	tap.Is(InCheck(E7, BLACK, &p), false, "I as black am NOT in check on the square E7")
+	tap.Is(InCheck(H5, BLACK, &p), true, "I as black am  in check on the square H5")
 	fmt.Println(&p)
 }

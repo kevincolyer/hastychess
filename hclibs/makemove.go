@@ -184,8 +184,8 @@ func MakeMove(m Move, p *Pos) {
 	if InCheck(p.King[side], side, p) {
 		p.InCheck = side
 	}
-        
-        p.HalfMoveClock++
+
+	p.HalfMoveClock++
 	if p.Side == WHITE {
 		p.FullMoveClock++
 	} // incremented after blacks turn

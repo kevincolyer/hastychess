@@ -67,9 +67,8 @@ func mainConsole() {
 		panic("Regexp did not compile!")
 	}
 	// 	version := 1.0
-	hiwhite:= color.New(color.FgHiWhite).PrintfFunc()
-	hiwhite("Hello and welcome to HastyChess version %v\n\n",hclibs.VERSION )
-        
+	hiwhite := color.New(color.FgHiWhite).PrintfFunc()
+	hiwhite("Hello and welcome to HastyChess version %v\n\n", hclibs.VERSION)
 
 	scanner := bufio.NewScanner(os.Stdin)
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
@@ -189,6 +188,7 @@ QUIT:
 }
 
 func mainXboard() {
+	// see https://www.gnu.org/software/xboard/engine-intf.html and XXX for protocol info
 	var err string
 	var result string
 	var move hclibs.Move
@@ -199,7 +199,7 @@ func mainXboard() {
 	}
 	// 	version := 0.99
 	name := fmt.Sprintf("HastyChess v%v", hclibs.VERSION)
-	fmt.Printf("Hello and welcome to %v\n\n", name)
+	fmt.Printf("tellics Hello and welcome to %v\n\n", name)
 
 	fmt.Println("feature debug=1")
 
@@ -222,6 +222,9 @@ QUIT:
 			input := strings.ToLower(strings.TrimSpace(scanner.Text()))
 			//fmt.Pri(ntf("You said [%v]\n", input)
 			switch {
+
+			case strings.HasPrefix(input, "accepted"):
+				break next
 
 			case strings.HasPrefix(input, "#"):
 				fmt.Println()
@@ -250,7 +253,7 @@ QUIT:
 				quit = true
 				break QUIT
 
-			case strings.Contains(input, "move"):
+			case strings.Contains(input, "move"), strings.Contains(input, "move"):
 				fields := strings.Fields(input)
 				if len(fields) > 1 {
 					move, err = hclibs.ParseUserMove(fields[1], &p)
@@ -262,9 +265,12 @@ QUIT:
 				result = hclibs.MakeUserMove(move, &p)
 				fmt.Println(result)
 
-				// make computer go
-				xboardGo(&p)
+				// make computer go if not in force mode
+				if hclibs.GameForce == false {
+					xboardGo(&p)
+				}
 
+				// Matches a2a3 type move
 			case re.MatchString(input):
 				move, err = hclibs.ParseUserMove(input, &p)
 				if err != "" {
@@ -274,27 +280,29 @@ QUIT:
 				result = hclibs.MakeUserMove(move, &p)
 				fmt.Println(result)
 
-				// make computer go
+				// make computer go if not in force mode
+				if hclibs.GameForce == false {
+					xboardGo(&p)
+				}
+
+			case strings.Contains(input, "go"): // || hclibs.GameForce == true:
+				hclibs.GameForce = false
 				xboardGo(&p)
 
-			case strings.Contains(input, "go") || hclibs.GameForce == true:
-				xboardGo(&p)
+			case strings.Contains(input, "force"): // || hclibs.GameForce == true:
+				hclibs.GameForce = true
 
 			case strings.Contains(input, "new"):
 				p = hclibs.FENToNewBoard(hclibs.STARTFEN)
 				hclibs.GameOver = false
-				/*
-				   when "new" {
-				   init_game;
-				   $p=Position.new;
-				   $time=1;
-				   $otim=1;
-				   $forced=False;
-				   @stack=();
-				*/
 
 			case strings.Contains(input, "ping"):
-				fmt.Println("pong")
+				fields := strings.Fields(input)
+				fmt.Print("pong")
+				if len(fields) > 1 {
+					fmt.Print(" " + fields[1])
+				}
+				fmt.Print("\n")
 
 			case strings.Contains(input, "depth"):
 				//  case strings.Contains(input,"fen") || strings.Contains(input,"setboard"):
@@ -318,14 +326,10 @@ QUIT:
 				fmt.Println("offer draw")
 				hclibs.GameOver = true
 				break next
-			/*
-			   when /$ setboard/ {
-			       $_ ~~ /$ setboard \s+ (.*)/;
-			       init_game;
-			       $p=Position.new(FEN => $0);
-			   }
-			   when "force" {
-			       $forced=True;                                            }*/
+
+			case strings.HasPrefix(input, "setboard"):
+				fmt.Println("Error (Not implemented yet!!!): " + input)
+				break next
 
 			case strings.HasPrefix(input, "white"):
 				p.Side = hclibs.WHITE
@@ -334,13 +338,25 @@ QUIT:
 			case strings.HasPrefix(input, "black"):
 				p.Side = hclibs.BLACK
 				break next
-				/*
-				   when /time/ { ... }
-				   when /otim/ { ... }
-				   when /post|random|hard|accepted|level/ {say "skip"; next; }
-				*/
+
+			case strings.HasPrefix(input, "post"):
+				hclibs.GamePostStats = true
+				break next
+
+			case strings.HasPrefix(input, "nopost"):
+				hclibs.GamePostStats = false
+				break next
+
+			// no ops
+			case strings.HasPrefix(input, "random"), strings.HasPrefix(input, "level"), strings.HasPrefix(input, "hard"), strings.HasPrefix(input, "accepted"):
+				break next
+
+			// currently no ops - TODO
+			case strings.HasPrefix(input, "time"), strings.HasPrefix(input, "otim"):
+				break next
+
 			default:
-				fmt.Printf("# Error (unknown command): %v\n", input)
+				fmt.Printf("Error (unknown command): %v\n", input)
 
 			}
 		}

@@ -4,15 +4,15 @@ package hclibs
 import (
 	"fmt"
 	"sort"
-        "time"
+	"time"
 )
 
-func  Milliseconds(d time.Duration) int {
-    return int(d.Nanoseconds()/1000000)
+func Milliseconds(d time.Duration) int {
+	return int(d.Nanoseconds() / 1000000)
 }
 
 // THIS SHOULD BE SEARCH ROOT OR A WAY TO ALLOW ME TO PLUG IN DIFFERENT SEARCHES
-func SearchRoot(p *Pos, maxdepth int, globalpv *PV,starttime time.Time) (bestmove Move, bestscore int) {
+func SearchRoot(p *Pos, maxdepth int, globalpv *PV, starttime time.Time) (bestmove Move, bestscore int) {
 	/*
 	   // 1. get all moves to consider
 	   // 1a. check that we are not in checkmate or stalemate
@@ -59,7 +59,7 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV,starttime time.Time) (bestmov
 		enterquiesce := (depth == maxdepth)
 		childpv := PV{ply: p.Ply + 1}
 		count := 0
-		
+
 		if GameProtocol == PROTOCONSOLE {
 			fmt.Printf("# Searching to depth %v\n", depth)
 		}
@@ -74,7 +74,7 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV,starttime time.Time) (bestmov
 			//fmt.Printf("# move %v scored %v\n", move, val)
 			UnMakeMove(move, p)
 			move.score = val // update for next round of sorting when iterative deepening. Do after unmakemove as the move score change is recorded in history array
-                        
+
 			if StatNodes > PREVENTEXPLOSION {
 				return
 			}
@@ -91,7 +91,7 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV,starttime time.Time) (bestmov
 				if GameProtocol == PROTOCONSOLE {
 					fmt.Printf("# depth: %v score: %v pv: %v\n", depth, bestscore, globalpv)
 				}
-				
+
 			}
 			if val > alpha {
 				alpha = val
@@ -115,10 +115,14 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV,starttime time.Time) (bestmov
 			alpha = consider[0].score - 50
 			beta = consider[0].score + 50
 		}
-                elapsed:=time.Since(starttime)
-		if UCI()  {
-                                    fmt.Printf("info depth %v score cp %v time %v nodes %v nps %v pv %v\n",depth,bestscore, Milliseconds(elapsed), StatNodes+StatQNodes, int(float64(StatNodes+StatQNodes)/elapsed.Seconds()),globalpv)
-                                }
+		elapsed := time.Since(starttime)
+		if UCI() {
+			fmt.Printf("info depth %v score cp %v time %v nodes %v nps %v pv %v\n", depth, bestscore, Milliseconds(elapsed), StatNodes+StatQNodes, int(float64(StatNodes+StatQNodes)/elapsed.Seconds()), globalpv)
+		}
+		if GamePostStats == true && GameProtocol == PROTOXBOARD {
+			// ply	Integer score Integer in centipawns.time in centiseconds (ex:1028 = 10.28 seconds). nodes Nodes searched. pv freeform
+			fmt.Printf("%v %v %v %v %v\n", depth, bestscore, float64(Milliseconds(elapsed)/100), StatNodes+StatQNodes, globalpv)
+		}
 	}
 	return
 }
@@ -251,6 +255,16 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int) int {
 	}
 	return alpha
 }
+
+// From https://chessprogramming.wikispaces.com/Move+Ordering
+// A typical move ordering consists as follows:
+// 1.PV-move of the principal variation from the previous iteration of an iterative deepening framework for the leftmost path, often implicitly done by 2.
+// 2.Hash move from hash tables
+// 3.Winning captures/promotions
+// 4.Equal captures/promotions
+// 5.Killer moves (non capture), often with mate killers first
+// 6.Non-captures sorted by history heuristic and that like
+// 7.Losing captures (* but see below
 
 func OrderMoves(moves []Move, p *Pos, pv *PV) bool {
 	// order by move type (capture and promotion first down to quiet moves)

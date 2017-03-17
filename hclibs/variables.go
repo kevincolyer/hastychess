@@ -132,6 +132,7 @@ var GameForce bool
 var GameUseBook bool
 var GameUseTt bool
 var GameUseStats bool
+var GamePostStats bool
 
 type Proto int
 

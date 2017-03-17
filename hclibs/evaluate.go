@@ -26,6 +26,7 @@ func EvalQ(p *Pos, nummoves, gamestage int) int {
 }
 
 // see https://chessprogramming.wikispaces.com/Simplified+evaluation+function for these values
+// Check = king? == 20000 "which sometimes might be useful for discovering whether the king was taken"
 var csshash = map[int]int{
 	QUEEN: 900, queen: 900,
 	ROOK: 500, rook: 500,
@@ -43,18 +44,18 @@ func MVVLVA(m Move, p *Pos) int {
 
 func ClaudeShannonScore(p *Pos, totalmoves int) int {
 	side := p.Side
-	xside := Xside(side)
-	incheck := p.InCheck
+	// 	xside := Xside(side)
+	// 	incheck := p.InCheck
 	// 	enpassant := p.EnPassant
 	score := 0
 	var piece, up, dd, ss int
 	// K-K'
-	if incheck == xside {
-		score += CHECK
-	}
-	if incheck == side {
-		score -= CHECK
-	}
+	// 	if incheck == xside {
+	// 		score += CHECK
+	// 	}
+	// 	if incheck == side {
+	// 		score -= CHECK
+	// 	}
 	// Material valuation
 	// could add bonuses at different game stages...
 	for _, i := range GRID {
@@ -131,14 +132,16 @@ func PstScore(p *Pos, gamestage int) (score int) { // actually Pst and material 
 			}
 		}
 	}
-	// opponant is in check
-	if p.InCheck == Xside(p.Side) {
-		score += CHECK
-	}
-	// i am in check :-(
-	if p.InCheck == p.Side {
-		score -= CHECK
-	}
+	//      Consider check else where - the King score is used for pl move generation. giving this as the final score means it is check or nothing!
+	//      use killer or killer-mate?
+	// 	// opponent is in check
+	// 	if p.InCheck == Xside(p.Side) {
+	// 		score += CHECK
+	// 	}
+	// 	// i am in check :-(
+	// 	if p.InCheck == p.Side {
+	// 		score -= CHECK
+	// 	}
 	return score
 }
 
@@ -222,6 +225,21 @@ func init() {
 	Pst[MIDGAME][bishop] = loadPstRev(i)
 	Pst[ENDGAME][bishop] = loadPstRev(i)
 
+	////rook w - opening
+	// Attempt to get the rook to stay put on it's square and not shift about before castling
+	i = []int{
+		0, 0, 0, 0, 0, 0, 0, 0,
+		5, 10, 10, 10, 10, 10, 10, 5,
+		-5, 0, 0, 0, 0, 0, 0, -5,
+		-5, 0, 0, 0, 0, 0, 0, -5,
+		-5, 0, 0, 0, 0, 0, 0, -5,
+		-5, 0, 0, 0, 0, 0, 0, -5,
+		-5, 0, 0, 0, 0, 0, 0, -5,
+		40, 0, 0, 5, 5, 0, 0, 40,
+	}
+	Pst[OPENING][ROOK] = loadPst(i)
+	Pst[OPENING][rook] = loadPstRev(i) // rook b
+
 	////rook w
 	i = []int{
 		0, 0, 0, 0, 0, 0, 0, 0,
@@ -234,10 +252,8 @@ func init() {
 		0, 0, 0, 5, 5, 0, 0, 0,
 	}
 
-	Pst[OPENING][ROOK] = loadPst(i)
 	Pst[MIDGAME][ROOK] = loadPst(i)
 	Pst[ENDGAME][ROOK] = loadPst(i)
-	Pst[OPENING][rook] = loadPstRev(i) // rook b
 	Pst[MIDGAME][rook] = loadPstRev(i)
 	Pst[ENDGAME][rook] = loadPstRev(i)
 

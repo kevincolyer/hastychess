@@ -219,20 +219,20 @@ func BoardToStr(p *Pos) string {
 func BoardToStrColour(p *Pos) string {
 	ptos := [...]string{" ", "P", "N", "K", "-", "B", "R", "Q", "-", "p", "n", "k", "-", "b", "r", "q"}
 	var s string
-	tog := false                       // true==black square
-	whitepc:= color.New(color.FgHiWhite).SprintFunc()
-	whitesq:= color.New(color.BgRed).SprintFunc()
-	blackpc:= color.New(color.FgWhite).SprintFunc()
-	blacksq:= color.New(color.BgBlack).SprintFunc()
+	tog := false // true==black square
+	whitepc := color.New(color.FgHiWhite).SprintFunc()
+	whitesq := color.New(color.BgRed).SprintFunc()
+	blackpc := color.New(color.FgWhite).SprintFunc()
+	blacksq := color.New(color.BgBlack).SprintFunc()
 	for rank := 7; rank >= 0; rank-- { // reverse order
 		s += fmt.Sprintf(" %v  ", rank+1)
 
 		for file := 0; file < 8; file++ {
 			pc := ptos[p.Board[rank<<4+file]]
-			if strings.ToUpper(pc)==pc {
-				pc = whitepc(pc+" ")
+			if strings.ToUpper(pc) == pc {
+				pc = whitepc(pc + " ")
 			} else {
-				pc = blackpc(pc+" ")
+				pc = blackpc(pc + " ")
 			}
 			if tog {
 				s += whitesq(" " + pc)
@@ -242,7 +242,7 @@ func BoardToStrColour(p *Pos) string {
 			tog = !tog
 		}
 		s += "\n"
-                tog =!tog
+		tog = !tog
 	}
 	s += "\n     A  B  C  D  E  F  G  H\n"
 	return s
@@ -265,7 +265,9 @@ func BoardToStrWide(p *Pos) string {
 }
 
 func (p *Pos) String() string {
-        if color.NoColor == false { return BoardToStrColour(p) }
+	if color.NoColor == false {
+		return BoardToStrColour(p)
+	}
 	return BoardToStrWide(p)
 }
 

@@ -268,7 +268,7 @@ func slider_moves(from int, p *Pos, dirs []int) (moves []Move) {
 }
 
 // Answers question: Am I in check? Side needs to be opponent for a true answer
-// does not do a sanity check that the square king refers to is filled OR which colour king is there!!!! 
+// does not do a sanity check that the square king refers to is filled OR which colour king is there!!!!
 // So looking at a white king from black's perspective will answer TRUE if a white piece "attacking"" is encountered!
 // use with caution!
 
@@ -351,7 +351,6 @@ func king_is_near(look int, p *Pos) bool {
 	}
 	return false
 }
-
 
 func is_legal_move(m Move, p *Pos) (retval bool) {
 
