@@ -211,6 +211,7 @@ func mainXboard() {
 	fmt.Printf("tellics Hello and welcome to %v\n\n", name)
 
 	fmt.Println("feature debug=1")
+	fmt.Printf("feature myname=\"%v\"\n", name)
 
 	scanner := bufio.NewScanner(os.Stdin)
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
@@ -333,7 +334,7 @@ QUIT:
 				fmt.Print("\n")
 				break next
 
-			case strings.Contains(input, "depth"):
+			case strings.HasPrefix(input, "sd"):
 				//  case strings.Contains(input,"fen") || strings.Contains(input,"setboard"):
 				fields := strings.Fields(input)
 				if len(fields) == 1 {
@@ -348,7 +349,7 @@ QUIT:
 				if d > hclibs.MAXSEARCHDEPTHX {
 					d = hclibs.MAXSEARCHDEPTHX
 				}
-				fmt.Printf("# Current depth is %d. Setting depth to %d.\n", hclibs.GameDepthSearch, d)
+				fmt.Printf("# Setting depth to %d.\n", d)
 				hclibs.GameDepthSearch = d
 
 			case strings.HasPrefix(input, "draw"):
@@ -357,7 +358,15 @@ QUIT:
 				break next
 
 			case strings.HasPrefix(input, "setboard"):
-				fmt.Println("Error (Not implemented yet!!!): " + input)
+				fields := strings.Fields(input)
+				if len(fields) == 1 {
+					fmt.Println("Error (no Fen): " + input)
+					break next
+				}
+				fen := strings.Join(fields[1:], " ")
+				fmt.Println("# parsing fen [" + fen + "]")
+				p = hclibs.FENToNewBoard(fen)
+				// 				fmt.Println("Error (Not implemented yet!!!): " + input)
 				break next
 
 			case strings.HasPrefix(input, "white"):
