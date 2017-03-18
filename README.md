@@ -1,6 +1,6 @@
 # hastychess
 
-Hastychess, Copyright (C) GPLv3, 2016, Kevin Colyer
+Hastychess, Copyright (C) GPLv3, 2016,2017, Kevin Colyer
 
 A not very good version of chess, because, why not?!
 
@@ -42,7 +42,8 @@ Features
 - SAN notation
 
 # Licence
-# Exceptions
+
+### Exceptions
 - file /hclibs/perftsuit.epd comes from ROCE-Roman's Own Chess Engine
 - Book openings from CPW 1.1 Chess Programming Wiki example engine.
 
