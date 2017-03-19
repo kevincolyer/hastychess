@@ -208,7 +208,7 @@ func mainXboard() {
 	}
 	// 	version := 0.99
 	name := fmt.Sprintf("HastyChess v%v", hclibs.VERSION)
-	fmt.Printf("tellics Hello and welcome to %v\n\n", name)
+	fmt.Printf("tellics say Hello and welcome to %v\n", name)
 
 	fmt.Println("feature debug=1")
 	fmt.Printf("feature myname=\"%v\"\n", name)
@@ -251,12 +251,13 @@ QUIT:
 
 			case strings.Contains(input, "protover 2"):
 				fmt.Println("feature done=0")
-				fmt.Printf("feature myname=\"%v\"\n", name)
+				fmt.Printf("feature myname=\"%v\"", name)
 				fmt.Println("feature usermove=1")
+				fmt.Println("feature memory=0")
 				fmt.Println("feature setboard=1")
 				fmt.Println("feature ping=1")
-				fmt.Println("feature sigint=1")  // We respond to SIGINT - get this for free in golang
-				fmt.Println("feature sigterm=1") // We respond to SIGTERM - get this for free in golang
+				fmt.Println("feature sigint=0")  // SIGINT will halt a go program unless caught. Xboard sends SIGINT by default to let chess engine know it wants to talk!!! Was quite a problem!
+				fmt.Println("feature sigterm=1") // We respond to SIGTERM - go stops!
 				fmt.Println("feature variants=\"normal\"")
 				fmt.Println("feature debug=1") // allows comments starting with hash symbols
 				fmt.Println("feature done=1")
@@ -334,7 +335,7 @@ QUIT:
 				fmt.Print("\n")
 				break next
 
-			case strings.HasPrefix(input, "sd"):
+			case strings.HasPrefix(input, "sd"), strings.HasPrefix(input, "depth"): // not in spec but knights seems to send depth anyway.
 				//  case strings.Contains(input,"fen") || strings.Contains(input,"setboard"):
 				fields := strings.Fields(input)
 				if len(fields) == 1 {
@@ -390,6 +391,7 @@ QUIT:
 				break next
 
 			// currently no ops - TODO
+			// undo
 			// 			case strings.HasPrefix(input, "time"), strings.HasPrefix(input, "otim"):
 			// 				break next
 
@@ -402,15 +404,17 @@ QUIT:
 }
 
 func xboardGo(p *hclibs.Pos) {
-	if hclibs.Control == nil || hclibs.StopSearch() == true {
+	/*if hclibs.Control == nil || hclibs.StopSearch() == true {
 
 		hclibs.Control = make(chan string)
-	}
+	}*/
 	res, info := hclibs.Go(p)
-	if hclibs.StopSearch() == false {
-		close(hclibs.Control)
+	// 	if hclibs.StopSearch() == false {
+	// 		close(hclibs.Control)
+	// 	}
+	if len(info) > 0 {
+		fmt.Println(info)
 	}
-	fmt.Println(info)
 	fmt.Println(res)
 }
 

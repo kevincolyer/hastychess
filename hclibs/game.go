@@ -75,7 +75,7 @@ func Go(p *Pos) (res string, info string) {
 
 	info += result(p)
 	if GameOver == false {
-		res = fmt.Sprintf("move %v\n", MoveToAlg(move))
+		res = fmt.Sprintf("move %v", MoveToAlg(move))
 		if UCI() {
 			res = "best" + res
 		} /*else {
@@ -175,13 +175,13 @@ func MakeUserMove(m Move, p *Pos) (s string) {
 }
 
 func StopSearch() bool {
-	select {
-	case <-Control:
-		if !UCI() {
-			fmt.Print("# detected search stop\n")
-		} // open channel means we can keep searching
-		return true
-	default:
+// 	select {
+// 	case <-Control:
+// 		if !UCI() {
+// 			fmt.Print("# detected search stop\n")
+// 		} // open channel means we can keep searching
+// 		return true
+// 	default:
 		return false
-	}
+// 	}
 }

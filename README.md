@@ -24,21 +24,33 @@ Initially I coded this in Perl6 but performance was so poor I re-implemented in 
 - lots
 
 ### Todo
+- impliment 3 move repeat rule so to stop cycling
+- Stop rooks from dancing about
+- add a degree of randomness to help with beginnings???? More aggression!
+- document data structures
+- Fen parsing needs refactoring to eliminate dies and panics - refactor out all panics and dies
+- adbstract terminal output
+- add logging facility
+
 Refactoring
+- refactor to support methods on p
+- refactor and design a clearer object modle and data structure.
 - refactor protocol support by moving into package
-- refactor so timing possible and pondering
+- refactor for polyglot or chess server structuring
+- refactor to impliment timing possible and pondering
 - refactor and remove comments of perl code and remove unused code
 - improve test coverage for searches and evals and protocols
 
 Features
-- transition table
+- improve eval beyond pst and material score for protected and supported pieces
 - xboard - undo
-- null move pruning
+- transition table
 - killer move
 - history move
-- improve eval beyond pst and material score for protected and supported pieces
 - special eval for quiese
+- null move pruning
 - remove limits on depth search
+- increase book size considerable
 - SAN notation
 
 # Licence
