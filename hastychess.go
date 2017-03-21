@@ -94,6 +94,14 @@ QUIT:
 			case strings.Contains(input, "quit"):
 				quit = true
 				break QUIT
+
+			// provide a way to change to xboard mode if use forgets to use commandline switch
+			case strings.HasPrefix(input, "xboard"):
+				color.NoColor = true
+				hclibs.GameProtocol = hclibs.PROTOXBOARD
+				mainXboard()
+				return
+
 			case strings.Contains(input, "move"):
 				fields := strings.Fields(input)
 				if len(fields) > 1 {
@@ -187,13 +195,15 @@ QUIT:
 	}
 }
 
+
 func mainXboard(*bufio.Scanner) {
-	// see https://www.gnu.org/software/xboard/engine-intf.html and XXX for protocol info
+	// see https://www.gnu.org/software/xboard/engine-intf.html
+	// and http://hgm.nubati.net/newspecs.html for protocol info
 	var err string
 	var result string
 	var move hclibs.Move
 
-	re, e := regexp.Compile("[a-h][1-8][a-h][1-8][qbnr]?")
+	re, e := regexp.Compile("^[a-h][1-8][a-h][1-8][qbnr]?")
 	if e != nil {
 		panic("Regexp did not compile!")
 	}
@@ -202,6 +212,7 @@ func mainXboard(*bufio.Scanner) {
 	fmt.Printf("tellics Hello and welcome to %v\n\n", name)
 
 	fmt.Println("feature debug=1")
+	fmt.Printf("feature myname=\"%v\"\n", name)
 
 // 	scanner := bufio.NewScanner(os.Stdin)
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
@@ -237,6 +248,7 @@ QUIT:
 
 			case strings.Contains(input, "xboard"):
 				fmt.Println()
+				break next
 
 			case strings.Contains(input, "protover 2"):
 				fmt.Println("feature done=0")
@@ -244,7 +256,8 @@ QUIT:
 				fmt.Println("feature usermove=1")
 				fmt.Println("feature setboard=1")
 				fmt.Println("feature ping=1")
-				fmt.Println("feature sigint=0")
+				fmt.Println("feature sigint=1")  // We respond to SIGINT - get this for free in golang
+				fmt.Println("feature sigterm=1") // We respond to SIGTERM - get this for free in golang
 				fmt.Println("feature variants=\"normal\"")
 				fmt.Println("feature debug=1") // allows comments starting with hash symbols
 				fmt.Println("feature done=1")
@@ -253,22 +266,32 @@ QUIT:
 				quit = true
 				break QUIT
 
-			case strings.Contains(input, "move"), strings.Contains(input, "move"):
+			case strings.HasPrefix(input, "usermove"), strings.HasPrefix(input, "move"):
 				fields := strings.Fields(input)
+				fmt.Println("# looking for move: fields ", len(fields))
 				if len(fields) > 1 {
 					move, err = hclibs.ParseUserMove(fields[1], &p)
 					if err != "" {
 						fmt.Println(err)
 						break next
 					}
+					fmt.Println("# found a valid move")
+				} else {
+					fmt.Println("# not found a move on this line")
+					break next
 				}
+
 				result = hclibs.MakeUserMove(move, &p)
-				fmt.Println(result)
+				if result != "" {
+					fmt.Println(result)
+				}
 
 				// make computer go if not in force mode
+				fmt.Println("# gameforce=", hclibs.GameForce)
 				if hclibs.GameForce == false {
 					xboardGo(&p)
 				}
+				break next
 
 				// Matches a2a3 type move
 			case re.MatchString(input):
@@ -278,23 +301,30 @@ QUIT:
 					break next
 				}
 				result = hclibs.MakeUserMove(move, &p)
-				fmt.Println(result)
+				if result != "" {
+					fmt.Println(result)
+				}
 
 				// make computer go if not in force mode
+				fmt.Println("# gameforce=", hclibs.GameForce)
 				if hclibs.GameForce == false {
 					xboardGo(&p)
 				}
+				break next
 
 			case strings.Contains(input, "go"): // || hclibs.GameForce == true:
 				hclibs.GameForce = false
 				xboardGo(&p)
+				break next
 
 			case strings.Contains(input, "force"): // || hclibs.GameForce == true:
 				hclibs.GameForce = true
+				break next
 
 			case strings.Contains(input, "new"):
 				p = hclibs.FENToNewBoard(hclibs.STARTFEN)
 				hclibs.GameOver = false
+				break next
 
 			case strings.Contains(input, "ping"):
 				fields := strings.Fields(input)
@@ -303,8 +333,9 @@ QUIT:
 					fmt.Print(" " + fields[1])
 				}
 				fmt.Print("\n")
+				break next
 
-			case strings.Contains(input, "depth"):
+			case strings.HasPrefix(input, "sd"):
 				//  case strings.Contains(input,"fen") || strings.Contains(input,"setboard"):
 				fields := strings.Fields(input)
 				if len(fields) == 1 {
@@ -319,7 +350,7 @@ QUIT:
 				if d > hclibs.MAXSEARCHDEPTHX {
 					d = hclibs.MAXSEARCHDEPTHX
 				}
-				fmt.Printf("# Current depth is %d. Setting depth to %d.\n", hclibs.GameDepthSearch, d)
+				fmt.Printf("# Setting depth to %d.\n", d)
 				hclibs.GameDepthSearch = d
 
 			case strings.HasPrefix(input, "draw"):
@@ -328,7 +359,15 @@ QUIT:
 				break next
 
 			case strings.HasPrefix(input, "setboard"):
-				fmt.Println("Error (Not implemented yet!!!): " + input)
+				fields := strings.Fields(input)
+				if len(fields) == 1 {
+					fmt.Println("Error (no Fen): " + input)
+					break next
+				}
+				fen := strings.Join(fields[1:], " ")
+				fmt.Println("# parsing fen [" + fen + "]")
+				p = hclibs.FENToNewBoard(fen)
+				// 				fmt.Println("Error (Not implemented yet!!!): " + input)
 				break next
 
 			case strings.HasPrefix(input, "white"):
@@ -348,12 +387,12 @@ QUIT:
 				break next
 
 			// no ops
-			case strings.HasPrefix(input, "random"), strings.HasPrefix(input, "level"), strings.HasPrefix(input, "hard"), strings.HasPrefix(input, "accepted"):
+			case strings.HasPrefix(input, "random"), strings.HasPrefix(input, "level"), strings.HasPrefix(input, "easy"), strings.HasPrefix(input, "hard"), strings.HasPrefix(input, "accepted"):
 				break next
 
 			// currently no ops - TODO
-			case strings.HasPrefix(input, "time"), strings.HasPrefix(input, "otim"):
-				break next
+			// 			case strings.HasPrefix(input, "time"), strings.HasPrefix(input, "otim"):
+			// 				break next
 
 			default:
 				fmt.Printf("Error (unknown command): %v\n", input)

@@ -151,9 +151,11 @@ func ParseUserMove(input string, p *Pos) (m Move, err string) {
 	for _, mv := range moves {
 		if m.from == mv.from && m.to == mv.to {
 			err = ""
+			// if the move is found in the move list and it is a promote then use the one we created above
 			if m.mtype == PROMOTE {
 				return
 			}
+			// use the better defined matched move
 			m = mv
 			return
 		}

@@ -2,7 +2,8 @@
 package hclibs
 
 // Versioning
-const VERSION = 1.01 // "Annihilator!"
+const VERSION = "1.10 'Blockhead'"
+
 // import "fmt"
 
 const BLACK = 1

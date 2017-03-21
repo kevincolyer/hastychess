@@ -6,33 +6,40 @@ A not very good version of chess, because, why not?!
 
 Initially I coded this in Perl6 but performance was so poor I re-implemented in Go. About 10,000 speed boost, which makes it fun for deeper searches.
 
-### Version 
-- V 0.99 - first version to make it to github.
 
 ### Implements
 - negamax alpha/beta search 
 - quiescent search
 - piece square table for material scores and position bonus
-- transition table
-- xboard support (mostly)
+- xboard support
+- uci support in protocol
+- coloured console output
+
+### Version
+- v 1.1 "Blockhead" - vastly improved!
+- v 1.01 "Annihilator!" - reimplimented search and finally understood what I was doing. Got move ordering sorted. Improved UCI and Xboard support massively. PV and statistics reporting.
+- V 0.99 - first version to make it to github.
 
 ### Issues
 - lots
 
 ### Todo
-- xboard - complete undo and force
-- icu server protocol
-- board to FEN
-- improve TT (currently very crude) to a zorbist hash
-- search and eval
-  - better initial sorting of moves
-  - pv
-  - null move pruning
-  - killer and history
-  - better eval for protected and supported pieces
-  - remove limits on depth search
-- lots of optimisations once quality of play improves
-- algebraic notation
+Refactoring
+- refactor protocol support by moving into package
+- refactor so timing possible and pondering
+- refactor and remove comments of perl code and remove unused code
+- improve test coverage for searches and evals and protocols
+
+Features
+- transition table
+- xboard - undo
+- null move pruning
+- killer move
+- history move
+- improve eval beyond pst and material score for protected and supported pieces
+- special eval for quiese
+- remove limits on depth search
+- SAN notation
 
 # Licence
 # Exceptions
