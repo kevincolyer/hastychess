@@ -34,29 +34,29 @@ func main() {
 	hclibs.GameUseBook = *(flagUseBook)
 
 	hclibs.GameInit()
-
+        scanner := bufio.NewScanner(os.Stdin)
 	switch {
 	case *(flagXboard):
 		hclibs.GameProtocol = hclibs.PROTOXBOARD
 		color.NoColor = true
-		mainXboard()
+		mainXboard(scanner)
 	case *(flagIcs):
 		hclibs.GameProtocol = hclibs.PROTOUCI
 		color.NoColor = true
-		mainIcs()
+		mainIcs(scanner)
 	case *(flagUci):
 		hclibs.GameProtocol = hclibs.PROTOUCI
 		color.NoColor = true
-		mainIcs()
+		mainIcs(scanner)
 	case *(flagConsole):
 		hclibs.GameProtocol = hclibs.PROTOCONSOLE
-		mainConsole()
+		mainConsole(scanner)
 	}
 	fmt.Println("Bye and thanks for playing!")
 
 }
 
-func mainConsole() {
+func mainConsole(scanner *bufio.Scanner) {
 
 	var err string
 	var result string
@@ -70,7 +70,7 @@ func mainConsole() {
 	hiwhite := color.New(color.FgHiWhite).PrintfFunc()
 	hiwhite("Hello and welcome to HastyChess version %v\n\n", hclibs.VERSION)
 
-	scanner := bufio.NewScanner(os.Stdin)
+	
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
 	hclibs.GameOver = false
 	hclibs.GameDisplayOn = true
@@ -99,7 +99,7 @@ QUIT:
 			case strings.HasPrefix(input, "xboard"):
 				color.NoColor = true
 				hclibs.GameProtocol = hclibs.PROTOXBOARD
-				mainXboard()
+				mainXboard(scanner)
 				return
 			// provide a way to change to xboard mode if use forgets to use commandline switch
 			case strings.HasPrefix(input, "uci"):
@@ -202,7 +202,8 @@ QUIT:
 	}
 }
 
-func mainXboard() {
+
+func mainXboard(scanner *bufio.Scanner) {
 	// see https://www.gnu.org/software/xboard/engine-intf.html
 	// and http://hgm.nubati.net/newspecs.html for protocol info
 	var err string
@@ -220,7 +221,7 @@ func mainXboard() {
 	fmt.Println("feature debug=1")
 	fmt.Printf("feature myname=\"%v\"\n", name)
 
-	scanner := bufio.NewScanner(os.Stdin)
+// 	scanner := bufio.NewScanner(os.Stdin)
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
 	hclibs.GameOver = false
 	hclibs.GameDisplayOn = false
@@ -442,10 +443,11 @@ func ucihelper() {
 	fmt.Println("uciok")
 }
 
-func mainIcs() {
+func mainIcs(scanner *bufio.Scanner) {
+	// 	version := 0.99
+	name := fmt.Sprintf("HastyChess v%v", hclibs.VERSION)
+// 	scanner := bufio.NewScanner(os.Stdin)
 
-	//name := fmt.Sprintf("HastyChess v%v", hclibs.VERSION)
-	scanner := bufio.NewScanner(os.Stdin)
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
 
 	hclibs.GameUseBook = false // UCI gui does book - unless option below...
