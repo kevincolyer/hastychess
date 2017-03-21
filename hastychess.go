@@ -99,7 +99,7 @@ QUIT:
 			case strings.HasPrefix(input, "xboard"):
 				color.NoColor = true
 				hclibs.GameProtocol = hclibs.PROTOXBOARD
-				mainXboard()
+				mainXboard(scanner)
 				return
 
 			case strings.Contains(input, "move"):
@@ -196,7 +196,7 @@ QUIT:
 }
 
 
-func mainXboard(*bufio.Scanner) {
+func mainXboard(scanner *bufio.Scanner) {
 	// see https://www.gnu.org/software/xboard/engine-intf.html
 	// and http://hgm.nubati.net/newspecs.html for protocol info
 	var err string
@@ -256,7 +256,7 @@ QUIT:
 				fmt.Println("feature usermove=1")
 				fmt.Println("feature setboard=1")
 				fmt.Println("feature ping=1")
-				fmt.Println("feature sigint=1")  // We respond to SIGINT - get this for free in golang
+				fmt.Println("feature sigint=0")  // We respond to SIGINT - get this for free in golang
 				fmt.Println("feature sigterm=1") // We respond to SIGTERM - get this for free in golang
 				fmt.Println("feature variants=\"normal\"")
 				fmt.Println("feature debug=1") // allows comments starting with hash symbols
@@ -423,11 +423,11 @@ func xboardGo(p *hclibs.Pos) {
  *
  ***************************************************************/
 
-func mainIcs(*bufio.Scanner) {
+func mainIcs(scanner *bufio.Scanner) {
 
 	// 	version := 0.99
 	name := fmt.Sprintf("HastyChess v%v", hclibs.VERSION)
-	scanner := bufio.NewScanner(os.Stdin)
+// 	scanner := bufio.NewScanner(os.Stdin)
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
 
 	hclibs.GameUseBook = false // UCI gui does book - unless option below...
