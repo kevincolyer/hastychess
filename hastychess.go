@@ -88,7 +88,8 @@ QUIT:
 	next:
 		for scanner.Scan() {
 
-			input := strings.ToLower(strings.TrimSpace(scanner.Text()))
+			//input := strings.ToLower(strings.TrimSpace(scanner.Text()))
+			input := strings.TrimSpace(scanner.Text())
 			//fmt.Printf("You said [%v]\n", input)
 			switch {
 			case strings.Contains(input, "quit"):
@@ -106,7 +107,7 @@ QUIT:
 				color.NoColor = true
 				hclibs.GameProtocol = hclibs.PROTOUCI
 				ucihelper()
-				mainIcs()
+				mainIcs(scanner)
 				return
 
 			case strings.Contains(input, "move"):
@@ -137,6 +138,17 @@ QUIT:
 				hclibs.GameOver = false
 				fmt.Println(&p)
 
+                        case strings.HasPrefix(input, "setboard"):
+				fields := strings.Fields(input)
+				if len(fields) == 1 {
+					fmt.Println("Error (no Fen): " + input)
+					break next
+				}
+				fen := strings.Join(fields[1:], " ")
+				fmt.Println("# parsing fen [" + fen + "]")
+				p = hclibs.FENToNewBoard(fen)
+				// 				fmt.Println("Error (Not implemented yet!!!): " + input)
+				break next
 			case strings.Contains(input, "auto"):
 				hclibs.GameForce = !hclibs.GameForce
 
@@ -237,8 +249,9 @@ QUIT:
 	next:
 		for scanner.Scan() {
 
-			input := strings.ToLower(strings.TrimSpace(scanner.Text()))
-			//fmt.Pri(ntf("You said [%v]\n", input)
+			//input := strings.ToLower(strings.TrimSpace(scanner.Text()))
+			input := strings.TrimSpace(scanner.Text())
+                        //fmt.Pri(ntf("You said [%v]\n", input)
 			switch {
 
 			case strings.HasPrefix(input, "accepted"):
@@ -445,7 +458,7 @@ func ucihelper() {
 
 func mainIcs(scanner *bufio.Scanner) {
 	// 	version := 0.99
-	name := fmt.Sprintf("HastyChess v%v", hclibs.VERSION)
+//	name := fmt.Sprintf("HastyChess v%v", hclibs.VERSION)
 // 	scanner := bufio.NewScanner(os.Stdin)
 
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
@@ -460,7 +473,8 @@ func mainIcs(scanner *bufio.Scanner) {
 	for {
 		for scanner.Scan() {
 
-			input := strings.ToLower(strings.TrimSpace(scanner.Text()))
+			//input := strings.ToLower(strings.TrimSpace(scanner.Text()))
+                        input := strings.TrimSpace(scanner.Text())
 			fmt.Printf("# echo server sent (%v)\n", input)
 			// 			time.Sleep(time.Second)
 			//fmt.Pri(ntf("You said [%v]\n", input)
@@ -535,7 +549,10 @@ func ParsePositionInput(input string) (fen string, moves []hclibs.Move) {
 	ef := 2 // end fen = start of moves (if any)
 	f := strings.Split(input, " ")
 	// can ignore first field == "position"
-
+        if len(f)>2 && f[1] == "fen" {
+            fen= strings.Join(f[2:]," ")
+            return
+        }
 	if f[1] == "startpos" {
 		fen = hclibs.STARTFEN
 	} else { //look ahead to moves - what is skipped is a fen
