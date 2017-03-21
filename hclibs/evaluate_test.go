@@ -1,7 +1,7 @@
 //Hastychess, Copyright (C) GPLv3, 2016, Kevin Colyer
 package hclibs
 
-// import "fmt"
+import "fmt"
 import "github.com/dex4er/go-tap"
 import "testing"
 
@@ -54,5 +54,60 @@ func TestGamestage(t *testing.T) {
 	tap.Is(Gamestage(&p), MIDGAME, "Gamestage: test finds opening")
 	p = FENToNewBoard("8/8/8/8/8/8/8/kK6 w KkqQ - 0 1")
 	tap.Is(Gamestage(&p), ENDGAME, "Gamestage: test finds endgame")
+
+}
+
+func TestMVVLVA(t *testing.T) {
+	var m Move
+	p := FENToNewBoard("r7/1P3k1r/4p1P1/5b2/Pp2p1BN/5Q2/4pKr1/8 w KkqQ - 0 1")
+	fmt.Println(&p)
+	// Qxp
+	m.from = F3
+	m.to = E2
+	val := MVVLVA(m, &p)
+	tap.Is(val < 0, true, "Qxp is net negative (not a worthwhile)")
+	tap.Is(val, -900+100, "Qxp is net negative")
+
+	tap.Is(BLIND(m, &p), false, "QxP is NOT BLIND")
+	// pxQ
+	m.to = F3
+	m.from = E4
+	val = MVVLVA(m, &p)
+	tap.Is(val > 0, true, "pxQ is net positive")
+	tap.Is(val, -100+900, "pxQ is net positive (a good capture)")
+	tap.Is(BLIND(m, &p), true, "PxQ is BLIND")
+	// enpassant capture
+	m.from = B4
+	m.to = A3
+	m.mtype = EPCAPTURE
+	val = MVVLVA(m, &p)
+	tap.Is(val, 0, "EP Capture ranks zero")
+	// promote + capture
+	m.from = B7
+	m.to = A8
+	m.mtype = PROMOTE
+	m.extra = QUEEN
+	val = MVVLVA(m, &p)
+	tap.Is(val, 900-100+500, "P Promote capture rook to QUEEN (a very good capture)")
+	// test Pxr > Bxp
+	m.from = G6
+	m.to = H7
+	m.mtype = CAPTURE
+	m.extra = 0
+	val = MVVLVA(m, &p)
+	// bxP
+	m.from = F5
+	m.to = G6
+	val2 := MVVLVA(m, &p)
+	tap.Is(val > val2, true, "Test Pxr > Bxp")
+	// Rxp
+	m.from = H7
+	m.to = G6
+	val = MVVLVA(m, &p)
+	tap.Is(val < val2, true, "Test Rxp < Bxp")
+	// g6xf5 == blind false
+	m.from = F3
+	m.to = E4
+	tap.Is(BLIND(m, &p), false, "F3xE4 QxP guarded by bishop F5 is NOT BLIND")
 
 }

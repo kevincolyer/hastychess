@@ -175,13 +175,13 @@ func MakeUserMove(m Move, p *Pos) (s string) {
 }
 
 func StopSearch() bool {
-// 	select {
-// 	case <-Control:
-// 		if !UCI() {
-// 			fmt.Print("# detected search stop\n")
-// 		} // open channel means we can keep searching
-// 		return true
-// 	default:
-		return false
-// 	}
+	// 	select {
+	// 	case <-Control:
+	// 		if !UCI() {
+	// 			fmt.Print("# detected search stop\n")
+	// 		} // open channel means we can keep searching
+	// 		return true
+	// 	default:
+	return false
+	// 	}
 }

@@ -1,0 +1,2 @@
+GOOS=linux GOARCH=arm go build -v -o hastychesspi
+scp hastychesspi pi@192.168.0.10:/home/pi

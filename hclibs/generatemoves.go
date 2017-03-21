@@ -267,7 +267,7 @@ func slider_moves(from int, p *Pos, dirs []int) (moves []Move) {
 	return
 }
 
-// Answers question: Am I in check? Side needs to be opponent for a true answer
+// Answers question: Am I in check? attacked? Side needs to be opponent for a true answer
 // does not do a sanity check that the square king refers to is filled OR which colour king is there!!!!
 // So looking at a white king from black's perspective will answer TRUE if a white piece "attacking"" is encountered!
 // use with caution!
@@ -334,6 +334,83 @@ func InCheck(king, side int, p *Pos) bool {
 	for _, m := range pawns {
 		if (king+m)&0x88 == 0 { // on board
 			if p.Board[king+m] == xP {
+				return true
+			}
+		}
+	}
+	return false // nothing threatens me!!! Muhahahaha!
+}
+
+// Is attacked - answers question is SQUARE attacked by SIDE
+func IsAttacked(square, side int, p *Pos) bool {
+	// ?????returns no, yes, stalemate, checkmate? looks from OTHER side perspective
+
+	// 	ssft := side << 3        //our sides shift
+	xssft := side << 3 //their sides shift
+	var piece, ray int
+	xK := KING + xssft
+	xB := BISHOP + xssft
+	xQ := QUEEN + xssft
+	xR := ROOK + xssft
+	xN := NIGHT + xssft
+	xP := PAWN + xssft
+
+	//sliders
+	for _, m := range BM { // Queen and Bishops and king
+		ray = square + m
+		if ray&0x88 == 0 && p.Board[ray] == xK {
+			return true
+		} // stop king sliding
+		for ray&0x88 == 0 { // until off board
+			piece = p.Board[ray]
+			if piece != EMPTY {
+				if piece == xB || piece == xQ {
+					return true
+				} // it's their queen or bishop
+				break // it is something else...
+			}
+			ray += m
+		}
+	}
+	for _, m := range RM { // Queen and rooks and king
+		ray = square + m
+		if ray&0x88 == 0 && p.Board[ray] == xK {
+			return true
+		} // stop king sliding
+		for (ray & 0x88) == 0 { // until off board
+			piece = p.Board[ray]
+			if piece != EMPTY {
+				if piece == xR || piece == xQ {
+					return true
+				} // their r or q
+				break // something else
+			}
+			ray += m
+		}
+	}
+	for _, m := range NM { // Kights
+		if (square+m)&0x88 == 0 { // off board check
+			piece = p.Board[square+m]
+			if piece != EMPTY {
+				if piece == xN {
+					return true
+				} // yes a knight
+			}
+		}
+	}
+	// is pawn above or below? W is below attacking up, B is above attacking down
+	// but we are searching from the square to the pawns...
+	var pawns [2]int
+	if side == WHITE {
+		pawns[0] = 17
+		pawns[1] = 15
+	} else {
+		pawns[0] = -17
+		pawns[1] = -15
+	}
+	for _, m := range pawns {
+		if (square+m)&0x88 == 0 { // on board
+			if p.Board[square+m] == xP {
 				return true
 			}
 		}

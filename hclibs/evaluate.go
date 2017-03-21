@@ -37,9 +37,49 @@ var csshash = map[int]int{
 
 // Most Valuable Victim, Least Valuable Agressor
 func MVVLVA(m Move, p *Pos) int {
-	return csshash[p.Board[m.to]] + csshash[m.extra] - csshash[p.Board[m.from]] // If promotion then m.extra has value of piece we promote to, otherwise it is 0
+	if m.mtype == EPCAPTURE {
+		return 0
+	}
+	if m.mtype == PROMOTE {
+		return -csshash[p.Board[m.from]] + csshash[m.extra] + csshash[p.Board[m.to]] // If promotion then m.extra has value of piece we promote to, otherwise it is 0
+	}
+	// standard capture
+	return -csshash[p.Board[m.from]] + csshash[p.Board[m.to]]
 	// 	return -csshash[p.Board[m.to]] + csshash[m.extra] + csshash[p.Board[m.from]] // If promotion then m.extra has value of piece we promote to, otherwise it is 0
 	//     return csshash[p.Board[m.to]]-csshash[p.Board[m.from]] // If promotion then m.extra has value of piece we promote to, otherwise it is 0
+}
+
+// Cargo culted from see.cpp of CPW engine
+/******************************************************************************
+*  This is not yet proper static exchange evaluation, but an approximation    *
+*  proposed by Harm Geert Mueller under the acronym BLIND (better, or lower   *
+*  if not defended. As the name indicates, it detects only obviously good     *
+*  captures, but it seems enough to improve move ordering.                    *
+******************************************************************************/
+func BLIND(m Move, p *Pos) bool {
+
+	/* captures by pawn do not lose material */
+	if PieceType(p.Board[m.from]) == PAWN {
+		return true
+	}
+
+	// BETTER
+	/* Captures "lower takes higher" (as well as BxN) are good by definition. */
+	if csshash[p.Board[m.to]] >= csshash[p.Board[m.from]]-50 {
+		return true
+	}
+
+	// LOWER if not guarded ie. QxP guarded by p
+	// 	/* Make the first capture, so that X-ray defender show up*/
+	from := p.Board[m.from]
+	p.Board[m.from] = EMPTY
+	/* Captures of undefended pieces are good by definition */
+	if !IsAttacked(m.to, 1-p.Side, p) { // need a better IsAttacked function.
+		p.Board[m.from] = from
+		return true
+	}
+	p.Board[m.from] = from
+	return false // of other captures we know nothing, Jon Snow!
 }
 
 func ClaudeShannonScore(p *Pos, totalmoves int) int {

@@ -101,6 +101,13 @@ QUIT:
 				hclibs.GameProtocol = hclibs.PROTOXBOARD
 				mainXboard()
 				return
+			// provide a way to change to xboard mode if use forgets to use commandline switch
+			case strings.HasPrefix(input, "uci"):
+				color.NoColor = true
+				hclibs.GameProtocol = hclibs.PROTOUCI
+				ucihelper()
+				mainIcs()
+				return
 
 			case strings.Contains(input, "move"):
 				fields := strings.Fields(input)
@@ -423,13 +430,21 @@ func xboardGo(p *hclibs.Pos) {
  *
  * lots of fun
  * See: http://wbec-ridderkerk.nl/html/UCIProtocol.html
- *
- ***************************************************************/
+ ****************************************************************/
+
+// little helper function ("hack") needed to switch from console to uci if command line switches are ignored
+func ucihelper() {
+	name := fmt.Sprintf("HastyChess v%v", hclibs.VERSION)
+	fmt.Println("id name " + name + "\nid author Kevin Colyer 2016")
+	// Send options to GUI here...
+	//
+	//
+	fmt.Println("uciok")
+}
 
 func mainIcs() {
 
-	// 	version := 0.99
-	name := fmt.Sprintf("HastyChess v%v", hclibs.VERSION)
+	//name := fmt.Sprintf("HastyChess v%v", hclibs.VERSION)
 	scanner := bufio.NewScanner(os.Stdin)
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
 
@@ -450,11 +465,12 @@ func mainIcs() {
 			switch {
 
 			case input == "uci":
-				fmt.Println("id name " + name + "\nid author Kevin Colyer 2016")
-				// Send options to GUI here...
+				//         fmt.Println("id name " + name + "\nid author Kevin Colyer 2016")
+				//         Send options to GUI here...
 				//
 				//
-				fmt.Println("uciok")
+				//         fmt.Println("uciok")
+				ucihelper()
 				continue
 
 			case strings.HasPrefix(input, "isready"):

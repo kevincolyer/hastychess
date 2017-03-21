@@ -218,24 +218,35 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int) int {
 		return alpha
 	}
 
-	// score them by Most Valuable Victim - Least Valuable Aggressor
+	// score by BLIND - Better or Lower If Not Defended
 	for i := range moves {
-		moves[i].score = MVVLVA(moves[i], p)
+		if BLIND(moves[i], p) {
+			moves[i].score = 100
+
+		}
 	}
+
+	// 	// score them by Most Valuable Victim - Least Valuable Aggressor
+	// 	for i := range moves {
+	// 		moves[i].score = MVVLVA(moves[i], p)
+	// 	}
+
 	// And order descending to provoke cuts
 	sort.Slice(moves, func(i, j int) bool { return moves[i].score > moves[j].score }) // by score type descending
 
 	// loop over all moves, searching deeper until no moves left and all is "quiet" - return this score...)
 	for _, m := range moves {
-		// adjust each score for delta cut offs and badmoves skipping to next each time
-		// delta - if not promotion and not endgame and is a low scoring capture then continue
-		// delta cut qnodes from 20M to 640,000 in one case!
+		//              No premature optimisation or cargo culting!
+
+		// 		// adjust each score for delta cut offs and badmoves skipping to next each time
+		// 		// delta - if not promotion and not endgame and is a low scoring capture then don't look deeper
+		// 		// delta cut qnodes from 20M to 640,000 in one case!
 		if m.mtype != PROMOTE && gamestage != ENDGAME && standpat+csshash[p.Board[m.to]]+200 < alpha {
 			continue
 		}
-
-		// badmoves - cut qnodes from 640,000 to 64,000
-		// capture by pawn is ok so skip
+		//
+		// 		// badmoves - cut qnodes from 640,000 to 64,000
+		// 		// capture by pawn is ok so skip
 		if p.Board[m.from]&7 == PAWN && m.mtype != PROMOTE {
 			continue
 		}
