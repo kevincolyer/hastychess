@@ -34,29 +34,29 @@ func main() {
 	hclibs.GameUseBook = *(flagUseBook)
 
 	hclibs.GameInit()
-
+        scanner := bufio.NewScanner(os.Stdin)
 	switch {
 	case *(flagXboard):
 		hclibs.GameProtocol = hclibs.PROTOXBOARD
 		color.NoColor = true
-		mainXboard()
+		mainXboard(scanner)
 	case *(flagIcs):
 		hclibs.GameProtocol = hclibs.PROTOUCI
 		color.NoColor = true
-		mainIcs()
+		mainIcs(scanner)
 	case *(flagUci):
 		hclibs.GameProtocol = hclibs.PROTOUCI
 		color.NoColor = true
-		mainIcs()
+		mainIcs(scanner)
 	case *(flagConsole):
 		hclibs.GameProtocol = hclibs.PROTOCONSOLE
-		mainConsole()
+		mainConsole(scanner)
 	}
 	fmt.Println("Bye and thanks for playing!")
 
 }
 
-func mainConsole() {
+func mainConsole(scanner *bufio.Scanner) {
 
 	var err string
 	var result string
@@ -70,7 +70,7 @@ func mainConsole() {
 	hiwhite := color.New(color.FgHiWhite).PrintfFunc()
 	hiwhite("Hello and welcome to HastyChess version %v\n\n", hclibs.VERSION)
 
-	scanner := bufio.NewScanner(os.Stdin)
+	
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
 	hclibs.GameOver = false
 	hclibs.GameDisplayOn = true
@@ -187,7 +187,7 @@ QUIT:
 	}
 }
 
-func mainXboard() {
+func mainXboard(*bufio.Scanner) {
 	// see https://www.gnu.org/software/xboard/engine-intf.html and XXX for protocol info
 	var err string
 	var result string
@@ -203,7 +203,7 @@ func mainXboard() {
 
 	fmt.Println("feature debug=1")
 
-	scanner := bufio.NewScanner(os.Stdin)
+// 	scanner := bufio.NewScanner(os.Stdin)
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
 	hclibs.GameOver = false
 	hclibs.GameDisplayOn = false
@@ -384,7 +384,7 @@ func xboardGo(p *hclibs.Pos) {
  *
  ***************************************************************/
 
-func mainIcs() {
+func mainIcs(*bufio.Scanner) {
 
 	// 	version := 0.99
 	name := fmt.Sprintf("HastyChess v%v", hclibs.VERSION)
