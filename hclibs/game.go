@@ -37,8 +37,9 @@ func Go(p *Pos) (res string, info string) {
 	StatUpperCuts = 0
 	StatLowerCuts = 0
 
-	StatTimeStart = 0 // not sure what type needed here
-	StatTimeElapsed = 0
+	StatTimeStart = time.Now()
+	// 	StatTimeElapsed = 0
+	GameStopSearch = false
 
 	move, success = ChooseBookMove(p)
 	if success == true {
@@ -175,6 +176,33 @@ func MakeUserMove(m Move, p *Pos) (s string) {
 }
 
 func StopSearch() bool {
+	// are we stopping?
+	if GameStopSearch {
+		return true
+	} // yes
+
+	// otherwise only check every 1000 nodes
+	if (StatNodes+StatQNodes)%1000 != 0 {
+		return false
+	}
+	// GameDurationToSearch ==0 means search forever
+	if GameDurationToSearch == 0 {
+		return false
+	}
+	// have we passed the time limit for searching?
+	if time.Since(StatTimeStart) < GameDurationToSearch {
+		return false
+	}
+	//         fmt.Println(time.Since(StatTimeStart))
+	//         fmt.Println(StatTimeStart)
+	//         fmt.Println(GameDurationToSearch)
+	// yes, so halt now and forever
+	if !UCI() {
+		fmt.Print("# Out of time to search...\n")
+	}
+	GameStopSearch = true
+	return true
+
 	// 	select {
 	// 	case <-Control:
 	// 		if !UCI() {
@@ -182,6 +210,6 @@ func StopSearch() bool {
 	// 		} // open channel means we can keep searching
 	// 		return true
 	// 	default:
-	return false
+	//return false
 	// 	}
 }

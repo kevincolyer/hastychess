@@ -34,7 +34,7 @@ func main() {
 	hclibs.GameUseBook = *(flagUseBook)
 
 	hclibs.GameInit()
-        scanner := bufio.NewScanner(os.Stdin)
+	scanner := bufio.NewScanner(os.Stdin)
 	switch {
 	case *(flagXboard):
 		hclibs.GameProtocol = hclibs.PROTOXBOARD
@@ -70,7 +70,6 @@ func mainConsole(scanner *bufio.Scanner) {
 	hiwhite := color.New(color.FgHiWhite).PrintfFunc()
 	hiwhite("Hello and welcome to HastyChess version %v\n\n", hclibs.VERSION)
 
-	
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
 	hclibs.GameOver = false
 	hclibs.GameDisplayOn = true
@@ -138,7 +137,7 @@ QUIT:
 				hclibs.GameOver = false
 				fmt.Println(&p)
 
-                        case strings.HasPrefix(input, "setboard"):
+			case strings.HasPrefix(input, "setboard"):
 				fields := strings.Fields(input)
 				if len(fields) == 1 {
 					fmt.Println("Error (no Fen): " + input)
@@ -214,7 +213,6 @@ QUIT:
 	}
 }
 
-
 func mainXboard(scanner *bufio.Scanner) {
 	// see https://www.gnu.org/software/xboard/engine-intf.html
 	// and http://hgm.nubati.net/newspecs.html for protocol info
@@ -233,7 +231,7 @@ func mainXboard(scanner *bufio.Scanner) {
 	fmt.Println("feature debug=1")
 	fmt.Printf("feature myname=\"%v\"\n", name)
 
-// 	scanner := bufio.NewScanner(os.Stdin)
+	// 	scanner := bufio.NewScanner(os.Stdin)
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
 	hclibs.GameOver = false
 	hclibs.GameDisplayOn = false
@@ -251,7 +249,7 @@ QUIT:
 
 			//input := strings.ToLower(strings.TrimSpace(scanner.Text()))
 			input := strings.TrimSpace(scanner.Text())
-                        //fmt.Pri(ntf("You said [%v]\n", input)
+			//fmt.Pri(ntf("You said [%v]\n", input)
 			switch {
 
 			case strings.HasPrefix(input, "accepted"):
@@ -458,8 +456,8 @@ func ucihelper() {
 
 func mainIcs(scanner *bufio.Scanner) {
 	// 	version := 0.99
-//	name := fmt.Sprintf("HastyChess v%v", hclibs.VERSION)
-// 	scanner := bufio.NewScanner(os.Stdin)
+	//	name := fmt.Sprintf("HastyChess v%v", hclibs.VERSION)
+	// 	scanner := bufio.NewScanner(os.Stdin)
 
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
 
@@ -474,7 +472,7 @@ func mainIcs(scanner *bufio.Scanner) {
 		for scanner.Scan() {
 
 			//input := strings.ToLower(strings.TrimSpace(scanner.Text()))
-                        input := strings.TrimSpace(scanner.Text())
+			input := strings.TrimSpace(scanner.Text())
 			fmt.Printf("# echo server sent (%v)\n", input)
 			// 			time.Sleep(time.Second)
 			//fmt.Pri(ntf("You said [%v]\n", input)
@@ -549,10 +547,10 @@ func ParsePositionInput(input string) (fen string, moves []hclibs.Move) {
 	ef := 2 // end fen = start of moves (if any)
 	f := strings.Split(input, " ")
 	// can ignore first field == "position"
-        if len(f)>2 && f[1] == "fen" {
-            fen= strings.Join(f[2:]," ")
-            return
-        }
+	if len(f) > 2 && f[1] == "fen" {
+		fen = strings.Join(f[2:], " ")
+		return
+	}
 	if f[1] == "startpos" {
 		fen = hclibs.STARTFEN
 	} else { //look ahead to moves - what is skipped is a fen
@@ -590,11 +588,24 @@ func uciGo(input string, p *hclibs.Pos) {
 	}()
 	// channel shut in "stop" command or at end of a search or at a time out...
 
-	// 	res,info:=hclibs.Go(p)
+	// expand imput string to parse sub verbs
+	f := strings.Split(input, " ")
+	if len(f) > 1 {
+		// DEPTH
+
+		// MOVETIME
+		if f[1] == "movetime" && len(f) >= 3 {
+			d, err := strconv.Atoi(f[2])
+			if err != nil {
+				fmt.Println("# Please specify a number")
+				d = 0
+			}
+			hclibs.GameDurationToSearch = time.Duration(d * 1000 * 1000) // milliseconds to nanoseconds
+		}
+		// INFINITE
+	}
+
 	res, _ := hclibs.Go(p)
-	// we need to massage the bestmove
-	// not sure what to do with all our stats info. Could try to send it too.
-	// 	fmt.Println(info+"best"+res)
 	fmt.Println(res)
 	return
 }

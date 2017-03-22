@@ -69,13 +69,16 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, starttime time.Time) (bestmo
 			if depth > 2 && count > 4 && move.score < bestscore+25 {
 				break
 			}
+
 			MakeMove(move, p)
-			val := -negamaxab(alpha, beta, depth, p, &childpv, enterquiesce) // need neg here as we switch sides in make move and evaluation happens relative to side
+			// need neg here as we switch sides in make move and evaluation happens relative to side
+			val := -negamaxab(alpha, beta, depth, p, &childpv, enterquiesce)
 			//fmt.Printf("# move %v scored %v\n", move, val)
 			UnMakeMove(move, p)
-			move.score = val // update for next round of sorting when iterative deepening. Do after unmakemove as the move score change is recorded in history array
+			// update for next round of sorting when iterative deepening. Do after unmakemove as the move score change is recorded in history array
+			move.score = val
 
-			if StatNodes > PREVENTEXPLOSION {
+			if StatNodes > PREVENTEXPLOSION || StopSearch() {
 				return
 			}
 
@@ -181,8 +184,11 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool) 
 		if alpha >= beta {
 			return beta
 		}
+		if StopSearch() {
+			return alpha
+		}
 	}
-	return max
+	return alpha
 }
 
 func SearchQuiesce(p *Pos, alpha, beta int, qdepth int) int {

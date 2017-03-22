@@ -3,6 +3,7 @@ package hclibs
 
 import "fmt"
 import "github.com/dustin/go-humanize"
+import "time"
 
 //////////////////////////////////////////////////////////////////////////
 type Move struct {
@@ -118,7 +119,7 @@ var StatQNodes int
 var StatUpperCuts int
 var StatLowerCuts int
 
-var StatTimeStart int // not sure what type needed here
+var StatTimeStart time.Time
 var StatTimeElapsed int
 
 var StatTtHits int
@@ -136,6 +137,8 @@ var GameUseBook bool
 var GameUseTt bool
 var GameUseStats bool
 var GamePostStats bool
+var GameStopSearch bool
+var GameDurationToSearch time.Duration
 
 type Proto int
 
