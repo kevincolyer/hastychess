@@ -29,12 +29,12 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, starttime time.Time) (bestmo
 
 	// 1a. check that we are not in checkmate or stalemate
 	if len(consider) == 0 {
-		if p.InCheck == p.Side {
-			bestscore = CHECKMATE
-		} else {
-			bestscore = STALEMATE
-		}
-		return
+		// 		if p.InCheck == p.Side {
+		// 			bestscore = -CHECKMATE
+		// 		} else {
+		// 			bestscore = -STALEMATE
+		// 		}
+		return // result routine works out what the win/lose/draw state is.
 	}
 
 	// 2. give a rough order
@@ -54,7 +54,7 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, starttime time.Time) (bestmo
 	// 3a. if iterative deepening loop from depth 2 to max depth in turn, sorting best score descending
 	//depth := maxdepth
 	globalpv.ply = p.Ply // syncronise new PV
-
+	searchdepth := 0
 	for depth := 2; depth < maxdepth+1; depth++ {
 		enterquiesce := (depth == maxdepth)
 		childpv := PV{ply: p.Ply + 1}
@@ -66,13 +66,13 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, starttime time.Time) (bestmo
 		for _, move := range consider {
 			//negamax sorts ENTIRE search space! With iterative deepening and some pruning we can cut the search space down.
 			// so if done shallow search and looked at about 4 moves already and current move looks no better than best break and search deeper...
-			if depth > 2 && count > 4 && move.score < bestscore+25 {
+			if depth > 2 && count > 3 && move.score < bestscore+25 {
 				break
 			}
 
 			MakeMove(move, p)
 			// need neg here as we switch sides in make move and evaluation happens relative to side
-			val := -negamaxab(alpha, beta, depth, p, &childpv, enterquiesce)
+			val := -negamaxab(alpha, beta, depth, p, &childpv, enterquiesce, searchdepth+1)
 			//fmt.Printf("# move %v scored %v\n", move, val)
 			UnMakeMove(move, p)
 			// update for next round of sorting when iterative deepening. Do after unmakemove as the move score change is recorded in history array
@@ -120,7 +120,8 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, starttime time.Time) (bestmo
 		}
 		elapsed := time.Since(starttime)
 		if UCI() {
-			fmt.Printf("info depth %v score cp %v time %v nodes %v nps %v pv %v\n", depth, bestscore, Milliseconds(elapsed), StatNodes+StatQNodes, int(float64(StatNodes+StatQNodes)/elapsed.Seconds()), globalpv)
+			// upperbound or lowerbound or cp for exact
+			fmt.Printf("info depth %v score upperbound %v time %v nodes %v nps %v pv %v\n", depth, bestscore, Milliseconds(elapsed), StatNodes+StatQNodes, int(float64(StatNodes+StatQNodes)/elapsed.Seconds()), globalpv)
 		}
 		if GamePostStats == true && GameProtocol == PROTOXBOARD {
 			// ply	Integer score Integer in centipawns.time in centiseconds (ex:1028 = 10.28 seconds). nodes Nodes searched. pv freeform
@@ -131,30 +132,33 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, starttime time.Time) (bestmo
 }
 
 // negamaxab search: searches between window so prunes the search tree.
-func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool) int {
+func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, searchdepth int) int {
 	// 	var childpv PV
 	childpv := PV{ply: p.Ply + 1}
+
+	// need to know if we are in mate before we return an eval at a leaf as this is the only way we check for mate!!! Not done in eval!
+	consider := GenerateAllMoves(p)
+	if len(consider) == 0 {
+		if p.InCheck != -1 {
+			//                         fmt.Println("found a checkmate")
+			return -CHECKMATE + searchdepth
+		}
+		//                 fmt.Println("found a stalemate")
+		return -STALEMATE + searchdepth // Unless we can't win because of lack of material then stalemate makes sense -- impliment this!
+	}
 
 	StatNodes++
 	if depth == 0 || StatNodes > PREVENTEXPLOSION {
 		parentpv.count = 0 // reset because we are at a leaf...
 
 		// Quiese?
-		if enterquiesce {
-			return SearchQuiesce(p, alpha, beta, QUIESCEDEPTH)
-		} else {
-			return Eval(p, 1, Gamestage(p))
+		if enterquiesce && StatNodes < PREVENTEXPLOSION {
+			// enter q search at this level - not deeper so no need to invert.
+			return SearchQuiesce(p, alpha, beta, QUIESCEDEPTH, searchdepth)
 		}
+		return Eval(p, 1, Gamestage(p))
 	}
 	max := NEGINF
-
-	consider := GenerateAllMoves(p)
-	if len(consider) == 0 {
-		if p.InCheck > 0 {
-			return CHECKMATE
-		}
-		return STALEMATE
-	}
 
 	OrderMoves(consider, p, parentpv)
 
@@ -166,7 +170,7 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool) 
 	for _, move := range consider {
 
 		MakeMove(move, p)
-		score := -negamaxab(-beta, -alpha, depth-1, p, &childpv, enterquiesce)
+		score := -negamaxab(-beta, -alpha, depth-1, p, &childpv, enterquiesce, searchdepth+1)
 		UnMakeMove(move, p)
 
 		if score > max {
@@ -191,7 +195,7 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool) 
 	return alpha
 }
 
-func SearchQuiesce(p *Pos, alpha, beta int, qdepth int) int {
+func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int) int {
 	gamestage := Gamestage(p)
 	StatQNodes++
 
@@ -259,7 +263,7 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int) int {
 
 		// search deeper until quiet
 		MakeMove(m, p)
-		val = -SearchQuiesce(p, -beta, -alpha, qdepth-1)
+		val = -SearchQuiesce(p, -beta, -alpha, qdepth-1, searchdepth+1)
 		UnMakeMove(m, p)
 
 		// adjust window

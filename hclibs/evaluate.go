@@ -174,14 +174,14 @@ func PstScore(p *Pos, gamestage int) (score int) { // actually Pst and material 
 	}
 	//      Consider check else where - the King score is used for pl move generation. giving this as the final score means it is check or nothing!
 	//      use killer or killer-mate?
-	// 	// opponent is in check
-	// 	if p.InCheck == Xside(p.Side) {
-	// 		score += CHECK
-	// 	}
-	// 	// i am in check :-(
-	// 	if p.InCheck == p.Side {
-	// 		score -= CHECK
-	// 	}
+	// opponent is in check
+	/*if p.InCheck == Xside(p.Side) {
+	          score += CHECK
+	  }
+	  // i am in check :-(
+	  if p.InCheck == p.Side {
+	          score -= CHECK
+	  }*/
 	return score
 }
 

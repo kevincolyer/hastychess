@@ -72,9 +72,9 @@ const ENDGAME = 2
 const QS = 0
 const KS = 1
 
-const CHECKMATE = -200000 // negative = avoid
-const STALEMATE = -50000  // negative = avoid
-const CHECK = 20000       // sign dictates who we award it to
+const CHECKMATE = 200000 //
+const STALEMATE = 50000  //
+const CHECK = 20000      // sign dictates who we award it to
 const NEGINF = -1000001
 const INF = -NEGINF
 const POSINF = INF

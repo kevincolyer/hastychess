@@ -1,7 +1,7 @@
 //Hastychess, Copyright (C) GPLv3, 2016, Kevin Colyer
 package hclibs
 
-// import "fmt"
+//import "fmt"
 
 func MakeMove(m Move, p *Pos) {
 
@@ -180,9 +180,9 @@ func MakeMove(m Move, p *Pos) {
 	// Evalute if opponant is in check
 	p.InCheck = -1
 	// have  just swapped sides so see if in check
-
-	if InCheck(p.King[side], side, p) {
-		p.InCheck = side
+	if InCheck(p.King[p.Side], p.Side, p) {
+		p.InCheck = p.Side
+		//fmt.Println("check!")
 	}
 
 	p.HalfMoveClock++

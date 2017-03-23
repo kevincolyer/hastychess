@@ -137,6 +137,43 @@ QUIT:
 				hclibs.GameOver = false
 				fmt.Println(&p)
 
+			// special commands that allow testing of certain positions
+			case strings.Contains(input, "kiwipete"):
+				p = hclibs.FENToNewBoard("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -")
+				hclibs.GameOver = false
+				fmt.Println(&p)
+
+			case strings.Contains(input, "pos4"):
+				p = hclibs.FENToNewBoard("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1")
+				hclibs.GameOver = false
+				fmt.Println(&p)
+
+			case strings.Contains(input, "pos5"):
+				p = hclibs.FENToNewBoard("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8")
+				hclibs.GameOver = false
+				fmt.Println(&p)
+
+			case strings.Contains(input, "end1"):
+				p = hclibs.FENToNewBoard("8/8/4k3/7p/8/8/2K5/R6Q w - - 0 1")
+				hclibs.GameOver = false
+				fmt.Println(&p)
+
+			case strings.Contains(input, "end2"):
+				p = hclibs.FENToNewBoard("8/8/8/1bn5/8/2k5/8/2K5 w - - 0 1")
+				hclibs.GameOver = false
+				fmt.Println(&p)
+
+			case strings.Contains(input, "end3"):
+				p = hclibs.FENToNewBoard("8/8/8/1k6/8/7Q/3R4/2K5 w - - 0 1")
+				hclibs.GameOver = false
+				fmt.Println(&p)
+
+			case strings.Contains(input, "end4"):
+				p = hclibs.FENToNewBoard("8/8/8/k7/8/7Q/1R6/2K5 w - - 0 1")
+				hclibs.GameOver = false
+				fmt.Println(&p)
+
+				// normal commands
 			case strings.HasPrefix(input, "setboard"):
 				fields := strings.Fields(input)
 				if len(fields) == 1 {
@@ -591,18 +628,42 @@ func uciGo(input string, p *hclibs.Pos) {
 	// expand imput string to parse sub verbs
 	f := strings.Split(input, " ")
 	if len(f) > 1 {
+		f = f[1:]
+	} // shift out "go"
+	// chomp settings two at a time
+	count := 0
+	for len(f) > 1 {
+		// double word commands
+		count = 2
 		// DEPTH
-
-		// MOVETIME
-		if f[1] == "movetime" && len(f) >= 3 {
-			d, err := strconv.Atoi(f[2])
+		if f[0] == "depth" && len(f) > 1 {
+			d, err := strconv.Atoi(f[1])
 			if err != nil {
-				fmt.Println("# Please specify a number")
+				fmt.Println("# setting depth: Please specify a number")
 				d = 0
+			} else {
+				hclibs.GameDepthSearch = d
+				fmt.Println("# set depth to ", d)
 			}
-			hclibs.GameDurationToSearch = time.Duration(d * 1000 * 1000) // milliseconds to nanoseconds
+
 		}
-		// INFINITE
+		// MOVETIME
+		if f[0] == "movetime" && len(f) > 1 {
+			d, err := strconv.Atoi(f[1])
+			if err != nil {
+				fmt.Println("# setting movetime: Please specify a number")
+				d = 0
+			} else {
+
+				fmt.Println("# set movetime to ", d)
+				hclibs.GameDurationToSearch = time.Duration(d * 1000 * 1000) // milliseconds to nanoseconds
+			}
+		}
+		// Single verb commands
+		// INFINITE (single)
+		// PONDER etc.
+		// 		fmt.Println("# comsuming tokens:",count)
+		f = f[count:] // consume tokens
 	}
 
 	res, _ := hclibs.Go(p)
