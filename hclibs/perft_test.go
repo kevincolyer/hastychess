@@ -33,6 +33,13 @@ func TestGenerateMoves(t *testing.T) {
 		if i == "" {
 			break
 		}
+
+		///////// COMMENT OUT THIS TO GET GREATER TESTING
+		if l > 1 {
+			break
+		}
+		/////////////////////////////////////////////////
+
 		items := strings.Split(i, ";")
 		fen := items[0]
 		j := len(items)

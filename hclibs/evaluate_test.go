@@ -65,17 +65,21 @@ func TestMVVLVA(t *testing.T) {
 	m.from = F3
 	m.to = E2
 	val := MVVLVA(m, &p)
-	tap.Is(val < 0, true, "Qxp is net negative (not a worthwhile)")
-	tap.Is(val, -900+100, "Qxp is net negative")
+	tap.Is(val < 0, true, "Qxp F3E2 is net negative (not a worthwhile)")
+	tap.Is(val, -900+100, "Qxp F3E2 is net negative")
+	tap.Is(BLIND(m, &p), true, "QxP F3E2 is BLIND as p is lower but not defended")
+	m.from = F3
+	m.to = E4
+	tap.Is(BLIND(m, &p), false, "QxP F3E4 is NOT BLIND")
 
-	tap.Is(BLIND(m, &p), false, "QxP is NOT BLIND")
 	// pxQ
-	m.to = F3
 	m.from = E4
+	m.to = F3
 	val = MVVLVA(m, &p)
 	tap.Is(val > 0, true, "pxQ is net positive")
 	tap.Is(val, -100+900, "pxQ is net positive (a good capture)")
-	tap.Is(BLIND(m, &p), true, "PxQ is BLIND")
+	tap.Is(BLIND(m, &p), true, "PxQ E4F3 is BLIND")
+
 	// enpassant capture
 	m.from = B4
 	m.to = A3

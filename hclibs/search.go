@@ -25,6 +25,9 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, starttime time.Time) (bestmo
 	   // 8. loop back to 4 or 3a.
 	   // 9. return best move and score
 	*/
+	// reset history table or age it?
+	// reset killers
+
 	consider := GenerateAllMoves(p)
 
 	// 1a. check that we are not in checkmate or stalemate
@@ -59,6 +62,11 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, starttime time.Time) (bestmo
 		enterquiesce := (depth == maxdepth)
 		childpv := PV{ply: p.Ply + 1}
 		count := 0
+
+		// from CPW: if only one move and searched 4 deep then move...
+		if len(consider) == 1 && depth > 4 {
+			break
+		}
 
 		if GameProtocol == PROTOCONSOLE {
 			fmt.Printf("# Searching to depth %v\n", depth)
@@ -136,17 +144,6 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 	// 	var childpv PV
 	childpv := PV{ply: p.Ply + 1}
 
-	// need to know if we are in mate before we return an eval at a leaf as this is the only way we check for mate!!! Not done in eval!
-	consider := GenerateAllMoves(p)
-	if len(consider) == 0 {
-		if p.InCheck != -1 {
-			//                         fmt.Println("found a checkmate")
-			return -CHECKMATE + searchdepth
-		}
-		//                 fmt.Println("found a stalemate")
-		return -STALEMATE + searchdepth // Unless we can't win because of lack of material then stalemate makes sense -- impliment this!
-	}
-
 	StatNodes++
 	if depth == 0 || StatNodes > PREVENTEXPLOSION {
 		parentpv.count = 0 // reset because we are at a leaf...
@@ -158,8 +155,18 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 		}
 		return Eval(p, 1, Gamestage(p))
 	}
-	max := NEGINF
+	// need to know if we are in mate before we return an eval at a leaf as this is the only way we check for mate!!! Not done in eval!
+	consider := GenerateAllMoves(p)
+	if len(consider) == 0 {
+		if p.InCheck != -1 {
+			//                         fmt.Println("found a checkmate")
+			return -CHECKMATE + searchdepth
+		}
+		//                 fmt.Println("found a stalemate")
+		return -STALEMATE + searchdepth // Unless we can't win because of lack of material then stalemate makes sense -- impliment this!
+	}
 
+	max := NEGINF
 	OrderMoves(consider, p, parentpv)
 
 	// reset PV and choose the
@@ -186,6 +193,8 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 			alpha = max
 		}
 		if alpha >= beta {
+			// set killers here
+			// history table here...
 			return beta
 		}
 		if StopSearch() {
@@ -287,16 +296,47 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int) int {
 // 6.Non-captures sorted by history heuristic and that like
 // 7.Losing captures (* but see below
 
+/*
+SORT_KING 400 // check
+SORT_HASH 200 // hash move
+SORT_CAPT 100 // capture
+SORT_PROM  90 // promote
+SORT_KILL  80*/ // killer move
+
+// usr blind here to put bad captures (blind==0) back of the queue after ordinary captures
+
 func OrderMoves(moves []Move, p *Pos, pv *PV) bool {
 	// order by move type (capture and promotion first down to quiet moves)
 	// 	plydelta := p.Ply - pv.ply
 	//         if plydelta<0 {panic("this should not be!")}
 	for i := range moves {
-		moves[i].score = moves[i].mtype + p.Board[moves[i].from]*2 // type of move + which piece is moving
+
+		// boost or lower captures depending on good or bad
+		// boost good captures and punish bad captures
+		if moves[i].mtype == CAPTURE {
+			if BLIND(moves[i], p) {
+				moves[i].score = p.Board[moves[i].from]*2 + GOODCAPTURE
+			} else {
+				moves[i].score = p.Board[moves[i].from]*2 + BADCAPTURE
+			}
+			if PieceType(moves[i].to) != PieceType(moves[i].from) {
+				moves[i].score = p.Board[moves[i].from]*2 + CAPTURE
+			}
+		}
+
+		if moves[i].mtype == EPCAPTURE || moves[i].mtype == O_O_O || moves[i].mtype == O_O {
+			moves[i].score = moves[i].mtype + p.Board[moves[i].from]*2 // type of move + which piece is moving
+		}
+
+		if moves[i].mtype == QUIET || moves[i].mtype == ENPASSANT {
+			//for now
+			moves[i].score = QUIET
+			// boost history
+			// boost killers
+			// boost check?????
+		}
 
 		// boost PV to top here
-		// if moves[i].from == pv.moves[plydelta].from && moves[i].to == pv.moves[plydelta].to && moves[i].extra == pv.moves[plydelta].extra {
-
 		// cycle through pv to boost all moves in current move list to top
 		for _, m := range pv.moves {
 
@@ -309,3 +349,18 @@ func OrderMoves(moves []Move, p *Pos, pv *PV) bool {
 	sort.Slice(moves, func(i, j int) bool { return moves[i].score > moves[j].score }) // descending
 	return true
 }
+
+/*
+BADCAPTURE c
+QUIET     *   sorted by history not piecevalue
+ENPASSANT *
+KILLERS   c
+O_O_O     *
+O_O       *
+EPCAPTURE *
+CAPTURE   * (equal)
+GOODCAPTURE c
+PROMOTE   *
+PVBONUS   c
+CHECK     c
+*/

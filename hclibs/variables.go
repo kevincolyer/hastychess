@@ -81,7 +81,7 @@ func (pv PV) String() (res string) {
 	} else {
 		res = fmt.Sprintf("%v", pv.moves[:pv.count-1])
 	}
-	res = res[1 : len(res)-2]
+	res = res[1 : len(res)-1]
 	return
 }
 
