@@ -590,7 +590,9 @@ func ParsePositionInput(input string) (fen string, moves []hclibs.Move) {
 	}
 	if f[1] == "startpos" {
 		fen = hclibs.STARTFEN
-	} else { //look ahead to moves - what is skipped is a fen
+	} else {
+		// assume command is "moves"
+		//look ahead to moves - what is skipped is a fen
 		for ; ef < len(f); ef++ {
 			if f[ef] == "moves" {
 				break

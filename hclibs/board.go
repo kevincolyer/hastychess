@@ -7,8 +7,13 @@ import "os"
 import "strconv"
 import "math/rand"
 import "github.com/fatih/color"
+import "time"
 
 // import "math"
+
+func init() {
+	rand.Seed(time.Now().UTC().UnixNano()) // a really HOT cup of strong tea
+}
 
 func Die(e string) {
 	fmt.Println(e)
