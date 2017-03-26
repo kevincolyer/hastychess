@@ -295,7 +295,7 @@ QUIT:
 			case strings.HasPrefix(input, "#"):
 				break next
 
-			case strings.Contains(input, "xboard"):
+			case strings.HasPrefix(input, "xboard"):
 				break next
 
 			case strings.Contains(input, "protover 2"):
@@ -316,7 +316,7 @@ QUIT:
 				break QUIT
 
 			case strings.HasPrefix(input, "result"):
-				hclibs.GameOver = false
+				hclibs.GameOver = true
 				break next
 
 			case strings.HasPrefix(input, "usermove"), strings.HasPrefix(input, "move"):
