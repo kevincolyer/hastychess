@@ -272,7 +272,7 @@ func mainXboard(scanner *bufio.Scanner) {
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
 	hclibs.GameOver = false
 	hclibs.GameDisplayOn = false
-	hclibs.GameDepthSearch = 4
+	// 	hclibs.GameDepthSearch = 4
 	hclibs.GameForce = false
 	if hclibs.GameDisplayOn {
 		fmt.Println(&p)
@@ -293,16 +293,9 @@ QUIT:
 				break next
 
 			case strings.HasPrefix(input, "#"):
-				fmt.Println()
-				break next
-
-				// ignore when xboard tells me I have lost
-			case strings.HasPrefix(input, "result"):
-				fmt.Println()
 				break next
 
 			case strings.Contains(input, "xboard"):
-				fmt.Println()
 				break next
 
 			case strings.Contains(input, "protover 2"):
@@ -321,6 +314,10 @@ QUIT:
 			case strings.Contains(input, "quit"):
 				quit = true
 				break QUIT
+
+			case strings.HasPrefix(input, "result"):
+				hclibs.GameOver = false
+				break next
 
 			case strings.HasPrefix(input, "usermove"), strings.HasPrefix(input, "move"):
 				fields := strings.Fields(input)
@@ -503,7 +500,7 @@ func mainIcs(scanner *bufio.Scanner) {
 
 	hclibs.GameOver = false
 	hclibs.GameDisplayOn = false
-	hclibs.GameDepthSearch = 4
+	hclibs.GameDepthSearch = 8
 	hclibs.GameForce = false
 	// main input loop
 	for {
