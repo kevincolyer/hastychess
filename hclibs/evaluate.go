@@ -16,12 +16,12 @@ package hclibs
 // M = Mobility (the number of legal moves)
 
 func Eval(p *Pos, nummoves, gamestage int) int {
-	return PstScore(p, gamestage)
+	return PstScore(p, nummoves, gamestage)
 	//		return ClaudeShannonScore(p, nummoves)
 }
 
 func EvalQ(p *Pos, nummoves, gamestage int) int {
-	return PstScore(p, gamestage) - 1 // -1 is so we don't trip the q search beta giving same score as normal eval.
+	return PstScore(p, nummoves, gamestage) - 1 // -1 is so we don't trip the q search beta giving same score as normal eval.
 	// 	return ClaudeShannonScore(p, nummoves)
 }
 
@@ -82,40 +82,27 @@ func BLIND(m Move, p *Pos) bool {
 	return false // of other captures we know nothing, Jon Snow!
 }
 
-func ClaudeShannonScore(p *Pos, totalmoves int) int {
-	side := p.Side
-	// 	xside := Xside(side)
-	// 	incheck := p.InCheck
-	// 	enpassant := p.EnPassant
-	score := 0
-	var piece, up, dd, ss int
-	// K-K'
-	// 	if incheck == xside {
-	// 		score += CHECK
-	// 	}
-	// 	if incheck == side {
-	// 		score -= CHECK
-	// 	}
-	// Material valuation
-	// could add bonuses at different game stages...
+// TODO test coverage here!!!!
+func PstScore(p *Pos, nummoves, gamestage int) (score int) { // actually Pst and material score
+	var piece, up, dd, ss, pawnscore int
+	//         var piece int
 	for _, i := range GRID {
 		piece = p.Board[i]
-		if piece == EMPTY {
-			continue
+		if piece != EMPTY {
+			if Side(piece) == p.Side {
+				score += (csshash[piece] + Pst[gamestage][piece][i])
+			} else {
+				score -= (csshash[piece] + Pst[gamestage][piece][i])
+			}
 		}
 
-		// add the piece value if ours - subtract if theirs
-		if Side(piece) == side {
-			score += csshash[piece]
-		} else {
-			score -= csshash[piece]
-		}
-
+		// Pawn mobility additions
 		if piece&0x7 != PAWN {
 			continue
 		}
 
-		// Pawn mobility additions
+		// pawn mobility or blockage
+		pawnscore = 0
 		if Side(piece) == WHITE {
 			up = NORTH
 		} else {
@@ -128,50 +115,49 @@ func ClaudeShannonScore(p *Pos, totalmoves int) int {
 		// start from this pawn and count upwards
 		// if still on board...
 		for Onboard(dd) {
+			// one of our pawns
 			if p.Board[dd] == piece {
-				score -= 50
-			} // one of our pawns
+				pawnscore -= 50
+			}
 			dd += up
 		}
 
 		//ss - blocked PAWNS TODO blocked by what?
-		if Onboard(ss) && EMPTY != p.Board[ss] && piece != p.Board[ss] {
-			score -= 50
-		} // blocked by opposite
+		if Onboard(ss) && p.Board[ss] != EMPTY && p.Board[ss] != piece {
+			pawnscore -= 50
+		}
 		//ii - isolated
 		for _, j := range QM {
-			if Onboard(i+j) && piece == p.Board[i+j] {
-				score -= 50
+			if Onboard(i+j) && p.Board[i+j] == piece {
+				// found a fellow pawn so not isolated
 				break
 			}
+			// isolated penalty
+			pawnscore -= 50
+		}
+		if Side(piece) == p.Side {
+			score += pawnscore
+		} else {
+			score -= pawnscore
 		}
 	}
 
-	// REMOVING MOBILITY FROM EVALUATION AS IT DOES NOT OFFER ENOUGH COMPARED TO THE ABOVE. THERE ARE OTHER FACTORS TOO THAT SHOULD BE ADDED FOR A GOOD EVALUATOR. COME BACK TO THIS AT SOME POINT
-	// 	p.Side = xside
-	// 	p.InCheck = -1
-	// 	p.EnPassant = 0
-	// 	score += (totalmoves - len(GenerateAllMoves(p))) * 10 // M-M' // just a rough estimate of how many moves...
-	// 	p.EnPassant = enpassant
-	// 	p.InCheck = incheck // restore
-	// 	p.Side = side
-	return score
-}
+	// M-M'
+	// just a rough estimate of how many moves...
+	/*	if nummoves>0 {
+		    incheck:=p.InCheck
+		    enpassant:=p.EnPassant
+		    p.InCheck=-1
+		    p.EnPassant = 0
+		    p.Side=1-p.Side
 
-// TODO test coverage here!!!!
-func PstScore(p *Pos, gamestage int) (score int) { // actually Pst and material score
+		    score += (nummoves - len(GenerateAllMoves(p))) * 10
 
-	piece := 0
-	for _, i := range GRID {
-		piece = p.Board[i]
-		if piece != EMPTY {
-			if Side(piece) == p.Side {
-				score += (csshash[piece] + Pst[gamestage][piece][i])
-			} else {
-				score -= (csshash[piece] + Pst[gamestage][piece][i])
-			}
+		    p.Side=1-p.Side
+		    p.EnPassant=enpassant
+		    p.InCheck=incheck
 		}
-	}
+	*/
 	//      Consider check else where - the King score is used for pl move generation. giving this as the final score means it is check or nothing!
 	//      use killer or killer-mate?
 	// opponent is in check

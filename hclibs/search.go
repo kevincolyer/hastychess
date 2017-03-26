@@ -93,16 +93,14 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, starttime time.Time) (bestmo
 			if val >= bestscore {
 				bestmove = move
 				bestscore = val
-				//fmt.Printf("# found bestscore %v move %v\n", bestscore, bestmove)
 				//update PV (stack based)
 				globalpv.moves[0] = bestmove
 				copy(globalpv.moves[1:], childpv.moves[:])
 				globalpv.count = childpv.count + 1
-				//                         if val==bestscore {fmt.Printf("# depth: %v score: %v pv: %v\n", depth,bestscore,globalpv)}
+
 				if GameProtocol == PROTOCONSOLE {
 					fmt.Printf("# depth: %v score: %v pv: %v\n", depth, bestscore, globalpv)
 				}
-
 			}
 			if val > alpha {
 				alpha = val
@@ -117,15 +115,16 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, starttime time.Time) (bestmo
 		// re-sort for next loop when iterative deepening
 
 		sort.Slice(consider, func(i, j int) bool { return consider[i].score > consider[j].score }) // by score type descending
-		if bestscore < alpha || bestscore > beta {
-			alpha = NEGINF
-			beta = POSINF
-			depth-- // search again but deeper
-		} else {
-
-			alpha = consider[0].score - 50
-			beta = consider[0].score + 50
-		}
+		//if bestscore <= alpha -50 || bestscore >= beta+50 {
+		alpha = NEGINF
+		beta = POSINF
+		//	depth-- // search again but deeper
+		//	fmt.Println("# Re-run this search but with a wide window")
+		// 		} else {
+		//
+		// 			alpha = consider[0].score - 50
+		// 			beta = consider[0].score + 50
+		// 		}
 		elapsed := time.Since(starttime)
 		if UCI() {
 			// upperbound or lowerbound or cp for exact
@@ -153,9 +152,10 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 			// enter q search at this level - not deeper so no need to invert.
 			return SearchQuiesce(p, alpha, beta, QUIESCEDEPTH, searchdepth)
 		}
-		return Eval(p, 1, Gamestage(p))
+		return Eval(p, 0, Gamestage(p))
 	}
 	// need to know if we are in mate before we return an eval at a leaf as this is the only way we check for mate!!! Not done in eval!
+
 	consider := GenerateAllMoves(p)
 	if len(consider) == 0 {
 		if p.InCheck != -1 {
@@ -165,14 +165,13 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 		//                 fmt.Println("found a stalemate")
 		return -STALEMATE + searchdepth // Unless we can't win because of lack of material then stalemate makes sense -- impliment this!
 	}
-
 	max := NEGINF
 	OrderMoves(consider, p, parentpv)
 
 	// reset PV and choose the
 	bestmove := consider[0]
-	parentpv.moves[0] = bestmove // in case we don't find anything better set first move to return
-	parentpv.count = 1
+	childpv.moves[0] = bestmove // in case we don't find anything better set first move to return
+	childpv.count = 1
 
 	for _, move := range consider {
 
@@ -209,7 +208,7 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int) int {
 	StatQNodes++
 
 	// need a standpat score
-	val := EvalQ(p, 1, gamestage) // custom evaluator here for QUIESENCE TODO
+	val := EvalQ(p, 0, gamestage) // custom evaluator here for QUIESENCE TODO
 	standpat := val
 
 	// is move worse than previous worst?
@@ -238,17 +237,17 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int) int {
 	}
 
 	// score by BLIND - Better or Lower If Not Defended
-	for i := range moves {
-		if BLIND(moves[i], p) {
-			moves[i].score = 100
-
-		}
-	}
-
-	// 	// score them by Most Valuable Victim - Least Valuable Aggressor
 	// 	for i := range moves {
-	// 		moves[i].score = MVVLVA(moves[i], p)
+	// 		if BLIND(moves[i], p) {
+	// 			moves[i].score = 100
+	//
+	// 		}
 	// 	}
+
+	// score them by Most Valuable Victim - Least Valuable Aggressor
+	for i := range moves {
+		moves[i].score = MVVLVA(moves[i], p)
+	}
 
 	// And order descending to provoke cuts
 	sort.Slice(moves, func(i, j int) bool { return moves[i].score > moves[j].score }) // by score type descending
@@ -266,7 +265,7 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int) int {
 		//
 		// 		// badmoves - cut qnodes from 640,000 to 64,000
 		// 		// capture by pawn is ok so skip
-		if p.Board[m.from]&7 == PAWN && m.mtype != PROMOTE {
+		if PieceType(p.Board[m.from]) == PAWN && m.mtype != PROMOTE {
 			continue
 		}
 

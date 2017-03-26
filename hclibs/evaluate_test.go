@@ -10,28 +10,32 @@ func TestPstScore(t *testing.T) {
 	p := FENToNewBoard(STARTFEN)
 	//tap.Is("Aaa", "Aaa", "Is")
 	// 	_, text := ParseUserMove("4a4a", &p)
-	tap.Is(PstScore(&p, Gamestage(&p)), 0, "New board stating evaluation is balanced, hence 0")
+	tap.Is(PstScore(&p, 0, Gamestage(&p)), 0, "New board stating evaluation is balanced, hence 0")
 	p.Board[A2] = EMPTY
-	tap.Is(PstScore(&p, Gamestage(&p)), -105, "New board less one pawn (was on a +5 sq) = -105")
+	tap.Is(PstScore(&p, 0, Gamestage(&p)), -55, "New board less one pawn (was on a +5 sq) = -55 (with dd/ss/ii)")
 	// restore
-	p.Board[A2] = PAWN
-	// test restored.
-	tap.Is(PstScore(&p, Gamestage(&p)), 0, "New board stating evaluation is balanced, hence 0")
+	p.Side = 1 - p.Side
+	tap.Is(PstScore(&p, 0, Gamestage(&p)), 55, "Test symetrical evaluation (as black now)")
+	p.Side = 1 - p.Side
 
-	MakeMove(Move{from: A2, to: A4}, &p)
-	p.Side = WHITE
-	tap.Is(PstScore(&p, Gamestage(&p)), -5, "New board a2->a4 gives -5 for evaluation of white")
-	p.Side = BLACK
-	tap.Is(PstScore(&p, Gamestage(&p)), 5, "New board a2->a4 gives -5 for evaluation of black")
+	// 	p.Board[A2] = PAWN
+	// 	// test restored.
+	// 	tap.Is(PstScore(&p, 0, Gamestage(&p)), 0, "New board stating evaluation is balanced, hence 0")
+	//
+	// 	MakeMove(Move{from: A2, to: A4}, &p)
+	// 	p.Side = WHITE
+	// 	tap.Is(PstScore(&p, 0, Gamestage(&p)), -5, "New board a2->a4 gives -5 for evaluation of white")
+	// 	p.Side = BLACK
+	// 	tap.Is(PstScore(&p, 0, Gamestage(&p)), 5, "New board a2->a4 gives -5 for evaluation of black")
 
 	p = FENToNewBoard("8/5k2/8/8/8/8/5K2/8 w KkqQ - 0 1") // symetrical for test
-	tap.Is(PstScore(&p, Gamestage(&p)), 0, "Kings in end game zero sum")
+	tap.Is(PstScore(&p, 0, Gamestage(&p)), 0, "Kings in end game zero sum")
 
 	MakeMove(Move{from: F2, to: F1}, &p)
 	p.Side = WHITE
 	tap.Is(Pst[ENDGAME][KING][F1], -30, "is PSQ f1 for king end game what I expect?")
 	tap.Is(Pst[ENDGAME][KING][F2], 0, "is PSQ f2 for king end game what I expect?")
-	tap.Is(PstScore(&p, Gamestage(&p)), -30, "Kings in end game = -30")
+	tap.Is(PstScore(&p, 0, Gamestage(&p)), -30, "Kings in end game = -30")
 
 	// test check
 	// 	p = FENToNewBoard("8/5k2/8/8/8/5Q2/5K2/8 w KkqQ - 0 1") // symetrical for test
