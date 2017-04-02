@@ -73,7 +73,7 @@ func mainConsole(scanner *bufio.Scanner) {
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
 	hclibs.GameOver = false
 	hclibs.GameDisplayOn = true
-	hclibs.GameDepthSearch = 4
+	hclibs.GameDepthSearch = 8
 	hclibs.GameForce = false
 	if hclibs.GameDisplayOn {
 		fmt.Println(&p)
@@ -272,7 +272,7 @@ func mainXboard(scanner *bufio.Scanner) {
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
 	hclibs.GameOver = false
 	hclibs.GameDisplayOn = false
-	// 	hclibs.GameDepthSearch = 4
+	hclibs.GameDepthSearch = 8
 	hclibs.GameForce = false
 	if hclibs.GameDisplayOn {
 		fmt.Println(&p)
@@ -288,9 +288,6 @@ QUIT:
 			input := strings.TrimSpace(scanner.Text())
 			//fmt.Pri(ntf("You said [%v]\n", input)
 			switch {
-
-			case strings.HasPrefix(input, "accepted"):
-				break next
 
 			case strings.HasPrefix(input, "#"):
 				break next
