@@ -11,11 +11,11 @@ const WHITE = 0
 const STARTFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 // board and piece numbering suggestions from https://cis.uab.edu/hyatt/boardrep.html
-const PREVENTEXPLOSION = 2000000 // 2mil nodes to made debugging easier!!! TODO remove!
+const PREVENTEXPLOSION = 4000000 // 2mil nodes to made debugging easier!!! TODO remove!
 const MAXSEARCHDEPTH = 8         // for manual play - easier to know what you have done wrong
 const MAXSEARCHDEPTHX = 8        // for xboard
 const QUIESCEDEPTH = 10
-const TTMAXSIZE = 20 // (is 2^20=1048576 entries when over this oldest tt nodes are culled back so tt is this size
+const TTMAXSIZE = 63 //
 const TTHASH = 1
 const QSTTHASH = 2
 const PTTHASH = 3
@@ -82,9 +82,13 @@ const NEGINF = -1000001
 const INF = -NEGINF
 const POSINF = INF
 
+const TTUNUSED = 0
 const TTEXACT = 1
 const TTLOWER = 2
+const TTALPHA = TTLOWER
 const TTUPPER = 3
+const TTBETA = TTUPPER
+const TTPV = 4
 
 // const A1  = 0
 // const A8  = 112

@@ -99,12 +99,20 @@ func (a bymovescore) Less(i, j int) bool { return a[i].score > a[j].score } // >
 type TtData struct {
 	score    int // score found
 	ply      int // ply first discovered at (to avoid loops)
-	nodetype int // TTEXACT TTUPPER OR TTLOWER
+	nodetype int // TTEXACT TTUPPER OR TTLOWER or TTUNUSED
 	move     Move
-	age      int64
+	gamma    int
+	//	age      int64
 }
 
-var tt map[string]TtData
+func (i TtData) IsInUse() bool {
+	if i.nodetype != TTUNUSED {
+		return true
+	}
+	return false
+}
+
+// var tt map[string]TtData
 
 ////////////////////////////////////////////////////////////////////////
 // type Book struct {
@@ -122,6 +130,7 @@ var StatLowerCuts int
 var StatTimeStart time.Time
 var StatTimeElapsed int
 
+var StatTtPeeks int
 var StatTtHits int
 var StatTtWrites int
 var StatTtUpdates int

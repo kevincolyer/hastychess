@@ -18,8 +18,12 @@ type zhashstruct struct {
 var Zhash zhashstruct
 
 // how do I declare an array but set its size later?
+// don't bother! Slices are OK.
 var tthash []TtData
 var qstthash []TtData
+
+type TT []TtData
+
 var hashnext Hash = 1
 
 func Rand64Reset() {
@@ -52,46 +56,37 @@ func init() {
 
 //type TTZKey uint64
 
-func TTPeek(key Hash, hashtable int) (data TtData, err bool) {
-	err = false
+func (tt TT) Peek(key Hash) (data TtData) {
 	key = key & Zhash.mask
-	switch hashtable {
-	case TTHASH:
-		if tthash[key] == data {
-			return
-		}
-		data = tthash[key]
-		err = true
-		return
-		//QSTTHASH
-		//PTTHASH
-		//ETTHASH
+	StatTtPeeks++
+	return tt[key] // a nil entry is means never considered
+}
+
+// NOTE THIS IS NOT THREAD SAFE!!! THIS COULD BE A BIG DEAL!
+func (tt TT) Poke(key Hash, data TtData) {
+	StatTtWrites++
+	key = key & Zhash.mask
+	tt[key] = data
+	return
+}
+
+// An attempt at a bit of a better thread safe model.
+func (tt TT) SafePoke(key Hash, data TtData) {
+	StatTtWrites++
+	key = key & Zhash.mask
+	tt[key] = data
+	// try to clobber another thread. Probably doesn't matter so much.
+	if tt[key] != data {
+		tt[key] = data
 	}
 	return
 }
 
-func TTPoke(key Hash, hashtable int, data TtData) {
-	key = key & Zhash.mask
-	switch hashtable {
-	case TTHASH:
-		tthash[key] = data
-		return
-		//QSTTHASH
-		//PTTHASH
-		//ETTHASH
+func (tt TT) Clear() {
+	for i := range tt {
+		tt[i] = TtData{}
 	}
 	return
-}
-
-func TTClear(hashtable int) bool {
-	switch hashtable {
-	case TTHASH:
-		for i := range tthash {
-			tthash[i] = TtData{}
-		}
-		return true
-	}
-	return false
 }
 
 // make TtKey - scan board for pieces, xor in, xor in castling states, xor in side to move and EP
@@ -125,12 +120,11 @@ func TTZKey(p *Pos) (z Hash) {
 
 // initialises the hash to the size that the engine will set. size is given in human terms of number of entries e.g. 32M=32 million byte / 8
 // this needs to always be done only once. ics engine sends a command to do this. Xboard also. Conoles we keep it set at
-func InitHashSize(size int) (e error) {
+func (tt TT) InitHashSize(size uint64) uint64 {
 	size = size * 1024 * 1024 / 8
 
 	if size > (1<<TTMAXSIZE) || size <= 0 {
-		e = fmt.Errorf("size %d is larger than max allowd %d (or < 1)", size, 1<<TTMAXSIZE)
-		return
+		panic(fmt.Errorf("size %d is larger than max allowd (or < 1)", size))
 	}
 	var power uint8 = 0
 	for size > 0 {
@@ -139,7 +133,5 @@ func InitHashSize(size int) (e error) {
 	}
 	size = 1 << (power - 1)
 	Zhash.mask = Hash(size - 1)
-	tthash = make([]TtData, size, size)
-	//	qstthash = make ([]TtData, size,size)
-	return
+	return size
 }

@@ -28,6 +28,8 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, starttime time.Time) (bestmo
 	// reset history table or age it?
 	// reset killers
 
+	// TODO clear tt table here?
+
 	consider := GenerateAllMoves(p)
 
 	// 1a. check that we are not in checkmate or stalemate
@@ -152,7 +154,21 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 			// enter q search at this level - not deeper so no need to invert.
 			return SearchQuiesce(p, alpha, beta, QUIESCEDEPTH, searchdepth)
 		}
-		return Eval(p, 0, Gamestage(p))
+		if GameUseTt == false {
+			return Eval(p, 0, Gamestage(p))
+		}
+
+		// Use TT if we are allowed
+		ttentry := ttable.Peek(p.Hash)
+		if ttentry.IsInUse() {
+			StatTtHits++
+			return ttentry.score
+		}
+
+		// store exact eval in TT data.
+		eval := Eval(p, 0, Gamestage(p))
+		pokeTt(p.Hash, TtData{score: eval, nodetype: TTEXACT, ply: depth})
+		return eval
 	}
 	// need to know if we are in mate before we return an eval at a leaf as this is the only way we check for mate!!! Not done in eval!
 
@@ -182,6 +198,7 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 		if score > max {
 			max = score
 			bestmove = move
+			pokeTt(p.Hash, TtData{score: max, nodetype: TTPV, move: move, ply: depth})
 
 			// update PV on stack
 			parentpv.moves[0] = bestmove
@@ -190,29 +207,53 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 		}
 		if max > alpha {
 			alpha = max
+			pokeTt(p.Hash, TtData{score: max, nodetype: TTALPHA, move: move, ply: depth})
 		}
 		if alpha >= beta {
 			// set killers here
 			// history table here...
+			pokeTt(p.Hash, TtData{score: beta, nodetype: TTBETA, move: move, ply: depth})
 			return beta
 		}
 		if StopSearch() {
 			return alpha
 		}
-	}
+	} // end loop
+
+	// return alpha
+	pokeTt(p.Hash, TtData{score: alpha, nodetype: TTALPHA, move: bestmove, ply: depth})
 	return alpha
 }
 
+func pokeTt(h Hash, entry TtData) {
+	if GameUseTt {
+		ttable.SafePoke(h, entry)
+	}
+}
+
 func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int) int {
+	var val int
 	gamestage := Gamestage(p)
 	StatQNodes++
 
 	// need a standpat score
-	val := EvalQ(p, 0, gamestage) // custom evaluator here for QUIESENCE TODO
+	if GameUseTt == false {
+		val = EvalQ(p, 0, Gamestage(p))
+	} else {
+		// Use TT if we are allowed
+		ttentry := ttable.Peek(p.Hash)
+		if ttentry.IsInUse() {
+			StatTtHits++
+			val = ttentry.score
+		} else {
+			val = EvalQ(p, 0, gamestage) // custom evaluator here for QUIESENCE TODO
+		}
+	}
 	standpat := val
 
 	// is move worse than previous worst?
 	if val >= beta {
+		pokeTt(p.Hash, TtData{score: beta, nodetype: TTBETA, ply: qdepth})
 		return beta
 	}
 	// is move less good than previous best?
@@ -224,6 +265,7 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int) int {
 	// to prevent search explosion while testing TODO remove!
 	// when at end of search
 	// someone signals we should stop
+	pokeTt(p.Hash, TtData{score: alpha, nodetype: TTALPHA, ply: qdepth})
 	if StatQNodes > PREVENTEXPLOSION/4 || qdepth == 0 || StopSearch() {
 		// 		fmt.Println("# Qnode explosion - bottling!")
 		return alpha
@@ -277,11 +319,13 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int) int {
 		// adjust window
 		if val >= alpha {
 			if val > beta {
+				pokeTt(p.Hash, TtData{score: beta, nodetype: TTBETA, ply: qdepth})
 				return beta
 			}
 			alpha = val
 		}
-	}
+	} // end loop
+	pokeTt(p.Hash, TtData{score: alpha, nodetype: TTALPHA, ply: qdepth})
 	return alpha
 }
 

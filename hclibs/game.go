@@ -7,11 +7,15 @@ import "strings"
 import "regexp"
 import "time"
 
+var pv PV
+var ttable TT
+
 func GameInit() {
-	//tt = make(map[string]TtData)
-	if err := InitHashSize(8); err != nil {
-		panic(err)
-	}
+
+	size := ttable.InitHashSize(32)
+	ttable = make([]TtData, size)
+	fmt.Println("ttable is len %d", len(ttable))
+	ttable.Clear()
 	book = make(map[string][]Move)
 
 	if GameUseBook {
@@ -19,8 +23,6 @@ func GameInit() {
 	}
 	return
 }
-
-var pv PV
 
 func Go(p *Pos) (res string, info string) {
 	// computer makes moves now!
@@ -70,7 +72,7 @@ func Go(p *Pos) (res string, info string) {
 		if GameUseStats && GameProtocol == PROTOCONSOLE {
 			info += "# fen: (" + BoardToFEN(p) + ")"
 			info += fmt.Sprintf("\n# PV %v", pv)
-			info += fmt.Sprintf("\n# STATS Score %v | nodes %v | qnodes %v (%v%%)| nps %v | uppercuts %v | lowercuts %v |\n# STATS tt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v |\n", Comma(score), Comma(StatNodes), Comma(StatQNodes), Comma(int((float64(StatQNodes) / float64(StatNodes+StatQNodes) * 100))), Comma(int(float64(StatNodes+StatQNodes)/elapsed.Seconds())), Comma(StatUpperCuts), Comma(StatLowerCuts), Comma(StatTtHits), Comma(int((float64(StatTtHits) / float64(StatNodes) * 100))), Comma(StatTtWrites), Comma(StatTtUpdates), Comma(len(tt)), Comma(StatTtCulls))
+			info += fmt.Sprintf("\n# STATS Score %v | nodes %v | qnodes %v (%v%%)| nps %v | uppercuts %v | lowercuts %v |\n# STATS tt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v |\n", Comma(score), Comma(StatNodes), Comma(StatQNodes), Comma(int((float64(StatQNodes) / float64(StatNodes+StatQNodes) * 100))), Comma(int(float64(StatNodes+StatQNodes)/elapsed.Seconds())), Comma(StatUpperCuts), Comma(StatLowerCuts), Comma(StatTtHits), Comma(int((float64(StatTtHits) / float64(StatNodes) * 100))), Comma(StatTtWrites), Comma(StatTtUpdates), Comma(len(ttable)), Comma(StatTtCulls))
 		}
 	}
 
