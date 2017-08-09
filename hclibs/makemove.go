@@ -191,6 +191,7 @@ func MakeMove(m Move, p *Pos) {
 	} // incremented after blacks turn
 
 	p.Ply++
+	p.Hash = zhash
 	// update hash
 	// 	p.Hash = TTZKey(p)
 	// 	if p.Hash != zhash {
@@ -205,7 +206,7 @@ func UnMakeMove(m Move, p *Pos) bool {
 	// assert history holds correct move to UnMakeMove
 
 	if m != history[hply].move {
-		panic("UnMakeMove histry array stored move disagrees with given move to unmake")
+		panic("UnMakeMove history array stored move disagrees with given move to unmake")
 	}
 	//fmt.Printf("Unmaking %v which is %v in history\np.Ply is %v and hply is %v\n",m,history[hply].move,p.Ply,hply)
 	// restore previous move from history array

@@ -12,9 +12,9 @@ var ttable TT
 
 func GameInit() {
 
-	size := ttable.InitHashSize(32)
+	size := ttable.InitHashSize(32 * 4)
 	ttable = make([]TtData, size)
-	fmt.Println("ttable is len %d", len(ttable))
+	// 	fmt.Println("ttable is len %d", len(ttable))
 	ttable.Clear()
 	book = make(map[string][]Move)
 

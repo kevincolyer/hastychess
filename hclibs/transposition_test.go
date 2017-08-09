@@ -57,14 +57,32 @@ func TestTTZKey(t *testing.T) {
 	data := ttable.Peek(key)
 	tap.Ok(data.IsInUse() == false, "unitialised hash is empty")
 
-	ttable.Poke(key, TtData{score: 1})
+	ttable.SafePoke(key, TtData{score: 1})
 	ttable.Clear()
 	tap.Ok(data.IsInUse() == false, "emptied hash is empty")
 
-	ttable.Poke(key, TtData{score: 1})
+	// test insertion and retrevial
+	ttable.SafePoke(key, TtData{score: 1})
 	data = ttable.Peek(key)
 	tap.Is(data.score, 1, "Retrieved data from TT table OK")
 
 	tap.Is(fmt.Sprintf("%x", Zhash.mask), "fffff", "hash mask calculated correctly for 1024x1024-1")
+
+	// test manual masking of hash and retrevial
+	ttable.SafePoke(key, TtData{score: 2})
+	tap.Is(ttable[key&Zhash.mask], ttable.Peek(key), "Test manual masking of hash and retreval")
+	tap.Is(ttable[key&Zhash.mask].score, 2, "Test manual masking of hash and retreval (value)")
+
+	// test one positions hash is different from anothers
+	fmt.Println(&p)
+	MakeMove(Move{from: A2, to: A4, mtype: QUIET}, &p)
+	fmt.Println(&p)
+	tap.Ok(key != p.Hash, "Different positions have different hashes")
+	fmt.Printf("key=%v p.Hash=%v\n", key, p.Hash)
+	ttable.SafePoke(p.Hash, TtData{score: 3})
+	tap.Is(ttable.Peek(key).score, 2, "Check hashes are not clobbering")
+	tap.Is(ttable.Peek(p.Hash).score, 3, "Check hashes are not clobbering")
+	UnMakeMove(Move{from: A2, to: A4, mtype: QUIET}, &p)
+	tap.Is(p.Hash, key, "UnMake Move resets hash OK")
 
 }

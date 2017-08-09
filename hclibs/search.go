@@ -118,8 +118,9 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, starttime time.Time) (bestmo
 
 		sort.Slice(consider, func(i, j int) bool { return consider[i].score > consider[j].score }) // by score type descending
 		//if bestscore <= alpha -50 || bestscore >= beta+50 {
-		alpha = NEGINF
-		beta = POSINF
+		//alpha = NEGINF
+		//beta = POSINF
+		//}
 		//	depth-- // search again but deeper
 		//	fmt.Println("# Re-run this search but with a wide window")
 		// 		} else {
@@ -154,21 +155,21 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 			// enter q search at this level - not deeper so no need to invert.
 			return SearchQuiesce(p, alpha, beta, QUIESCEDEPTH, searchdepth)
 		}
+
+		// return exact evaluation or deeper search result if in TT
+		// Use TT if we are allowed
 		if GameUseTt == false {
 			return Eval(p, 0, Gamestage(p))
 		}
-
-		// Use TT if we are allowed
 		ttentry := ttable.Peek(p.Hash)
 		if ttentry.IsInUse() {
 			StatTtHits++
 			return ttentry.score
 		}
-
 		// store exact eval in TT data.
-		eval := Eval(p, 0, Gamestage(p))
-		pokeTt(p.Hash, TtData{score: eval, nodetype: TTEXACT, ply: depth})
-		return eval
+		val := Eval(p, 0, Gamestage(p))
+		pokeTt(p.Hash, TtData{score: val, nodetype: TTEXACT, ply: depth})
+		return val
 	}
 	// need to know if we are in mate before we return an eval at a leaf as this is the only way we check for mate!!! Not done in eval!
 
@@ -246,6 +247,9 @@ func pokeTt(h Hash, entry TtData) {
 }
 
 func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int) int {
+	if StatQNodes > PREVENTEXPLOSION/4 {
+		return alpha
+	}
 	var val int
 	gamestage := Gamestage(p)
 	StatQNodes++
@@ -280,7 +284,7 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int) int {
 	// when at end of search
 	// someone signals we should stop
 	pokeTt(p.Hash, TtData{score: alpha, nodetype: TTALPHA, ply: qdepth})
-	if StatQNodes > PREVENTEXPLOSION/4 || qdepth == 0 || StopSearch() {
+	if qdepth == 0 || StopSearch() {
 		// 		fmt.Println("# Qnode explosion - bottling!")
 		return alpha
 	}

@@ -88,6 +88,9 @@ func (tt TT) Poke(key Hash, data TtData) {
 
 // An attempt at a bit of a better thread safe model.
 func (tt TT) SafePoke(key Hash, data TtData) {
+	if !tt.Peek(key).IsInUse() {
+		StatTtUpdates++
+	}
 	StatTtWrites++
 	key = key & Zhash.mask
 	tt[key] = data
