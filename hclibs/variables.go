@@ -96,23 +96,6 @@ func (a bymovescore) Len() int           { return len(a) }
 func (a bymovescore) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a bymovescore) Less(i, j int) bool { return a[i].score > a[j].score } // > means descending.
 ///////////////////////////////////////////////////////////////////////
-type TtData struct {
-	score    int // score found
-	ply      int // ply first discovered at (to avoid loops)
-	nodetype int // TTEXACT TTUPPER OR TTLOWER or TTUNUSED
-	move     Move
-	gamma    int
-	//	age      int64
-}
-
-func (i TtData) IsInUse() bool {
-	if i.nodetype != TTUNUSED {
-		return true
-	}
-	return false
-}
-
-// var tt map[string]TtData
 
 ////////////////////////////////////////////////////////////////////////
 // type Book struct {

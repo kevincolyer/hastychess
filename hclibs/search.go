@@ -28,8 +28,7 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, starttime time.Time) (bestmo
 	// reset history table or age it?
 	// reset killers
 
-	// TODO clear tt table here?
-
+	ttable.Clear()
 	consider := GenerateAllMoves(p)
 
 	// 1a. check that we are not in checkmate or stalemate
@@ -61,7 +60,8 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, starttime time.Time) (bestmo
 	globalpv.ply = p.Ply // syncronise new PV
 	searchdepth := 0
 	for depth := 2; depth < maxdepth+1; depth++ {
-		enterquiesce := (depth == maxdepth)
+		//enterquiesce := (depth == maxdepth)
+		enterquiesce := true
 		childpv := PV{ply: p.Ply + 1}
 		count := 0
 
@@ -181,6 +181,20 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 		//                 fmt.Println("found a stalemate")
 		return -STALEMATE + searchdepth // Unless we can't win because of lack of material then stalemate makes sense -- impliment this!
 	}
+
+	if GameUseTt {
+
+		// Use TT if we are allowed
+		ttentry := ttable.Peek(p.Hash)
+		if ttentry.IsInUse() {
+			// if not a PV and better than alpha then lets use this instead!
+			if ttentry.score > alpha && ttentry.score < beta {
+				StatTtHits++
+				return ttentry.score
+			}
+		}
+	}
+
 	max := NEGINF
 	OrderMoves(consider, p, parentpv)
 

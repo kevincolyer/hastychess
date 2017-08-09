@@ -56,6 +56,22 @@ func init() {
 
 //type TTZKey uint64
 
+type TtData struct {
+	score    int // score found
+	ply      int // ply first discovered at (to avoid loops)
+	nodetype int // TTEXACT TTUPPER OR TTLOWER or TTUNUSED
+	move     Move
+	gamma    int
+	//	age      int64
+}
+
+func (i TtData) IsInUse() bool {
+	if i.nodetype == TTUNUSED {
+		return false
+	}
+	return true
+}
+
 func (tt TT) Peek(key Hash) (data TtData) {
 	key = key & Zhash.mask
 	StatTtPeeks++
@@ -120,18 +136,21 @@ func TTZKey(p *Pos) (z Hash) {
 
 // initialises the hash to the size that the engine will set. size is given in human terms of number of entries e.g. 32M=32 million byte / 8
 // this needs to always be done only once. ics engine sends a command to do this. Xboard also. Conoles we keep it set at
-func (tt TT) InitHashSize(size uint64) uint64 {
-	size = size * 1024 * 1024 / 8
+func (tt TT) InitHashSize(size int) (buckets uint64) {
+	if size < 0 {
+		size = -size
+	}
+	buckets = uint64(size) * 1024 * 1024 / 8
 
-	if size > (1<<TTMAXSIZE) || size <= 0 {
-		panic(fmt.Errorf("size %d is larger than max allowd (or < 1)", size))
+	if buckets > (1<<TTMAXSIZE) || buckets <= 0 {
+		panic(fmt.Errorf("buckets %d is larger than max allowd (or < 1)", buckets))
 	}
 	var power uint8 = 0
-	for size > 0 {
-		size = size >> 1
+	for buckets > 0 {
+		buckets = buckets >> 1
 		power++
 	}
-	size = 1 << (power - 1)
-	Zhash.mask = Hash(size - 1)
-	return size
+	buckets = 1 << (power - 1)
+	Zhash.mask = Hash(buckets - 1) // cast to Hash type and make the mask we need
+	return buckets
 }

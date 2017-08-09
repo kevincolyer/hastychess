@@ -3,6 +3,7 @@ package hclibs
 
 import "github.com/dex4er/go-tap"
 import "testing"
+import "fmt"
 
 func TestRand64(t *testing.T) {
 	// 		tap.Ok(true, "Ok")
@@ -39,10 +40,10 @@ func TestInitHashSize(t *testing.T) {
 	// 		tap.Is("Aaa", "Aaa", "Is")
 	//	tap.Is(123, 123, "Is")
 	//tap.DoneTesting()
-	size := 8
-	e := InitHashSize(size)
-	tap.Is(e, nil, "No error expected from function")
-	tap.Is(len(tthash), size*1024*1024/8, "Is tthash the length we expected?")
+	var size = 8
+	l := ttable.InitHashSize(size)
+	ttable = make([]TtData, l)
+	tap.Is(len(ttable), size*1024*1024/8, "Is tthash the length we expected?")
 	tap.Is(Zhash.mask, Hash(size*1024*1024/8-1), "Is Zhash.mask correct?")
 
 }
@@ -51,10 +52,19 @@ func TestTTZKey(t *testing.T) {
 	// put function test in here!!!!!
 	p := FENToNewBoard(STARTFEN)
 	key := TTZKey(&p)
-	data, err := TTPeek(key, TTHASH)
-	tap.Ok(err == false, "unitialised hash is empty")
-	TTPoke(key, TTHASH, TtData{score: 1})
-	data, err = TTPeek(key, TTHASH)
+	ttable = make([]TtData, ttable.InitHashSize(8))
+
+	data := ttable.Peek(key)
+	tap.Ok(data.IsInUse() == false, "unitialised hash is empty")
+
+	ttable.Poke(key, TtData{score: 1})
+	ttable.Clear()
+	tap.Ok(data.IsInUse() == false, "emptied hash is empty")
+
+	ttable.Poke(key, TtData{score: 1})
+	data = ttable.Peek(key)
 	tap.Is(data.score, 1, "Retrieved data from TT table OK")
+
+	tap.Is(fmt.Sprintf("%x", Zhash.mask), "fffff", "hash mask calculated correctly for 1024x1024-1")
 
 }
