@@ -347,8 +347,6 @@ func OtherSide(p Pos) int {
 	}
 }
 
-
-
 func Abs(n int) int {
 	if n < 0 {
 		n = -n

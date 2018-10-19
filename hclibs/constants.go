@@ -12,7 +12,7 @@ const STARTFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 // board and piece numbering suggestions from https://cis.uab.edu/hyatt/boardrep.html
 const PREVENTEXPLOSION = 2000000 // 2mil nodes to made debugging easier!!! TODO remove!
-const MAXSEARCHDEPTH = 10         // for manual play - easier to know what you have done wrong
+const MAXSEARCHDEPTH = 10        // for manual play - easier to know what you have done wrong
 const MAXSEARCHDEPTHX = 8        // for xboard
 const QUIESCEDEPTH = 4
 const TTMAXSIZE = 20 // (is 2^20=1048576 entries when over this oldest tt nodes are culled back so tt is this size

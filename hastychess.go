@@ -32,7 +32,7 @@ func main() {
 	hclibs.GameUseTt = *(flagUseTt)
 	hclibs.GameUseStats = *(flagStats)
 	hclibs.GameUseBook = *(flagUseBook)
-        //fmt.Println("Using TT",hclibs.GameUseTt,"Using Stats",hclibs.GameUseStats,"Using Book",hclibs.GameUseBook)
+	//fmt.Println("Using TT",hclibs.GameUseTt,"Using Stats",hclibs.GameUseStats,"Using Book",hclibs.GameUseBook)
 	hclibs.GameInit()
 	scanner := bufio.NewScanner(os.Stdin)
 	switch {
