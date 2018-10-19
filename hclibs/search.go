@@ -42,8 +42,9 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, starttime time.Time) (bestmo
 
 	// 2. give a rough order
 	// 	OrderMoves(consider, p)
-	OrderMoves(consider, p, globalpv)
-	if GameProtocol == PROTOCONSOLE {
+	OrderMoves(&consider, p, globalpv)
+// 	fmt.Println(" ",consider[0])
+        if GameProtocol == PROTOCONSOLE {
 		fmt.Printf("# moves to consider: %v\n", consider)
 	}
 	alpha := NEGINF
@@ -166,7 +167,7 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 		return -STALEMATE + searchdepth // Unless we can't win because of lack of material then stalemate makes sense -- impliment this!
 	}
 	max := NEGINF
-	OrderMoves(consider, p, parentpv)
+	OrderMoves(&consider, p, parentpv)
 
 	// reset PV and choose the
 	bestmove := consider[0]
@@ -304,32 +305,32 @@ SORT_KILL  80*/ // killer move
 
 // usr blind here to put bad captures (blind==0) back of the queue after ordinary captures
 
-func OrderMoves(moves []Move, p *Pos, pv *PV) bool {
+func OrderMoves(moves *[]Move, p *Pos, pv *PV) bool {
 	// order by move type (capture and promotion first down to quiet moves)
 	// 	plydelta := p.Ply - pv.ply
 	//         if plydelta<0 {panic("this should not be!")}
-	for i := range moves {
+	for i :=0;i<len(*moves);i++ {
 
 		// boost or lower captures depending on good or bad
 		// boost good captures and punish bad captures
-		if moves[i].mtype == CAPTURE {
-			if BLIND(moves[i], p) {
-				moves[i].score = p.Board[moves[i].from]*2 + GOODCAPTURE
+		if (*moves)[i].mtype == CAPTURE {
+			if BLIND((*moves)[i], p) {
+				(*moves)[i].score = p.Board[(*moves)[i].from]*2 + GOODCAPTURE
 			} else {
-				moves[i].score = p.Board[moves[i].from]*2 + BADCAPTURE
+				(*moves)[i].score = p.Board[(*moves)[i].from]*2 + BADCAPTURE
 			}
-			if PieceType(moves[i].to) != PieceType(moves[i].from) {
-				moves[i].score = p.Board[moves[i].from]*2 + CAPTURE
+			if PieceType((*moves)[i].to) != PieceType((*moves)[i].from) {
+				(*moves)[i].score = p.Board[(*moves)[i].from]*2 + CAPTURE
 			}
 		}
 
-		if moves[i].mtype == EPCAPTURE || moves[i].mtype == O_O_O || moves[i].mtype == O_O {
-			moves[i].score = moves[i].mtype + p.Board[moves[i].from]*2 // type of move + which piece is moving
+		if (*moves)[i].mtype == EPCAPTURE || (*moves)[i].mtype == O_O_O || (*moves)[i].mtype == O_O {
+			(*moves)[i].score = (*moves)[i].mtype + p.Board[(*moves)[i].from]*2 // type of move + which piece is moving
 		}
 
-		if moves[i].mtype == QUIET || moves[i].mtype == ENPASSANT {
+		if (*moves)[i].mtype == QUIET || (*moves)[i].mtype == ENPASSANT {
 			//for now
-			moves[i].score = QUIET
+			(*moves)[i].score = QUIET
 			// boost history
 			// boost killers
 			// boost check?????
@@ -339,13 +340,14 @@ func OrderMoves(moves []Move, p *Pos, pv *PV) bool {
 		// cycle through pv to boost all moves in current move list to top
 		for _, m := range pv.moves {
 
-			if moves[i].from == m.from && moves[i].to == m.to && moves[i].extra == m.extra {
-				moves[i].score += PVBONUS
+			if (*moves)[i].from == m.from && (*moves)[i].to == m.to && (*moves)[i].extra == m.extra {
+				(*moves)[i].score += PVBONUS
 			}
 		}
 	}
 
-	sort.Slice(moves, func(i, j int) bool { return moves[i].score > moves[j].score }) // descending
+	sort.Slice((*moves), func(i, j int) bool { return (*moves)[i].score > (*moves)[j].score }) // descending
+//         fmt.Print((*moves)[0])
 	return true
 }
 
