@@ -59,7 +59,8 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, starttime time.Time) (bestmo
 	//depth := maxdepth
 	globalpv.ply = p.Ply // syncronise new PV
 	searchdepth := 0
-	for depth := 2; depth < maxdepth+1; depth++ {
+// 	for depth := 2; depth < maxdepth+1; depth++ {
+	for depth := maxdepth; depth < maxdepth+1; depth++ {
 		enterquiesce := (depth == maxdepth)
 		childpv := PV{ply: p.Ply + 1}
 		count := 0
@@ -75,9 +76,9 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, starttime time.Time) (bestmo
 		for _, move := range consider {
 			//negamax sorts ENTIRE search space! With iterative deepening and some pruning we can cut the search space down.
 			// so if done shallow search and looked at about 4 moves already and current move looks no better than best break and search deeper...
-			if depth > 2 && count > 3 && move.score < bestscore+25 {
-				break
-			}
+// 			if depth > 2 && count > 3 && move.score < bestscore+25 {
+// 				break
+// 			}
 
 			MakeMove(move, p)
 			// need neg here as we switch sides in make move and evaluation happens relative to side
@@ -173,12 +174,13 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 	bestmove := consider[0]
 	childpv.moves[0] = bestmove // in case we don't find anything better set first move to return
 	childpv.count = 1
-
+        count:=0
 	for _, move := range consider {
-
+                if count>MAXSEARCHDEPTH-searchdepth { break }
 		MakeMove(move, p)
 		score := -negamaxab(-beta, -alpha, depth-1, p, &childpv, enterquiesce, searchdepth+1)
 		UnMakeMove(move, p)
+                count++
 
 		if score > max {
 			max = score
@@ -225,7 +227,7 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int) int {
 	// to prevent search explosion while testing TODO remove!
 	// when at end of search
 	// someone signals we should stop
-	if StatQNodes > PREVENTEXPLOSION/4 || qdepth == 0 || StopSearch() {
+	if  qdepth == 0 || StopSearch() || StatQNodes > PREVENTEXPLOSION/4  {
 		// 		fmt.Println("# Qnode explosion - bottling!")
 		return alpha
 	}

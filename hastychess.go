@@ -73,7 +73,7 @@ func mainConsole(scanner *bufio.Scanner) {
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
 	hclibs.GameOver = false
 	hclibs.GameDisplayOn = true
-	hclibs.GameDepthSearch = 4
+	hclibs.GameDepthSearch = hclibs.MAXSEARCHDEPTH // 8 or 4 // don't delete this or search depth = 0!
 	hclibs.GameForce = false
 	if hclibs.GameDisplayOn {
 		fmt.Println(&p)
