@@ -5,28 +5,6 @@ package hclibs
 
 import "fmt"
 
-// func TtCull() {
-// 	StatTtCulls = 0
-//
-// }
-
-// func TtPeek(TtKey string, ply int, val *int, alpha int, beta int) (m Move, bool {
-//     if GameUseTt==false { return GameUseTt }
-//     item,ok:=tt[Ttkey]
-//     if ok == nil { return false }
-//     // something found. Was this entry searched to same or deeper level that we are on now?
-//     if item.ply >= ply {
-//
-//
-//     }
-//
-// }
-//
-// func TtPoke(TtKey string, ply int, score int, tttype int ) bool {
-//     if GameUseTt==false { return GameUseTt }
-//
-//
-// }
 type Hash uint64
 
 type zhashstruct struct {
@@ -50,7 +28,6 @@ func Rand64Reset() {
 
 // Rand64 generates uint64's and is pinched the one the cpw engine pinches from Sungorus!
 func Rand64() Hash {
-
 	hashnext = hashnext*1103515245 + 12345
 	return hashnext
 }
@@ -64,9 +41,9 @@ func init() {
 			Zhash.psq[i][j] = Rand64()
 		}
 	}
-	Zhash.ep[i] = Rand64()
-	for i = 0; i < 4; i++ {
+	Zhash.ep[128] = Rand64()
 
+	for i = 0; i < 4; i++ {
 		Zhash.castle[i] = Rand64()
 	}
 	Zhash.side[BLACK] = Rand64()
@@ -75,10 +52,10 @@ func init() {
 
 //type TTZKey uint64
 
-func TTPeek(key Hash, hash int) (data TtData, err bool) {
+func TTPeek(key Hash, hashtable int) (data TtData, err bool) {
 	err = false
 	key = key & Zhash.mask
-	switch hash {
+	switch hashtable {
 	case TTHASH:
 		if tthash[key] == data {
 			return
@@ -93,9 +70,9 @@ func TTPeek(key Hash, hash int) (data TtData, err bool) {
 	return
 }
 
-func TTPoke(key Hash, hash int, data TtData) {
+func TTPoke(key Hash, hashtable int, data TtData) {
 	key = key & Zhash.mask
-	switch hash {
+	switch hashtable {
 	case TTHASH:
 		tthash[key] = data
 		return
@@ -106,6 +83,17 @@ func TTPoke(key Hash, hash int, data TtData) {
 	return
 }
 
+func TTClear(hashtable int) bool {
+	switch hashtable {
+	case TTHASH:
+		for i := range tthash {
+			tthash[i] = TtData{}
+		}
+		return true
+	}
+	return false
+}
+
 // make TtKey - scan board for pieces, xor in, xor in castling states, xor in side to move and EP
 func TTZKey(p *Pos) (z Hash) {
 	for _, square := range GRID {
@@ -114,17 +102,17 @@ func TTZKey(p *Pos) (z Hash) {
 		}
 	}
 
-	if p.Castled[QS] {
-		z = z ^ Zhash.castle[QS]
+	if p.Castled[BLACK*2+QS] {
+		z = z ^ Zhash.castle[BLACK*2+QS]
 	}
-	if p.Castled[KS] {
-		z = z ^ Zhash.castle[KS]
+	if p.Castled[BLACK*2+KS] {
+		z = z ^ Zhash.castle[BLACK*2+KS]
 	}
-	if p.Castled[QS+p.Side*2] {
-		z = z ^ Zhash.castle[QS+p.Side*2]
+	if p.Castled[WHITE*2+QS] {
+		z = z ^ Zhash.castle[WHITE*2+QS]
 	}
-	if p.Castled[KS+p.Side*2] {
-		z = z ^ Zhash.castle[KS+p.Side*2]
+	if p.Castled[WHITE*2+KS] {
+		z = z ^ Zhash.castle[WHITE*2+KS]
 	}
 
 	z = z ^ Zhash.ep[p.EnPassant+1]

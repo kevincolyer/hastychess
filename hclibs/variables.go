@@ -3,6 +3,7 @@ package hclibs
 
 import "fmt"
 import "github.com/dustin/go-humanize"
+import "time"
 
 //////////////////////////////////////////////////////////////////////////
 type Move struct {
@@ -10,6 +11,7 @@ type Move struct {
 	to    int
 	mtype int // uses constants defined in constants.go
 	extra int
+	score int
 }
 
 func (mv Move) String() string {
@@ -25,7 +27,6 @@ func (mv Move) String() string {
 //     }
 //     return
 // }
-
 
 //////////////////////////////////////////////////////////////////////////
 type Pos struct {
@@ -46,8 +47,9 @@ type Pos struct {
 }
 
 type History struct {
-    move Move
+	move          Move
 	TakenPieces   [2]int
+	JustTaken     int
 	Castled       [4]bool
 	King          [2]int
 	Side          int
@@ -56,35 +58,37 @@ type History struct {
 	Fifty         int
 	FullMoveClock int
 	HalfMoveClock int
-//	Ply           int
-    
+	Hash          Hash
+	//	Ply           int
+
 }
+
+var history [1000]History
+
 //////////////////////////////////////////////////////////////////////////
 //PV struct
-type PV struct { // intended to be used in a slice of PV slices
-	moves []Move
-	score int // for whole list of moves
-	depth int // depth searched to
+type PV struct { // PV array
+	moves [20]Move // too many perhaps depth x 2?
+	count int      // for whole list of moves
+	ply   int      // to syncronise the ply level
 
 }
 
-// used to provide a sort of PV struct by nodes
-type bypv []PV
-
-func (a bypv) Len() int           { return len(a) }
-func (a bypv) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a bypv) Less(i, j int) bool { return a[i].score > a[j].score } // the < means descending search
-
 // pretty printer for PV struct
-func (pv PV) String() string {
-	return fmt.Sprintf("Score: %d (depth %d) %v:", pv.score, pv.depth, pv.moves)
+func (pv PV) String() (res string) {
+	if pv.count < 1 {
+		res = fmt.Sprintf("%v", pv.moves[:pv.count])
+	} else {
+		res = fmt.Sprintf("%v", pv.moves[:pv.count-1])
+	}
+	res = res[1 : len(res)-1]
+	return
 }
 
 ///////////////////////////////////////////////////////////////////////
 type Movescore struct {
 	move  Move
 	score int
-	ttkey string
 }
 type bymovescore []Movescore
 
@@ -115,7 +119,7 @@ var StatQNodes int
 var StatUpperCuts int
 var StatLowerCuts int
 
-var StatTimeStart int // not sure what type needed here
+var StatTimeStart time.Time
 var StatTimeElapsed int
 
 var StatTtHits int
@@ -132,6 +136,9 @@ var GameForce bool
 var GameUseBook bool
 var GameUseTt bool
 var GameUseStats bool
+var GamePostStats bool
+var GameStopSearch bool
+var GameDurationToSearch time.Duration
 
 type Proto int
 

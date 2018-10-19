@@ -6,8 +6,14 @@ import "fmt"
 import "os"
 import "strconv"
 import "math/rand"
+import "github.com/fatih/color"
+import "time"
 
 // import "math"
+
+func init() {
+	rand.Seed(time.Now().UTC().UnixNano()) // a really HOT cup of strong tea
+}
 
 func Die(e string) {
 	fmt.Println(e)
@@ -196,6 +202,7 @@ func FENToBoard(f string, p *Pos) *Pos {
 	if InCheck(p.King[BLACK], BLACK, p) {
 		p.InCheck = BLACK
 	}
+	p.Hash = TTZKey(p)
 	return p
 }
 
@@ -211,6 +218,38 @@ func BoardToStr(p *Pos) string {
 		s += fmt.Sprintf(" %v\n", rank+1)
 	}
 	s += " abcdefgh"
+	return s
+}
+
+func BoardToStrColour(p *Pos) string {
+	ptos := [...]string{" ", "P", "N", "K", "-", "B", "R", "Q", "-", "p", "n", "k", "-", "b", "r", "q"}
+	var s string
+	tog := false // true==black square
+	whitepc := color.New(color.FgHiWhite).SprintFunc()
+	whitesq := color.New(color.BgRed).SprintFunc()
+	blackpc := color.New(color.FgWhite).SprintFunc()
+	blacksq := color.New(color.BgBlack).SprintFunc()
+	for rank := 7; rank >= 0; rank-- { // reverse order
+		s += fmt.Sprintf(" %v  ", rank+1)
+
+		for file := 0; file < 8; file++ {
+			pc := ptos[p.Board[rank<<4+file]]
+			if strings.ToUpper(pc) == pc {
+				pc = whitepc(pc + " ")
+			} else {
+				pc = blackpc(pc + " ")
+			}
+			if tog {
+				s += whitesq(" " + pc)
+			} else {
+				s += blacksq(" " + pc)
+			}
+			tog = !tog
+		}
+		s += "\n"
+		tog = !tog
+	}
+	s += "\n     A  B  C  D  E  F  G  H\n"
 	return s
 }
 
@@ -231,7 +270,10 @@ func BoardToStrWide(p *Pos) string {
 }
 
 func (p *Pos) String() string {
-	return fmt.Sprintf("%s\n", BoardToStrWide(p))
+	if color.NoColor == false {
+		return BoardToStrColour(p)
+	}
+	return BoardToStrWide(p)
 }
 
 func Side(piece int) int {
@@ -323,8 +365,8 @@ func MhDistance(from, to int) int {
 func MoveToAlg(m Move) (s string) {
 	ptos := [...]string{".", "P", "N", "K", "-", "B", "R", "Q", "-", "p", "n", "k", "-", "b", "r", "q"}
 	s = DecToAlg(m.from) + DecToAlg(m.to)
-	if m.mtype&PROMOTE > 0 {
-		s += ptos[m.extra] // this will show whites symbols, but that is ok. In MakeMove the correct piece is shown.
+	if m.mtype == PROMOTE {
+		s += strings.ToLower(ptos[m.extra]) // force to lowe because xboard etc expect lower case in promotions?
 	}
 	return
 }

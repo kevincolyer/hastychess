@@ -1,6 +1,9 @@
 //Hastychess, Copyright (C) GPLv3, 2016, Kevin Colyer
 package hclibs
 
+// Versioning
+const VERSION = "1.10 'Blockhead'"
+
 // import "fmt"
 
 const BLACK = 1
@@ -8,8 +11,9 @@ const WHITE = 0
 const STARTFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 // board and piece numbering suggestions from https://cis.uab.edu/hyatt/boardrep.html
-const MAXSEARCHDEPTH = 8  // for manual play - easier to know what you have done wrong
-const MAXSEARCHDEPTHX = 8 // for xboard
+const PREVENTEXPLOSION = 2000000 // 2mil nodes to made debugging easier!!! TODO remove!
+const MAXSEARCHDEPTH = 8         // for manual play - easier to know what you have done wrong
+const MAXSEARCHDEPTHX = 8        // for xboard
 const QUIESCEDEPTH = 10
 const TTMAXSIZE = 20 // (is 2^20=1048576 entries when over this oldest tt nodes are culled back so tt is this size
 const TTHASH = 1
@@ -21,6 +25,7 @@ const ETTHASH = 4
 // const USETTABLE=true
 
 // pawn=1, knight=2, king=3, bishop=5, rook=6 and queen=7
+//WHITE
 const EMPTY = 0
 const PAWN = 1
 const NIGHT = 2
@@ -28,6 +33,8 @@ const KING = 3
 const BISHOP = 5
 const ROOK = 6
 const QUEEN = 7
+
+//black
 const pawn = 1 + 8
 const night = 2 + 8
 const king = 3 + 8
@@ -47,13 +54,18 @@ const queen = 7 + 8
 // used for mtype in struct move
 // this is useful for ordering moves - ascending order is interesting for us.
 const (
-	CAPTURE   = 1 << iota
-	EPCAPTURE = 1 << iota
-	PROMOTE   = 1 << iota
-	O_O_O     = 1 << iota
-	O_O       = 1 << iota
-	ENPASSANT = 1 << iota
-	QUIET     = 1 << iota
+	BADCAPTURE  = 0
+	QUIET       = 50 // sorted by history
+	ENPASSANT   = 51
+	KILLERS     = 100
+	O_O_O       = 200
+	O_O         = 201
+	EPCAPTURE   = 300
+	CAPTURE     = 301
+	GOODCAPTURE = 400
+	PROMOTE     = 500
+	PVBONUS     = 600
+	INCHECK     = 700
 )
 
 const OPENING = 0
@@ -63,9 +75,9 @@ const ENDGAME = 2
 const QS = 0
 const KS = 1
 
-const CHECKMATE = 200000
-const STALEMATE = 50000
-const CHECK = 20000
+const CHECKMATE = 200000 //
+const STALEMATE = 50000  //
+const CHECK = 20000      // sign dictates who we award it to
 const NEGINF = -1000001
 const INF = -NEGINF
 const POSINF = INF

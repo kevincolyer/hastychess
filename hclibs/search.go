@@ -4,354 +4,275 @@ package hclibs
 import (
 	"fmt"
 	"sort"
+	"time"
 )
 
-// NEED QuiesenceSearch, SearchRoot, Nulls and PV's
-// SortMoves needs to be smarter by adding in captures and promtions etc.
-// consider killer and history
+func Milliseconds(d time.Duration) int {
+	return int(d.Nanoseconds() / 1000000)
+}
 
 // THIS SHOULD BE SEARCH ROOT OR A WAY TO ALLOW ME TO PLUG IN DIFFERENT SEARCHES
-func SearchRoot(p Pos, initdepth, maxdepth int) (bestmove Move, bestscore int) {
-	GameUseTt = false // TODO fix the broken tt!
-	enterQuiesce := false
-	///////// Checkmate and stalemate detection
+func SearchRoot(p *Pos, maxdepth int, globalpv *PV, starttime time.Time) (bestmove Move, bestscore int) {
+	/*
+	   // 1. get all moves to consider
+	   // 1a. check that we are not in checkmate or stalemate
+	   // 2. give a rough order
+	   // 3a. if iterative deepening loop from depth 2 to max depth in turn, sorting best score descending
+	   // 4. loop all moves to consider
+	   // 5. make move
+	   // 6. negamax search the moves (or negamaxab or negascout) to depth
+	   // 7. if found best move record score and move to return
+	   // 8. loop back to 4 or 3a.
+	   // 9. return best move and score
+	*/
+	// reset history table or age it?
+	// reset killers
 
-	consider := GenerateAllMoves(&p)
-	considercount := len(consider)
-	gamestage := Gamestage(&p)
-	var mvscore []Movescore
-	// 	var score int
-	// 	fmt.Printf("considercount %v\n", considercount)
-	if considercount == 0 {
-		if p.InCheck > -1 {
-			bestscore = -CHECKMATE
+	consider := GenerateAllMoves(p)
 
-		} else {
-			bestscore = -STALEMATE
+	// 1a. check that we are not in checkmate or stalemate
+	if len(consider) == 0 {
+		// 		if p.InCheck == p.Side {
+		// 			bestscore = -CHECKMATE
+		// 		} else {
+		// 			bestscore = -STALEMATE
+		// 		}
+		return // result routine works out what the win/lose/draw state is.
+	}
+
+	// 2. give a rough order
+	// 	OrderMoves(consider, p)
+	OrderMoves(consider, p, globalpv)
+	if GameProtocol == PROTOCONSOLE {
+		fmt.Printf("# moves to consider: %v\n", consider)
+	}
+	alpha := NEGINF
+	beta := POSINF
+	bestscore = NEGINF
+	bestmove = consider[0]
+	// reset pv
+	globalpv.count = 1
+	globalpv.moves[0] = bestmove
+
+	// 3a. if iterative deepening loop from depth 2 to max depth in turn, sorting best score descending
+	//depth := maxdepth
+	globalpv.ply = p.Ply // syncronise new PV
+	searchdepth := 0
+	for depth := 2; depth < maxdepth+1; depth++ {
+		enterquiesce := (depth == maxdepth)
+		childpv := PV{ply: p.Ply + 1}
+		count := 0
+
+		// from CPW: if only one move and searched 4 deep then move...
+		if len(consider) == 1 && depth > 4 {
+			break
 		}
-		bestmove = Move{} // nothing to od
-		return
-	}
-	StatNodes++
-	if considercount == 1 {
-		// if only one move to make, make it!
-		bestmove = consider[0]
-		bestscore = Eval(&p, 1, gamestage)
-		return
-	}
-	/////////// Get initial sort so we can get an left hand set of nodes
-	for i, _ := range consider {
-		mvscore = append(mvscore, Movescore{consider[i], NEGINF, ""})
-	}
-	OrderMoves(mvscore)
-	//         sort.Slice(mvscore, func( i,j int) bool { return mvscore[i].move.mtype < mvscore[j].move.mtype} )
-	bestscore = mvscore[0].score
-	bestscore = NEGINF + 100
-	bestmove = mvscore[0].move
 
-	//         fmt.Println(mvscore)
-
-	for depth := 1; depth <= maxdepth; depth++ {
-		if !UCI() {
-			fmt.Printf("# searching to depth %d\n", depth)
+		if GameProtocol == PROTOCONSOLE {
+			fmt.Printf("# Searching to depth %v\n", depth)
 		}
-		//		if depth > 1 { enterQuiesce=true } // only enterQuiesce after first search to give an exact score for better ordering for later
-		if depth == maxdepth {
-			enterQuiesce = true
-		} else {
-			enterQuiesce = false
-		} // only enterQuiesce after first search to give an exact score for better ordering for later
-		///////// Deeper sort -- iterative deepening
-		for i, _ := range mvscore {
-			if StopSearch() {
-				return
-			}
-
-			// prevent search explosion...
-			// if the searching deeper and >4 searches and so far the best is < 1/4 a pawn above next choice then give up broader search
-
-			if depth > 2 && i > 4 && bestscore > mvscore[i].score+26 {
-				if !UCI() {
-					fmt.Println("# nothing better, splitting at index ", i)
-				}
+		for _, move := range consider {
+			//negamax sorts ENTIRE search space! With iterative deepening and some pruning we can cut the search space down.
+			// so if done shallow search and looked at about 4 moves already and current move looks no better than best break and search deeper...
+			if depth > 2 && count > 3 && move.score < bestscore+25 {
 				break
 			}
 
-			q := p //copy p
-			MakeMove(mvscore[i].move, &q)
+			MakeMove(move, p)
+			// need neg here as we switch sides in make move and evaluation happens relative to side
+			val := -negamaxab(alpha, beta, depth, p, &childpv, enterquiesce, searchdepth+1)
+			//fmt.Printf("# move %v scored %v\n", move, val)
+			UnMakeMove(move, p)
+			// update for next round of sorting when iterative deepening. Do after unmakemove as the move score change is recorded in history array
+			move.score = val
 
-			score := NegaMaxAB(q, bestscore-50, bestscore+50, depth, enterQuiesce)
-			// TODO too much beardth at lower levels give qsearch explosion with poor move ordering...
-			// need to improve q search move ordering...
-			//   			if score <= bestscore-50 || score >= bestscore+50 {
-			//    				score = NegaMaxAB(q, NEGINF, INF, depth, enterQuiesce) // broaden the search window - we found some values way beyond what was expected...
-			//    			}
-			mvscore[i].score = score
+			if StatNodes > PREVENTEXPLOSION || StopSearch() {
+				return
+			}
 
-			// set new max
-			if mvscore[i].score > bestscore {
-				bestscore = mvscore[i].score
-				bestmove = mvscore[i].move
+			if val >= bestscore {
+				bestmove = move
+				bestscore = val
+				//update PV (stack based)
+				globalpv.moves[0] = bestmove
+				copy(globalpv.moves[1:], childpv.moves[:])
+				globalpv.count = childpv.count + 1
 
-				if GameUseStats && !UCI() {
-					fmt.Printf("# good move %v scored %v found at index %v\n", bestmove, bestscore, i)
+				if GameProtocol == PROTOCONSOLE {
+					fmt.Printf("# depth: %v score: %v pv: %v\n", depth, bestscore, globalpv)
 				}
 			}
-		}
-		// now we have scores sort for the next round
-		sort.Sort(bymovescore(mvscore))
-		//         fmt.Println(mvscore)
-	}
-
-	///////////////////// finished search. Report and cleanup
-	if !UCI() {
-		fmt.Printf("# Chosen move %v score %v\n", bestmove, Comma(bestscore))
-	}
-	// prune dead tt entries (from ply's in the past)
-	if GameUseTt {
-		StatTtCulls = 0
-		for key, ttdata := range tt {
-			if ttdata.age+TTMAXSIZE < TtAgeCounter {
-				delete(tt, key)
-				StatTtCulls++
-
+			if val > alpha {
+				alpha = val
 			}
+			// stop search as found better
+			if val > beta {
+				break
+			}
+
+			count++
+		}
+		// re-sort for next loop when iterative deepening
+
+		sort.Slice(consider, func(i, j int) bool { return consider[i].score > consider[j].score }) // by score type descending
+		//if bestscore <= alpha -50 || bestscore >= beta+50 {
+		alpha = NEGINF
+		beta = POSINF
+		//	depth-- // search again but deeper
+		//	fmt.Println("# Re-run this search but with a wide window")
+		// 		} else {
+		//
+		// 			alpha = consider[0].score - 50
+		// 			beta = consider[0].score + 50
+		// 		}
+		elapsed := time.Since(starttime)
+		if UCI() {
+			// upperbound or lowerbound or cp for exact
+			fmt.Printf("info depth %v score upperbound %v time %v nodes %v nps %v pv %v\n", depth, bestscore, Milliseconds(elapsed), StatNodes+StatQNodes, int(float64(StatNodes+StatQNodes)/elapsed.Seconds()), globalpv)
+		}
+		if GamePostStats == true && GameProtocol == PROTOXBOARD {
+			// ply	Integer score Integer in centipawns.time in centiseconds (ex:1028 = 10.28 seconds). nodes Nodes searched. pv freeform
+			fmt.Printf("%v %v %v %v %v\n", depth, bestscore, float64(Milliseconds(elapsed)/100), StatNodes+StatQNodes, globalpv)
 		}
 	}
 	return
 }
 
-func NegaMaxAB(p Pos, alpha int, beta int, depth int, enterQuiesce bool) int {
+// negamaxab search: searches between window so prunes the search tree.
+func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, searchdepth int) int {
+	// 	var childpv PV
+	childpv := PV{ply: p.Ply + 1}
 
-	// i_alpha:= alpha // initial alpha
-	bestval := NEGINF // the value we hope to find and return
-	side := p.Side
-	val := NEGINF      // a temporary value to compare with best val
-	bestmove := Move{} // only for storing pv
-	tttype := TTLOWER  // default node to write! lower=alpha / upper = beta
+	StatNodes++
+	if depth == 0 || StatNodes > PREVENTEXPLOSION {
+		parentpv.count = 0 // reset because we are at a leaf...
 
-	var q Pos
-	var elem TtData
-	var ok bool
-	var ttkey string
-
-	moves := GenerateAllMoves(&p)
-	lenmoves := len(moves)
-
-	if GameUseTt {
-		ttkey = TtKey(&p)
-		elem, ok = tt[ttkey]
-		if ok {
-			StatTtHits++
-			// if we have already searched deeper then use this value...
-			if elem.ply >= p.Ply {
-
-				if elem.nodetype == TTEXACT {
-					bestval = elem.score
-					if depth == 0 {
-						return val
-					} // ???????????????????????????????????????????????????????????
-					// if at end of search and seen exact value before then return exact value...
-				}
-				if elem.nodetype == TTLOWER {
-					alpha = elem.score
-				} // use previous deeper bounds to set this bound
-				if elem.nodetype == TTUPPER {
-					beta = elem.score
-				} // use previous deeper bounds to set this bound
-			}
+		// Quiese?
+		if enterquiesce && StatNodes < PREVENTEXPLOSION {
+			// enter q search at this level - not deeper so no need to invert.
+			return SearchQuiesce(p, alpha, beta, QUIESCEDEPTH, searchdepth)
 		}
+		return Eval(p, 0, Gamestage(p))
 	}
-	gamestage := Gamestage(&p)
+	// need to know if we are in mate before we return an eval at a leaf as this is the only way we check for mate!!! Not done in eval!
 
-	// checkmate and stalemate detection...
-	if lenmoves == 0 || (p.TakenPieces[side] == 15 && p.TakenPieces[1-side] == 15) { // go till no moves or only kings
-		// 		fmt.Printf("depth %v found 0 moves\n", depth)
-		//fmt.Printf("%v\n", p)
-		if p.InCheck == side {
-			bestval = -CHECKMATE // checkmate to xside
-		} else {
-			bestval = -STALEMATE // stalemate
+	consider := GenerateAllMoves(p)
+	if len(consider) == 0 {
+		if p.InCheck != -1 {
+			//                         fmt.Println("found a checkmate")
+			return -CHECKMATE + searchdepth
 		}
-		if GameUseTt {
-			elem, ok = tt[ttkey]
-			if !ok || elem.ply <= p.Ply {
-				StatTtWrites++
-				tt[ttkey] = TtData{bestval, p.Ply, TTEXACT, Move{}, TtAgeCounter}
-				TtAgeCounter++
-			}
-		}
-		return bestval
+		//                 fmt.Println("found a stalemate")
+		return -STALEMATE + searchdepth // Unless we can't win because of lack of material then stalemate makes sense -- impliment this!
 	}
-	if bestval == NEGINF {
-		bestval = Eval(&p, lenmoves, gamestage) // material score
-	}
+	max := NEGINF
+	OrderMoves(consider, p, parentpv)
 
-	// LEAF NODE
-	// we are at a leaf node at the end of a search so...
-	if depth == 0 {
-		// NEED QUIESCENCE SEARCH ONE LEVEL DEEPER HERE...
-		// 		 		fmt.Printf("Entering q search\n")
-		// if we have not looked at this position before then get a value for it
-		if enterQuiesce {
-			bestval = SearchQuiesce(p, alpha, beta, QUIESCEDEPTH) // why not neg???????
+	// reset PV and choose the
+	bestmove := consider[0]
+	childpv.moves[0] = bestmove // in case we don't find anything better set first move to return
+	childpv.count = 1
+
+	for _, move := range consider {
+
+		MakeMove(move, p)
+		score := -negamaxab(-beta, -alpha, depth-1, p, &childpv, enterquiesce, searchdepth+1)
+		UnMakeMove(move, p)
+
+		if score > max {
+			max = score
+			bestmove = move
+
+			// update PV on stack
+			parentpv.moves[0] = bestmove
+			copy(parentpv.moves[1:], childpv.moves[:])
+			parentpv.count = childpv.count + 1
 		}
-		tttype := TTEXACT
-		if bestval > beta {
-			tttype = TTUPPER
+		if max > alpha {
+			alpha = max
 		}
-		if bestval <= alpha {
-			tttype = TTLOWER
+		if alpha >= beta {
+			// set killers here
+			// history table here...
+			return beta
 		}
-		// 		fmt.Printf("leaving q search\n")
-		//
-		// put exact score in TT here!!!!! if we are not using it already
-		if GameUseTt {
-			// 			elem, ok = tt[ttkey]
-			// 			if !ok || elem.ply <= p.Ply {
-			// use always replace for q search (my choice)
-			StatTtWrites++
-			tt[ttkey] = TtData{bestval, p.Ply, tttype, Move{}, TtAgeCounter}
-			TtAgeCounter++
-			// 			}
-		}
-		return bestval
-
-	} // at a leaf // note at a leaf we can't detect stalemate - need to look deeper for that...
-
-	// Order moves (use function here...)
-	sort.Slice(moves, func(i, j int) bool { return moves[i].mtype < moves[j].mtype })
-	// ALPHA == lower bound
-	// BETA == upper bound */
-	bestmove = moves[0]
-
-	if bestval > alpha {
-		alpha = bestval
-	} // adjust alpha for this level????
-
-	for _, m := range moves {
 		if StopSearch() {
 			return alpha
-		} // someone signals we should stop
-		q = p
-		MakeMove(m, &q)
-		ttkey = TtKey(&q)
-
-		val = -NegaMaxAB(q, -beta, -alpha, depth-1, enterQuiesce)
-		StatNodes++
-
-		// found a better UPPER BOUND
-		if val >= beta {
-			// save in tt
-			tttype = TTUPPER
-			StatUpperCuts++
-			if GameUseTt {
-				elem, ok = tt[ttkey]
-				if ok {
-					if elem.ply <= q.Ply {
-						StatTtUpdates++
-					} else {
-						StatTtWrites++
-					}
-				} // if this search is deeper than prev then update
-				tt[ttkey] = TtData{val, q.Ply, tttype, m, TtAgeCounter}
-				TtAgeCounter++
-			}
-			// end save in tt
-			return val // best val above expexted upper bound
-		}
-		// found better value so reset LOWER BOUND
-		if val > bestval {
-			bestval = val
-			bestmove = m
-			if val > alpha { // is better than lower bound so move that up and make a new lower bound
-				alpha = val
-				tttype = TTEXACT
-				StatLowerCuts++
-			}
-		}
-	} // END OF range over moves
-	// save in tt
-	if GameUseTt {
-		elem, ok = tt[ttkey]
-		if !ok || elem.ply < q.Ply {
-			// if this search is deeper than prev then update
-			//  ore not seen before so add
-			tttype = TTLOWER
-			StatTtWrites++
-			tt[ttkey] = TtData{alpha, q.Ply, tttype, bestmove, TtAgeCounter}
-			TtAgeCounter++
 		}
 	}
-	return bestval // found between lower and upper bounds (which is alpha really)
+	return alpha
 }
 
-func SearchQuiesce(p Pos, alpha, beta int, qdepth int) int {
-	// need a standpat score
-	var val int
-	var q Pos
-	gamestage := Gamestage(&p)
-	val = EvalQ(&p, 1, gamestage) // custom evaluator here for QUIESENCE
-	var mvscore []Movescore
-	standpat := val
+func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int) int {
+	gamestage := Gamestage(p)
 	StatQNodes++
 
+	// need a standpat score
+	val := EvalQ(p, 0, gamestage) // custom evaluator here for QUIESENCE TODO
+	standpat := val
+
+	// is move worse than previous worst?
 	if val >= beta {
 		return beta
 	}
+	// is move less good than previous best?
 	if alpha <= val {
 		alpha = val
 	}
 
-	// prevent search explosion while testing TODO remove!
-
-	if StatQNodes > 1000000 {
-		fmt.Println("Qnode explosion - bottling!")
+	// finish searching:
+	// to prevent search explosion while testing TODO remove!
+	// when at end of search
+	// someone signals we should stop
+	if StatQNodes > PREVENTEXPLOSION/4 || qdepth == 0 || StopSearch() {
+		// 		fmt.Println("# Qnode explosion - bottling!")
 		return alpha
-
 	}
-	if qdepth == 0 {
-		return alpha
-	} // cant search too deep
+
 	// get moves - but only captures and promotions
-	moves := GenerateMovesForQSearch(&p)
+	moves := GenerateMovesForQSearch(p)
+	// nothing more to search...
 	if len(moves) == 0 {
 		return alpha
-	} // nothing more to search...
-	// score them
-	// 	fmt.Printf("# QS: looking at ply %v (%v moves to consider: %v)\n", p.Ply, len(moves), moves)
-	// socre them by Most Valuable Victim - Least Valuable Aggressor
-	for _, i := range moves {
-		mvscore = append(mvscore, Movescore{move: i,
-			score: MVVLVA(i, &p),
-			ttkey: ""})
 	}
-	// And order descending to provoke cuts
-	sort.Sort(bymovescore(mvscore))
-	//         fmt.Printf("alpha= %v, beta=%v, val=%v, movescore=%v\n",alpha,beta,val,mvscore)
-	// loop over all moves, searching deeper until no moves left and all is "quiet" - return this score...)
-	for _, m := range mvscore {
-		// adjust each score for delta cut offs and badmoves skipping to next each time
-		// delta - if not promotion and not endgame and is a low scoring capture then continue
-		if m.move.mtype != PROMOTE && Gamestage(&p) != ENDGAME && standpat+csshash[p.Board[m.move.to]]+200 < alpha {
-			continue
-		} // delta cut qnodes from 20M to 640,000 in one case!
 
-		// 		// badmoves - cut qnodes from 640,000 to 64,000
-		if p.Board[m.move.from]&7 == PAWN && m.move.mtype != PROMOTE {
+	// score by BLIND - Better or Lower If Not Defended
+	// 	for i := range moves {
+	// 		if BLIND(moves[i], p) {
+	// 			moves[i].score = 100
+	//
+	// 		}
+	// 	}
+
+	// score them by Most Valuable Victim - Least Valuable Aggressor
+	for i := range moves {
+		moves[i].score = MVVLVA(moves[i], p)
+	}
+
+	// And order descending to provoke cuts
+	sort.Slice(moves, func(i, j int) bool { return moves[i].score > moves[j].score }) // by score type descending
+
+	// loop over all moves, searching deeper until no moves left and all is "quiet" - return this score...)
+	for _, m := range moves {
+		//              No premature optimisation or cargo culting!
+
+		// 		// adjust each score for delta cut offs and badmoves skipping to next each time
+		// 		// delta - if not promotion and not endgame and is a low scoring capture then don't look deeper
+		// 		// delta cut qnodes from 20M to 640,000 in one case!
+		if m.mtype != PROMOTE && gamestage != ENDGAME && standpat+csshash[p.Board[m.to]]+200 < alpha {
 			continue
 		}
-		// capture by pawn is ok
+		//
+		// 		// badmoves - cut qnodes from 640,000 to 64,000
+		// 		// capture by pawn is ok so skip
+		if PieceType(p.Board[m.from]) == PAWN && m.mtype != PROMOTE {
+			continue
+		}
 
 		// search deeper until quiet
-		// 		fmt.Println("search one deeper")
-		if StopSearch() {
-			return alpha
-		} // someone signals we should stop
-		q = p
-		MakeMove(m.move, &q)
-		val = -SearchQuiesce(q, -beta, -alpha, qdepth-1)
-		// 		fmt.Printf("returned from one deeper val = %v\n",val)
+		MakeMove(m, p)
+		val = -SearchQuiesce(p, -beta, -alpha, qdepth-1, searchdepth+1)
+		UnMakeMove(m, p)
 
 		// adjust window
 		if val >= alpha {
@@ -361,21 +282,84 @@ func SearchQuiesce(p Pos, alpha, beta int, qdepth int) int {
 			alpha = val
 		}
 	}
-	return alpha // nothing better than this to return
+	return alpha
 }
 
-func OrderMoves(mvscore []Movescore) bool {
-	// can add in pv at top and also any other things to help
-	sort.Slice(mvscore, func(i, j int) bool { return mvscore[i].move.mtype < mvscore[j].move.mtype })
+// From https://chessprogramming.wikispaces.com/Move+Ordering
+// A typical move ordering consists as follows:
+// 1.PV-move of the principal variation from the previous iteration of an iterative deepening framework for the leftmost path, often implicitly done by 2.
+// 2.Hash move from hash tables
+// 3.Winning captures/promotions
+// 4.Equal captures/promotions
+// 5.Killer moves (non capture), often with mate killers first
+// 6.Non-captures sorted by history heuristic and that like
+// 7.Losing captures (* but see below
+
+/*
+SORT_KING 400 // check
+SORT_HASH 200 // hash move
+SORT_CAPT 100 // capture
+SORT_PROM  90 // promote
+SORT_KILL  80*/ // killer move
+
+// usr blind here to put bad captures (blind==0) back of the queue after ordinary captures
+
+func OrderMoves(moves []Move, p *Pos, pv *PV) bool {
+	// order by move type (capture and promotion first down to quiet moves)
+	// 	plydelta := p.Ply - pv.ply
+	//         if plydelta<0 {panic("this should not be!")}
+	for i := range moves {
+
+		// boost or lower captures depending on good or bad
+		// boost good captures and punish bad captures
+		if moves[i].mtype == CAPTURE {
+			if BLIND(moves[i], p) {
+				moves[i].score = p.Board[moves[i].from]*2 + GOODCAPTURE
+			} else {
+				moves[i].score = p.Board[moves[i].from]*2 + BADCAPTURE
+			}
+			if PieceType(moves[i].to) != PieceType(moves[i].from) {
+				moves[i].score = p.Board[moves[i].from]*2 + CAPTURE
+			}
+		}
+
+		if moves[i].mtype == EPCAPTURE || moves[i].mtype == O_O_O || moves[i].mtype == O_O {
+			moves[i].score = moves[i].mtype + p.Board[moves[i].from]*2 // type of move + which piece is moving
+		}
+
+		if moves[i].mtype == QUIET || moves[i].mtype == ENPASSANT {
+			//for now
+			moves[i].score = QUIET
+			// boost history
+			// boost killers
+			// boost check?????
+		}
+
+		// boost PV to top here
+		// cycle through pv to boost all moves in current move list to top
+		for _, m := range pv.moves {
+
+			if moves[i].from == m.from && moves[i].to == m.to && moves[i].extra == m.extra {
+				moves[i].score += PVBONUS
+			}
+		}
+	}
+
+	sort.Slice(moves, func(i, j int) bool { return moves[i].score > moves[j].score }) // descending
 	return true
 }
 
-func Gamestage(p *Pos) int {
-	if p.TakenPieces[p.Side] > 12 {
-		return ENDGAME
-	}
-	if p.TakenPieces[p.Side] > 4 {
-		return MIDGAME
-	}
-	return OPENING
-}
+/*
+BADCAPTURE c
+QUIET     *   sorted by history not piecevalue
+ENPASSANT *
+KILLERS   c
+O_O_O     *
+O_O       *
+EPCAPTURE *
+CAPTURE   * (equal)
+GOODCAPTURE c
+PROMOTE   *
+PVBONUS   c
+CHECK     c
+*/

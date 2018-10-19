@@ -45,7 +45,6 @@ func TestInitHashSize(t *testing.T) {
 	tap.Is(len(tthash), size*1024*1024/8, "Is tthash the length we expected?")
 	tap.Is(Zhash.mask, Hash(size*1024*1024/8-1), "Is Zhash.mask correct?")
 
-    
 }
 
 func TestTTZKey(t *testing.T) {

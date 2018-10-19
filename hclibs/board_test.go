@@ -52,7 +52,7 @@ func TestBoardToStr(t *testing.T) {
 }
 func TestBoard(t *testing.T) {
 
-	if fmt.Sprintf("%v", FENToNewBoard(STARTFEN)) != `{ [6 2 5 7 3 5 2 6 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 9 9 9 9 9 9 9 9 0 0 0 0 0 0 0 0 14 10 13 15 11 13 10 14 0 0 0 0 0 0 0 0] [0 0] [false false false false] [4 116] 0 -1 -1 0 1 0 0 0}` {
+	if fmt.Sprintf("%v", FENToNewBoard(STARTFEN)) != `{ [6 2 5 7 3 5 2 6 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 9 9 9 9 9 9 9 9 0 0 0 0 0 0 0 0 14 10 13 15 11 13 10 14 0 0 0 0 0 0 0 0] [0 0] [false false false false] [4 116] 0 -1 -1 0 1 0 0 7424690183336351638}` {
 		t.Errorf("Internal representation of Board failed - has something changed?\n%v", FENToNewBoard(STARTFEN))
 	}
 }
@@ -64,4 +64,37 @@ func TestBoardToFEN(t *testing.T) {
 	if comp != STARTFEN {
 		t.Errorf("Board does not match STARTFEN on roundtrip\n%v", comp)
 	}
+}
+
+func TestSide(t *testing.T) {
+	if Side(PAWN) != WHITE {
+		t.Error("Side does not guess piece colour corretly - white")
+	}
+	if Side(pawn) != BLACK {
+		t.Error("Side does not guess piece colour corretly - black")
+	}
+
+}
+
+func TestMoveToAlg(t *testing.T) {
+	if MoveToAlg(Move{from: A2, to: A3}) != "a2a3" {
+		t.Error("quiet move alg incorrect (poor move struct)")
+	}
+	if MoveToAlg(Move{from: A2, to: A3, mtype: QUIET}) != "a2a3" {
+		t.Error("quiet move alg incorrect")
+	}
+	if MoveToAlg(Move{from: A2, to: A3, mtype: CAPTURE}) != "a2a3" {
+		t.Error("capture move alg incorrect")
+	}
+	if MoveToAlg(Move{from: A2, to: A3, mtype: EPCAPTURE}) != "a2a3" {
+		t.Error("epcapture move alg incorrect")
+	}
+	if MoveToAlg(Move{from: A7, to: A8, mtype: PROMOTE, extra: QUEEN}) != "a7a8q" {
+		t.Error("Promote to queen (white) incorrect")
+	}
+
+	if MoveToAlg(Move{from: A7, to: A8, mtype: PROMOTE, extra: queen}) != "a7a8q" {
+		t.Errorf("Promote to queen (black) incorrect %v", MoveToAlg(Move{from: A7, to: A8, mtype: PROMOTE, extra: queen}))
+	}
+
 }
