@@ -15,7 +15,7 @@ func MakeMove(m Move, p *Pos) {
 	to := m.to
 	extra := m.extra
 	side := p.Side
-// 	xside := 1 - side
+	xside := 1 - side
 	//fmt.Print(p)
 	if from == to && from == A1 {
 		panic("I've been given a nonsence move")
@@ -123,8 +123,8 @@ func MakeMove(m Move, p *Pos) {
 	p.Side = 1 - p.Side
 	p.InCheck = -1
 	// have to switch sides to get in_check to evaluate right
-	if InCheck(p.King[side], side, p) {
-		p.InCheck = side
+	if InCheck(p.King[xside], xside, p) {
+		p.InCheck = xside
 	} // other side now in check?
 
 	if p.Side == WHITE {
