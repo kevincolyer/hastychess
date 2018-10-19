@@ -32,7 +32,7 @@ func main() {
 	hclibs.GameUseTt = *(flagUseTt)
 	hclibs.GameUseStats = *(flagStats)
 	hclibs.GameUseBook = *(flagUseBook)
-
+	//fmt.Println("Using TT",hclibs.GameUseTt,"Using Stats",hclibs.GameUseStats,"Using Book",hclibs.GameUseBook)
 	hclibs.GameInit()
 	scanner := bufio.NewScanner(os.Stdin)
 	switch {
@@ -73,7 +73,7 @@ func mainConsole(scanner *bufio.Scanner) {
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
 	hclibs.GameOver = false
 	hclibs.GameDisplayOn = true
-	hclibs.GameDepthSearch = 8
+	hclibs.GameDepthSearch = hclibs.MAXSEARCHDEPTH // 8 or 4 // don't delete this or search depth = 0!
 	hclibs.GameForce = false
 	if hclibs.GameDisplayOn {
 		fmt.Println(&p)

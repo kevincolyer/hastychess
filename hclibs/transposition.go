@@ -143,3 +143,8 @@ func InitHashSize(size int) (e error) {
 	//	qstthash = make ([]TtData, size,size)
 	return
 }
+
+// Simple stringification why to make a TT table (used for book)
+func TtKey(p *Pos) string {
+	return fmt.Sprintf("%v %v %v", p.Board, p.Castled, p.Side)
+}
