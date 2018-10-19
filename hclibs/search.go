@@ -176,6 +176,7 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 	childpv.count = 1
         count:=0
 	for _, move := range consider {
+                // prevent search explosion by reducing search width with increasing depth - probably doesn't work with iterative deepening...
                 if count>MAXSEARCHDEPTH-searchdepth { break }
 		MakeMove(move, p)
 		score := -negamaxab(-beta, -alpha, depth-1, p, &childpv, enterquiesce, searchdepth+1)

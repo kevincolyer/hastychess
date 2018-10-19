@@ -3,7 +3,7 @@ package hclibs
 
 import "strings"
 
-// import "fmt"
+ import "fmt"
 
 func ChooseBookMove(p *Pos) (move Move, success bool) {
 
@@ -32,6 +32,7 @@ func ChooseBookMove(p *Pos) (move Move, success bool) {
 func InitBook() {
 
 	bookLoadInternal()
+        fmt.Println(book)
 	return
 }
 

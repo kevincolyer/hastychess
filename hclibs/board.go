@@ -347,9 +347,7 @@ func OtherSide(p Pos) int {
 	}
 }
 
-func TtKey(p *Pos) string {
-	return fmt.Sprintf("%v %v %v", p.Board, p.Castled, p.Side)
-}
+
 
 func Abs(n int) int {
 	if n < 0 {
