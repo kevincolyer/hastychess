@@ -52,7 +52,7 @@ func main() {
 		hclibs.GameProtocol = hclibs.PROTOCONSOLE
 		mainConsole(scanner)
 	}
-	fmt.Println("Bye and thanks for playing!")
+	fmt.Println("# Bye and thanks for playing!")
 
 }
 
@@ -272,7 +272,7 @@ func mainXboard(scanner *bufio.Scanner) {
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
 	hclibs.GameOver = false
 	hclibs.GameDisplayOn = false
-	hclibs.GameDepthSearch = 4
+	// 	hclibs.GameDepthSearch = 4
 	hclibs.GameForce = false
 	if hclibs.GameDisplayOn {
 		fmt.Println(&p)
@@ -293,16 +293,9 @@ QUIT:
 				break next
 
 			case strings.HasPrefix(input, "#"):
-				fmt.Println()
 				break next
 
-				// ignore when xboard tells me I have lost
-			case strings.HasPrefix(input, "result"):
-				fmt.Println()
-				break next
-
-			case strings.Contains(input, "xboard"):
-				fmt.Println()
+			case strings.HasPrefix(input, "xboard"):
 				break next
 
 			case strings.Contains(input, "protover 2"):
@@ -321,6 +314,10 @@ QUIT:
 			case strings.Contains(input, "quit"):
 				quit = true
 				break QUIT
+
+			case strings.HasPrefix(input, "result"):
+				hclibs.GameOver = true
+				break next
 
 			case strings.HasPrefix(input, "usermove"), strings.HasPrefix(input, "move"):
 				fields := strings.Fields(input)
@@ -488,6 +485,7 @@ func ucihelper() {
 	// Send options to GUI here...
 	//
 	//
+	fmt.Println("debug on")
 	fmt.Println("uciok")
 }
 
@@ -498,11 +496,11 @@ func mainIcs(scanner *bufio.Scanner) {
 
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
 
-	hclibs.GameUseBook = false // UCI gui does book - unless option below...
+	//hclibs.GameUseBook = false // UCI gui does book - unless option below...
 
 	hclibs.GameOver = false
 	hclibs.GameDisplayOn = false
-	hclibs.GameDepthSearch = 4
+	hclibs.GameDepthSearch = 8
 	hclibs.GameForce = false
 	// main input loop
 	for {
@@ -510,7 +508,7 @@ func mainIcs(scanner *bufio.Scanner) {
 
 			//input := strings.ToLower(strings.TrimSpace(scanner.Text()))
 			input := strings.TrimSpace(scanner.Text())
-			fmt.Printf("# echo server sent (%v)\n", input)
+			fmt.Printf("info string echo server sent (%v)\n", input)
 			// 			time.Sleep(time.Second)
 			//fmt.Pri(ntf("You said [%v]\n", input)
 			switch {
@@ -641,11 +639,11 @@ func uciGo(input string, p *hclibs.Pos) {
 		if f[0] == "depth" && len(f) > 1 {
 			d, err := strconv.Atoi(f[1])
 			if err != nil {
-				fmt.Println("# setting depth: Please specify a number")
+				fmt.Println("info string Setting depth: Please specify a number")
 				d = 0
 			} else {
 				hclibs.GameDepthSearch = d
-				fmt.Println("# set depth to ", d)
+				fmt.Println("info string  Set depth to ", d)
 			}
 
 		}
@@ -653,11 +651,11 @@ func uciGo(input string, p *hclibs.Pos) {
 		if f[0] == "movetime" && len(f) > 1 {
 			d, err := strconv.Atoi(f[1])
 			if err != nil {
-				fmt.Println("# setting movetime: Please specify a number")
+				fmt.Println("info string Setting movetime: Please specify a number")
 				d = 0
 			} else {
 
-				fmt.Println("# set movetime to ", d)
+				fmt.Println("info string Set movetime to ", d)
 				hclibs.GameDurationToSearch = time.Duration(d * 1000 * 1000) // milliseconds to nanoseconds
 			}
 		}
