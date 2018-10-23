@@ -4,16 +4,15 @@ package protocol
 import (
 	"bufio"
 	"fmt"
+	"github.com/fatih/color"
+	"github.com/kevincolyer/hastychess/engine"
+	"github.com/kevincolyer/hastychess/hclibs"
 	"io"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-	"github.com/kevincolyer/hastychess/hclibs"
-        	"github.com/fatih/color"
 )
-
-
 
 type console struct {
 	In      io.Reader
@@ -37,14 +36,21 @@ func (p *console) Echo() (e error) {
 	return
 }
 
-func (p *console) Start() (e error) {
-	io.WriteString(p.Out, "started ok\n")
-	e = fmt.Errorf("Done!")
-	return
+func (p *console) Start() error {
+	myEngine, err := engine.New(engine.EngineOptions{})
+	if err != nil {
+		return fmt.Errorf("Error creating engine: %v", err)
+	}
+	io.WriteString(p.Out, "Engine started ok\n")
+
+	if myEngine.Stop() {
+		io.WriteString(p.Out, "Engine stopped ok\n")
+	}
+
+	return fmt.Errorf("Done!")
 }
 
 //===========================================================================
-
 
 func mainConsole(scanner *bufio.Scanner) {
 
@@ -85,13 +91,13 @@ QUIT:
 				quit = true
 				break QUIT
 
-			// provide a way to change to xboard mode if use forgets to use commandline switch
+			// provide a way to change to xboard mode if user forgets to use commandline switch
 			case strings.HasPrefix(input, "xboard"):
 				color.NoColor = true
 				hclibs.GameProtocol = hclibs.PROTOXBOARD
 				mainXboard(scanner)
 				return
-			// provide a way to change to xboard mode if use forgets to use commandline switch
+			// provide a way to change to xboard mode if user forgets to use commandline switch
 			case strings.HasPrefix(input, "uci"):
 				color.NoColor = true
 				hclibs.GameProtocol = hclibs.PROTOUCI
@@ -239,4 +245,3 @@ QUIT:
 		}
 	}
 }
-

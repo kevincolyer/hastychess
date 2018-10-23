@@ -12,8 +12,6 @@ import (
 	"time"
 )
 
-
-
 type uci struct {
 	In      io.Reader
 	Out     io.Writer
@@ -43,10 +41,6 @@ func (p *uci) Start() (e error) {
 }
 
 //===========================================================================
-
-
-
-
 
 /***************************************************************
  * Use the UCI chess protocol

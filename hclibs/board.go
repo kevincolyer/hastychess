@@ -88,7 +88,7 @@ func BoardToFEN(p *Pos) string {
 
 func FENToBoard(f string, p *Pos) *Pos {
 	// parse fen
-    
+
 	fenfields := strings.Split(f, " ")
 	// board =0 , side2move, castling, enpassant, halfmoveclock, fullmovecounter
 	side2move := fenfields[1]

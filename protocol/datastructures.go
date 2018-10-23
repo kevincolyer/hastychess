@@ -1,8 +1,6 @@
 // Hastychess, Copyright (C) GPLv3, 2016, Kevin Colyer
 package protocol
 
-
-
 type CLIOptions struct {
 	Engine         string
 	Protocol       string
@@ -16,4 +14,3 @@ type CLIOptions struct {
 	GameType       string // normal eq empty string. or "crazy" etc
 	NameVersion    string
 }
-

@@ -12,8 +12,6 @@ import (
 	"strings"
 )
 
-
-
 type xboard struct {
 	In      io.Reader
 	Out     io.Writer
@@ -43,7 +41,6 @@ func (p *xboard) Start() (e error) {
 }
 
 //===========================================================================
-
 
 func mainXboard(scanner *bufio.Scanner) {
 	// see https://www.gnu.org/software/xboard/engine-intf.html
@@ -262,4 +259,3 @@ func xboardGo(p *hclibs.Pos) {
 	}
 	fmt.Println(res)
 }
-
