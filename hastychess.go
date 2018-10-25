@@ -76,7 +76,7 @@ func main() {
 
 	switch o.Protocol {
 	case "console":
-		myProtocol, err = protocol.NewConsole(os.Stdout, os.Stdin, o)
+		myProtocol, err = protocol.NewConsole(os.Stdout, os.Stdin, os.Stderr, o)
 		//             case "xboard":
 		//                 myProtocol, err = protocol.NewXboard(os.Stdin, os.Stdout,o)
 		//             case "ics":
