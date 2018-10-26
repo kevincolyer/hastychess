@@ -7,11 +7,12 @@ import "time"
 
 //////////////////////////////////////////////////////////////////////////
 type Move struct {
-	from  int
-	to    int
-	mtype int // uses constants defined in constants.go
-	extra int
-	score int
+	from    int
+	to      int
+	mtype   int // uses constants defined in constants.go
+	extra   int
+	subtype int
+	score   int
 }
 
 func (mv Move) String() string {
@@ -27,6 +28,8 @@ func (mv Move) String() string {
 //     }
 //     return
 // }
+
+type Fen string
 
 //////////////////////////////////////////////////////////////////////////
 type Pos struct {

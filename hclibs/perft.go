@@ -72,12 +72,12 @@ func (a by) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a by) Less(i, j int) bool { return a[i].move < a[j].move }
 
 // the useful divide function shows counts of nodes for top level moves
-func Divide(depth int, p *Pos) (nodes_total int, s string ) {
+func Divide(depth int, p *Pos) (nodes_total int, s string) {
 
 	var moves []Move
 	var result []divide
 	if depth == 0 {
-		return 1,""
+		return 1, ""
 	} // because b & w have turns...
 	moves = append(moves, GenerateAllMoves(p)...)
 	nodes := 0
@@ -92,10 +92,10 @@ func Divide(depth int, p *Pos) (nodes_total int, s string ) {
 	}
 	// returning from perft;
 	sort.Sort(by(result))
-	s=fmt.Sprintf("%v\n",result)
-	s+=fmt.Sprintf("Total moves: %v\n", len(result))
-	s+=fmt.Sprintf("Total nodes: %v\n", nodes_total)
-	return 
+	s = fmt.Sprintf("%v\n", result)
+	s += fmt.Sprintf("Total moves: %v\n", len(result))
+	s += fmt.Sprintf("Total nodes: %v\n", nodes_total)
+	return
 }
 
 func DeepPerftTest(t *testing.T) {

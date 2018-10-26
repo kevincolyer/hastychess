@@ -22,31 +22,58 @@ func GameInit() {
 
 var pv PV
 
-func Go(p *Pos) (res string, info string) {
+type Search struct {
+	Nodes       int
+	QNodes      int
+	TtHits      int
+	TtWrites    int
+	TtCulls     int
+	TtUpdates   int
+	UpperCuts   int
+	LowerCuts   int
+	TimeStart   time.Time
+	TimeElapsed time.Duration
+
+	MaxDurationOfSearch time.Duration
+	ParentPV            *PV
+	ChildPV             *PV
+	Score               int
+	BestMove            Move
+	Stop                bool
+	ExplosionLimit      int
+	MaxDepthToSearch    int
+}
+
+func (stat Search) String() string {
+	return fmt.Sprintf("STATS score %v | nodes %v | qnodes %v (%v%%)| nps %v | uppercuts %v | lowercuts %v |\n# STATS tt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v |\n", Comma(stat.Score), Comma(stat.Nodes), Comma(stat.QNodes), Comma(int((float64(stat.QNodes) / float64(stat.Nodes+stat.QNodes) * 100))), Comma(int(float64(stat.Nodes+stat.QNodes)/stat.TimeElapsed.Seconds())), Comma(stat.UpperCuts), Comma(stat.LowerCuts), Comma(stat.TtHits), Comma(int((float64(stat.TtHits) / float64(stat.Nodes) * 100))), Comma(stat.TtWrites), Comma(stat.TtUpdates), Comma(len(tt)), Comma(stat.TtCulls))
+
+}
+
+func (fen Fen) Search(depth int, control chan string) (res string, info string, search Search, newfen Fen) {
+	p := fen.NewBoard()
+	res, info, search = Go(&p)
+	newfen = Fen(BoardToFEN(&p))
+	return
+}
+
+func Go(p *Pos) (res string, info string, search Search) {
 	// computer makes moves now!
 	// 	var pv PV
-	var move Move
-	var score int
-	var success bool
+	// 	var move Move
+	// 	var score int
+	var bookSuccess bool
 
-	StatNodes = 0
-	StatQNodes = 0
-	StatTtHits = 0
-	StatTtWrites = 0
-	StatTtUpdates = 0
-	StatUpperCuts = 0
-	StatLowerCuts = 0
+	search = Search{
+		TimeStart:      time.Now(),
+		Score:          NEGINF,
+		ExplosionLimit: 2000000,
+	}
 
-	StatTimeStart = time.Now()
 	// 	StatTimeElapsed = 0
-	GameStopSearch = false
+	// 	GameStopSearch = false
 
-	move, success = ChooseBookMove(p)
-	if success == true {
-		if GameProtocol == PROTOCONSOLE {
-			info += fmt.Sprintf("# book move found")
-		}
-	} else {
+	search.BestMove, bookSuccess = ChooseBookMove(p)
+	if bookSuccess == false {
 		// search root
 		// adjust pv if filled
 		if pv.count > 0 {
@@ -55,35 +82,35 @@ func Go(p *Pos) (res string, info string) {
 				pv.count--
 				copy(pv.moves[0:], pv.moves[1:]) // shift movelist up by one
 				if GameProtocol == PROTOCONSOLE {
-					fmt.Printf("# pv chomp p.ply=%v, pv.ply=%v -- %v\n", p.Ply, pv.ply, pv)
+					info += fmt.Sprintf("# pv chomp p.ply=%v, pv.ply=%v -- %v\n", p.Ply, pv.ply, pv)
 				}
 			}
 		}
 		if pv.ply > p.Ply {
 			pv.ply = p.Ply
 		} // in case reset game - pv is global (yuk) and not reset so far
-		start := time.Now()
+		search.TimeStart = time.Now()
 		// some computation
-		move, score = SearchRoot(p, GameDepthSearch, &pv, start) // global variable for depth of search...
-		elapsed := time.Since(start)
-
+		search.BestMove, search.Score = SearchRoot(p, GameDepthSearch, &pv, &search) // global variable for depth of search...
+		search.TimeElapsed = time.Since(search.TimeStart)
 		if GameUseStats && GameProtocol == PROTOCONSOLE {
 			info += "# fen: (" + BoardToFEN(p) + ")"
 			info += fmt.Sprintf("\n# PV %v", pv)
-			info += fmt.Sprintf("\n# STATS Score %v | nodes %v | qnodes %v (%v%%)| nps %v | uppercuts %v | lowercuts %v |\n# STATS tt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v |\n", Comma(score), Comma(StatNodes), Comma(StatQNodes), Comma(int((float64(StatQNodes) / float64(StatNodes+StatQNodes) * 100))), Comma(int(float64(StatNodes+StatQNodes)/elapsed.Seconds())), Comma(StatUpperCuts), Comma(StatLowerCuts), Comma(StatTtHits), Comma(int((float64(StatTtHits) / float64(StatNodes) * 100))), Comma(StatTtWrites), Comma(StatTtUpdates), Comma(len(tt)), Comma(StatTtCulls))
+			info += fmt.Sprintf("\n# %v", search)
 		}
 	}
 
 	info += result(p)
-	if GameOver == false {
-		res = fmt.Sprintf("move %v", MoveToAlg(move))
-		if UCI() {
-			res = "best" + res
-		} /*else {
-			res += "#\n"
-		}*/
-		MakeMove(move, p)
-	}
+
+	res = fmt.Sprintf("move %v", MoveToAlg(search.BestMove))
+
+	//TODO if UCI() {
+	//    res = "best" + res
+	//} /*else {
+	//		res += "#\n"
+	//	}*/
+	MakeMove(search.BestMove, p)
+
 	return
 }
 
@@ -175,33 +202,52 @@ func MakeUserMove(m Move, p *Pos) (s string) {
 	return
 }
 
-func StopSearch() bool {
+func (s Search) StopSearch() bool {
 	// are we stopping?
-	if GameStopSearch {
+	if s.Stop {
 		return true
 	} // yes
-
 	// otherwise only check every 1000 nodes
-	if (StatNodes+StatQNodes)%1000 != 0 {
+	if (s.Nodes+s.QNodes)%1000 != 0 {
 		return false
 	}
 	// GameDurationToSearch ==0 means search forever
-	if GameDurationToSearch == 0 {
+	if s.MaxDurationOfSearch == 0 {
 		return false
 	}
 	// have we passed the time limit for searching?
-	if time.Since(StatTimeStart) < GameDurationToSearch {
+	if time.Since(s.TimeStart) < s.MaxDurationOfSearch {
 		return false
 	}
-	//         fmt.Println(time.Since(StatTimeStart))
-	//         fmt.Println(StatTimeStart)
-	//         fmt.Println(GameDurationToSearch)
-	// yes, so halt now and forever
-	if !UCI() {
-		fmt.Print("# Out of time to search...\n")
-	}
-	GameStopSearch = true
+	s.Stop = true
 	return true
+	// func StopSearch() bool {
+	// 	// are we stopping?
+	// 	if GameStopSearch {
+	// 		return true
+	// 	} // yes
+	//
+	// 	// otherwise only check every 1000 nodes
+	// 	if (StatNodes+StatQNodes)%1000 != 0 {
+	// 		return false
+	// 	}
+	// 	// GameDurationToSearch ==0 means search forever
+	// 	if GameDurationToSearch == 0 {
+	// 		return false
+	// 	}
+	// 	// have we passed the time limit for searching?
+	// 	if time.Since(StatTimeStart) < GameDurationToSearch {
+	// 		return false
+	// 	}
+	// 	//         fmt.Println(time.Since(StatTimeStart))
+	// 	//         fmt.Println(StatTimeStart)
+	// 	//         fmt.Println(GameDurationToSearch)
+	// 	// yes, so halt now and forever
+	// 	if !UCI() {
+	// 		fmt.Print("# Out of time to search...\n")
+	// 	}
+	// 	GameStopSearch = true
+	// 	return true
 
 	// 	select {
 	// 	case <-Control:

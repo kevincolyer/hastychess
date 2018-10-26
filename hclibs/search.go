@@ -12,7 +12,7 @@ func Milliseconds(d time.Duration) int {
 }
 
 // THIS SHOULD BE SEARCH ROOT OR A WAY TO ALLOW ME TO PLUG IN DIFFERENT SEARCHES
-func SearchRoot(p *Pos, maxdepth int, globalpv *PV, starttime time.Time) (bestmove Move, bestscore int) {
+func SearchRoot(p *Pos, maxdepth int, globalpv *PV, srch *Search) (bestmove Move, bestscore int) {
 	/*
 	   // 1. get all moves to consider
 	   // 1a. check that we are not in checkmate or stalemate
@@ -82,13 +82,13 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, starttime time.Time) (bestmo
 
 			MakeMove(move, p)
 			// need neg here as we switch sides in make move and evaluation happens relative to side
-			val := -negamaxab(alpha, beta, depth, p, &childpv, enterquiesce, searchdepth+1)
+			val := -negamaxab(alpha, beta, depth, p, &childpv, enterquiesce, searchdepth+1, srch)
 			//fmt.Printf("# move %v scored %v\n", move, val)
 			UnMakeMove(move, p)
 			// update for next round of sorting when iterative deepening. Do after unmakemove as the move score change is recorded in history array
 			move.score = val
 
-			if StatNodes > PREVENTEXPLOSION || StopSearch() {
+			if srch.Nodes > srch.ExplosionLimit || srch.StopSearch() {
 				return
 			}
 
@@ -127,32 +127,32 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, starttime time.Time) (bestmo
 		// 			alpha = consider[0].score - 50
 		// 			beta = consider[0].score + 50
 		// 		}
-		elapsed := time.Since(starttime)
+		elapsed := time.Since(srch.TimeStart)
 		if UCI() {
 			// upperbound or lowerbound or cp for exact
-			fmt.Printf("info depth %v score upperbound %v time %v nodes %v nps %v pv %v\n", depth, bestscore, Milliseconds(elapsed), StatNodes+StatQNodes, int(float64(StatNodes+StatQNodes)/elapsed.Seconds()), globalpv)
+			fmt.Printf("info depth %v score upperbound %v time %v nodes %v nps %v pv %v\n", depth, bestscore, Milliseconds(elapsed), srch.Nodes+srch.QNodes, int(float64(srch.Nodes+srch.QNodes)/elapsed.Seconds()), globalpv)
 		}
 		if GamePostStats == true && GameProtocol == PROTOXBOARD {
 			// ply	Integer score Integer in centipawns.time in centiseconds (ex:1028 = 10.28 seconds). nodes Nodes searched. pv freeform
-			fmt.Printf("%v %v %v %v %v\n", depth, bestscore, float64(Milliseconds(elapsed)/100), StatNodes+StatQNodes, globalpv)
+			fmt.Printf("%v %v %v %v %v\n", depth, bestscore, float64(Milliseconds(elapsed)/100), srch.Nodes+srch.QNodes, globalpv)
 		}
 	}
 	return
 }
 
 // negamaxab search: searches between window so prunes the search tree.
-func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, searchdepth int) int {
+func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, searchdepth int, srch *Search) int {
 	// 	var childpv PV
 	childpv := PV{ply: p.Ply + 1}
 
-	StatNodes++
-	if depth == 0 || StatNodes > PREVENTEXPLOSION {
+	srch.Nodes++
+	if depth == 0 || srch.Nodes > srch.ExplosionLimit {
 		parentpv.count = 0 // reset because we are at a leaf...
 
 		// Quiese?
-		if enterquiesce && StatNodes < PREVENTEXPLOSION {
+		if enterquiesce && srch.Nodes < srch.ExplosionLimit {
 			// enter q search at this level - not deeper so no need to invert.
-			return SearchQuiesce(p, alpha, beta, QUIESCEDEPTH, searchdepth)
+			return SearchQuiesce(p, alpha, beta, QUIESCEDEPTH, searchdepth, srch)
 		}
 		return Eval(p, 0, Gamestage(p))
 	}
@@ -181,7 +181,7 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 			break
 		}
 		MakeMove(move, p)
-		score := -negamaxab(-beta, -alpha, depth-1, p, &childpv, enterquiesce, searchdepth+1)
+		score := -negamaxab(-beta, -alpha, depth-1, p, &childpv, enterquiesce, searchdepth+1, srch)
 		UnMakeMove(move, p)
 		count++
 
@@ -202,16 +202,16 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 			// history table here...
 			return beta
 		}
-		if StopSearch() {
+		if srch.StopSearch() {
 			return alpha
 		}
 	}
 	return alpha
 }
 
-func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int) int {
+func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int, srch *Search) int {
 	gamestage := Gamestage(p)
-	StatQNodes++
+	srch.QNodes++
 
 	// need a standpat score
 	val := EvalQ(p, 0, gamestage) // custom evaluator here for QUIESENCE TODO
@@ -230,7 +230,7 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int) int {
 	// to prevent search explosion while testing TODO remove!
 	// when at end of search
 	// someone signals we should stop
-	if qdepth == 0 || StopSearch() || StatQNodes > PREVENTEXPLOSION/4 {
+	if qdepth == 0 || srch.StopSearch() || srch.QNodes > srch.ExplosionLimit/4 {
 		// 		fmt.Println("# Qnode explosion - bottling!")
 		return alpha
 	}
@@ -277,7 +277,7 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int) int {
 
 		// search deeper until quiet
 		MakeMove(m, p)
-		val = -SearchQuiesce(p, -beta, -alpha, qdepth-1, searchdepth+1)
+		val = -SearchQuiesce(p, -beta, -alpha, qdepth-1, searchdepth+1, srch)
 		UnMakeMove(m, p)
 
 		// adjust window

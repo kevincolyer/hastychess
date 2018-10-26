@@ -21,24 +21,24 @@ type console struct {
 	Options CLIOptions
 }
 
-func (p* console) o(s string) {
-    io.WriteString(p.Out, "o "+s    )
+func (p *console) o(s string) {
+	io.WriteString(p.Out, "o "+s)
 }
 
-func (p* console) oln(s string) {
-    io.WriteString(p.Out, "o "+s+"\n"    )
+func (p *console) oln(s string) {
+	io.WriteString(p.Out, "o "+s+"\n")
 }
 
-func (p* console) ofln(s interface{}) {
-    io.WriteString(p.Out, fmt.Sprintf("o %v\n",s)    )
+func (p *console) ofln(s interface{}) {
+	io.WriteString(p.Out, fmt.Sprintf("o %v\n", s))
 }
 
-func (p* console) debug(s string) {
-    io.WriteString(p.Stderr, "Stderr: "+s    )
+func (p *console) debug(s string) {
+	io.WriteString(p.Stderr, "Stderr: "+s)
 }
 
 func NewConsole(in io.Reader, out io.Writer, stderr io.Writer, options CLIOptions) (*console, error) {
-	p := console{Out: out, In: in, Stderr:stderr, Options: options}
+	p := console{Out: out, In: in, Stderr: stderr, Options: options}
 	_, e := io.WriteString(p.Stderr, "Stderr: Started "+options.NameVersion+"\n")
 	return &p, e
 }
@@ -60,11 +60,11 @@ func (p *console) Start() error {
 		return fmt.Errorf("Error creating engine: %v", err)
 	}
 	p.debug("Engine started ok\n")
-        p.o("hello world\n")
-        p.MainLoop(myEngine)
-// 	if myEngine.Stop() {
-// 		io.WriteString(p.Stderr, "Stderr: Engine stopped ok\n")
-// 	}
+	p.o("hello world\n")
+	p.MainLoop(myEngine)
+	// 	if myEngine.Stop() {
+	// 		io.WriteString(p.Stderr, "Stderr: Engine stopped ok\n")
+	// 	}
 
 	return nil
 }
@@ -72,17 +72,18 @@ func (p *console) Start() error {
 //===========================================================================
 
 func (proto *console) MainLoop(myEngine *engine.Engine) {
-        scanner:=bufio.NewScanner(proto.In)
+	scanner := bufio.NewScanner(proto.In)
 	var err string
 	var result string
 	var move hclibs.Move
 
-	re:= regexp.MustCompile("[a-h][1-8][a-h][1-8][qbnr]?")
+	re := regexp.MustCompile("[a-h][1-8][a-h][1-8][qbnr]?")
 	// 	version := 1.0
 	hiwhite := color.New(color.FgHiWhite).SprintfFunc()
 	proto.o(hiwhite("Hello and welcome to %v\n\n", proto.Options.NameVersion))
 
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
+	hclibs.GameProtocol = hclibs.PROTOCONSOLE
 	hclibs.GameOver = false
 	hclibs.GameDisplayOn = true
 	hclibs.GameDepthSearch = hclibs.MAXSEARCHDEPTH // 8 or 4 // don't delete this or search depth = 0!
@@ -100,23 +101,23 @@ QUIT:
 		for scanner.Scan() {
 			input := strings.TrimSpace(scanner.Text())
 			switch {
-			case input=="quit" || input == "q":
+			case input == "quit" || input == "q":
 				quit = true
 				break QUIT
 
 			// provide a way to change to xboard mode if user forgets to use commandline switch
-// 			case strings.HasPrefix(input, "xboard"):
-// 				color.NoColor = true
-// 				hclibs.GameProtocol = hclibs.PROTOXBOARD
-// 				mainXboard(scanner)
-// 				return
-// 			// provide a way to change to xboard mode if user forgets to use commandline switch
-// 			case strings.HasPrefix(input, "uci"):
-// 				color.NoColor = true
-// 				hclibs.GameProtocol = hclibs.PROTOUCI
-// 				ucihelper()
-// 				mainIcs(scanner)
-// 				return
+			// 			case strings.HasPrefix(input, "xboard"):
+			// 				color.NoColor = true
+			// 				hclibs.GameProtocol = hclibs.PROTOXBOARD
+			// 				mainXboard(scanner)
+			// 				return
+			// 			// provide a way to change to xboard mode if user forgets to use commandline switch
+			// 			case strings.HasPrefix(input, "uci"):
+			// 				color.NoColor = true
+			// 				hclibs.GameProtocol = hclibs.PROTOUCI
+			// 				ucihelper()
+			// 				mainIcs(scanner)
+			// 				return
 
 			case strings.Contains(input, "move"):
 				fields := strings.Fields(input)
@@ -209,7 +210,7 @@ QUIT:
 					proto.oln("Please specify a number")
 					break next
 				}
-				_,s:=hclibs.Divide(d, &p)
+				_, s := hclibs.Divide(d, &p)
 				proto.ofln(s)
 
 			case strings.Contains(input, "perft"):
@@ -247,19 +248,19 @@ QUIT:
 				proto.o(fmt.Sprintf("Current depth is %d. Setting depth to %d.\n", hclibs.GameDepthSearch, d))
 				hclibs.GameDepthSearch = d
 
-                        case input == "help":
-                                proto.o("Commands: move [a2a4],[a2a4], g[o], auto, quit, new, ping, depth #, perft #, divide #,\n          setboard [fen], kiwipete, pos4, pos5, end1, end2, end3, end4\n")
-                                
+			case input == "help":
+				proto.o("Commands: move [a2a4],[a2a4], g[o], auto, quit, new, ping, depth #, perft #, divide #,\n          setboard [fen], kiwipete, pos4, pos5, end1, end2, end3, end4\n")
+
 			case strings.Contains(input, "auto"):
 				hclibs.GameForce = !hclibs.GameForce
 
-			////////////////////////////////////////////////////////////////////////////////
-                        case strings.Contains(input, "go") || input =="g" || hclibs.GameForce == true:
-				res, info := hclibs.Go(&p)
+				////////////////////////////////////////////////////////////////////////////////
+			case strings.Contains(input, "go") || input == "g" || hclibs.GameForce == true:
+				res, info, _ := hclibs.Go(&p)
 				proto.ofln(&p)
 				proto.oln(info)
 				proto.oln(res)
-	
+
 			}
 
 			proto.o("> ")

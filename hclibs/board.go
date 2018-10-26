@@ -23,6 +23,9 @@ func Die(e string) {
 func Pick(i int) int {
 	return rand.Intn(i)
 }
+func (f Fen) NewBoard() Pos {
+	return FENToNewBoard(string(f))
+}
 func FENToNewBoard(f string) Pos {
 	var p Pos
 	FENToBoard(f, &p)

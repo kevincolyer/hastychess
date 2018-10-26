@@ -22,7 +22,7 @@ func TestGenerateMoves(t *testing.T) {
 	tap.Is(Perft(2, &p), 400, "2nd test of perft")
 	tap.Is(Perft(3, &p), 8902, "third test of perft")
 
-        i,_:=Divide(4, &p)
+	i, _ := Divide(4, &p)
 	tap.Is(i, 197281, "4th test of divide")
 	// 	tap.Is(123, 123, "Is")
 
