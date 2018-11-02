@@ -88,11 +88,8 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, srch *Search) (bestmove Move
 			// update for next round of sorting when iterative deepening. Do after unmakemove as the move score change is recorded in history array
 			move.score = val
 
-			if srch.Nodes > srch.ExplosionLimit || srch.StopSearch() {
-				return
-			}
 
-			if val >= bestscore {
+			if val > bestscore {
 				bestmove = move
 				bestscore = val
 				//update PV (stack based)
@@ -104,9 +101,15 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, srch *Search) (bestmove Move
 					fmt.Printf("# depth: %v score: %v pv: %v\n", depth, bestscore, globalpv)
 				}
 			}
+			
+			if srch.Nodes > srch.ExplosionLimit || srch.StopSearch() {
+				return
+			}
+			
 			if val > alpha {
 				alpha = val
 			}
+			
 			// stop search as found better
 			if val > beta {
 				break
@@ -116,10 +119,10 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, srch *Search) (bestmove Move
 		}
 		// re-sort for next loop when iterative deepening
 
-		sort.Slice(consider, func(i, j int) bool { return consider[i].score > consider[j].score }) // by score type descending
+		//sort.Slice(consider, func(i, j int) bool { return consider[i].score > consider[j].score }) // by score type descending
 		//if bestscore <= alpha -50 || bestscore >= beta+50 {
-		alpha = NEGINF
-		beta = POSINF
+		//alpha = NEGINF
+		//beta = POSINF
 		//	depth-- // search again but deeper
 		//	fmt.Println("# Re-run this search but with a wide window")
 		// 		} else {
@@ -142,24 +145,33 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, srch *Search) (bestmove Move
 
 // negamaxab search: searches between window so prunes the search tree.
 func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, searchdepth int, srch *Search) int {
-	// 	var childpv PV
-	childpv := PV{ply: p.Ply + 1}
+    // Implimenting NegaMaxAB failsoft
+    //https://www.chessprogramming.org/Alpha-Beta
 
+	childpv := PV{ply: p.Ply + 1}
 	srch.Nodes++
-	if depth == 0 || srch.Nodes > srch.ExplosionLimit {
+
+	if srch.Nodes > srch.ExplosionLimit || srch.StopSearch() {
+        return Eval(p, 0, Gamestage(p))
+    }
+    
+	if depth == 0{
 		parentpv.count = 0 // reset because we are at a leaf...
 
 		// Quiese?
-		if enterquiesce && srch.Nodes < srch.ExplosionLimit {
+		if enterquiesce {
 			// enter q search at this level - not deeper so no need to invert.
 			return SearchQuiesce(p, alpha, beta, QUIESCEDEPTH, searchdepth, srch)
 		}
+		// return an exact score
 		return Eval(p, 0, Gamestage(p))
 	}
-	// need to know if we are in mate before we return an eval at a leaf as this is the only way we check for mate!!! Not done in eval!
+
 
 	consider := GenerateAllMoves(p)
-	if len(consider) == 0 {
+
+	// need to know if we are in mate before we return an eval at a leaf as this is the only way we check for mate!!! Not done in eval!
+    if len(consider) == 0 {
 		if p.InCheck != -1 {
 			//                         fmt.Println("found a checkmate")
 			return -CHECKMATE + searchdepth
@@ -167,26 +179,36 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 		//                 fmt.Println("found a stalemate")
 		return -STALEMATE + searchdepth // Unless we can't win because of lack of material then stalemate makes sense -- impliment this!
 	}
-	max := NEGINF
+	
+	// give initial order for searching
 	OrderMoves(&consider, p, parentpv)
-
-	// reset PV and choose the
+    
+    // reset PV and choose the
 	bestmove := consider[0]
 	childpv.moves[0] = bestmove // in case we don't find anything better set first move to return
 	childpv.count = 1
 	count := 0
+	
+	bestscore := NEGINF
 	for _, move := range consider {
 		// prevent search explosion by reducing search width with increasing depth - probably doesn't work with iterative deepening...
 		if count > MAXSEARCHDEPTH-searchdepth {
 			break
 		}
+		count++
+		
 		MakeMove(move, p)
 		score := -negamaxab(-beta, -alpha, depth-1, p, &childpv, enterquiesce, searchdepth+1, srch)
 		UnMakeMove(move, p)
-		count++
 
-		if score > max {
-			max = score
+		if score >= beta {
+			// set killers here
+			// history table here...
+			return beta
+		}
+		
+		if score > bestscore {
+			bestscore = score
 			bestmove = move
 
 			// update PV on stack
@@ -194,14 +216,12 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 			copy(parentpv.moves[1:], childpv.moves[:])
 			parentpv.count = childpv.count + 1
 		}
-		if max > alpha {
-			alpha = max
+		
+		if bestscore > alpha {
+			alpha = bestscore
 		}
-		if alpha >= beta {
-			// set killers here
-			// history table here...
-			return beta
-		}
+		
+		// Check if we have been asked to stop...
 		if srch.StopSearch() {
 			return alpha
 		}
@@ -352,7 +372,6 @@ func OrderMoves(moves *[]Move, p *Pos, pv *PV) bool {
 	}
 
 	sort.Slice((*moves), func(i, j int) bool { return (*moves)[i].score > (*moves)[j].score }) // descending
-	//         fmt.Print((*moves)[0])
 	return true
 }
 

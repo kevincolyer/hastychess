@@ -13,7 +13,10 @@ func GenerateAllMoves(p *Pos) (moves []Move) {
 			//fmt.Println(all)
 			for _, j := range all {
 				// test legality here...
-				if is_legal_move(j, p) {
+                legal,check:=is_legal_move(j, p)
+				if  legal {
+                    if check { // TODO add check flag}
+                    }
 					moves = append(moves, j)
 				}
 			}
@@ -43,8 +46,10 @@ func GenerateMovesForQSearch(p *Pos) (moves []Move) {
 			for _, j := range all {
 				// test legality here...
 				if j.mtype == CAPTURE || j.mtype == PROMOTE { // || j.mtype==EPCAPTURE {
-					if is_legal_move(j, p) {
-
+                    legal,check:=is_legal_move(j, p)
+					if legal {
+                        if check { // TODO add check flag
+                        }
 						moves = append(moves, j)
 					}
 				}
@@ -429,7 +434,7 @@ func king_is_near(look int, p *Pos) bool {
 	return false
 }
 
-func is_legal_move(m Move, p *Pos) (retval bool) {
+func is_legal_move(m Move, p *Pos) (retval,check bool) {
 
 	side := p.Side
 	king := p.King[side]
@@ -476,8 +481,13 @@ func is_legal_move(m Move, p *Pos) (retval bool) {
 		} // cant move and allow king to be in check
 	}
 
+	
+	// TODO test if move puts opponants king in check!!! return check=true
+	
 	// TODO other moves to check - 3 repetitions or fifty move?
-	////// Completed tespture
+	
+	////// Completed test capture
+	// make UNMOVE
 	if m.mtype == EPCAPTURE {
 		p.Board[epcap] = eppawn
 	}
@@ -505,4 +515,8 @@ func IsValidMove(m Move, p *Pos) bool {
 		}
 	}
 	return false
+}
+
+func DoesMoveCheckKing(m, Move, p *Pos) (b bool) {
+    return
 }
