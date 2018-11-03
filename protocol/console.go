@@ -39,7 +39,7 @@ func (p *console) debug(s string) {
 
 func NewConsole(in io.Reader, out io.Writer, stderr io.Writer, options CLIOptions) (*console, error) {
 	p := console{Out: out, In: in, Stderr: stderr, Options: options}
-	p.debug("Started Console Protocol for "+options.NameVersion+"\n")
+	p.debug("Started Console Protocol for " + options.NameVersion + "\n")
 	return &p, nil
 }
 
@@ -78,7 +78,11 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 	re := regexp.MustCompile("[a-h][1-8][a-h][1-8][qbnr]?")
 	// 	version := 1.0
 	hiwhite := color.New(color.FgHiWhite).SprintfFunc()
+	//         cls:="\033[2J"
+	cls := "\033[H\033[2J"
+	proto.o(cls)
 	proto.o(hiwhite("Hello and welcome to %v\n\n", proto.Options.NameVersion))
+	cls += hiwhite("%v\n\n", proto.Options.NameVersion)
 
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
 	hclibs.GameProtocol = hclibs.PROTOCONSOLE
@@ -90,9 +94,10 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 		proto.ofln(&p)
 	}
 	quit := false
-	proto.o("> ")
+
 	hclibs.Control = make(chan string)
 	// main input loop
+
 QUIT:
 	for quit == false {
 	next:
@@ -127,6 +132,7 @@ QUIT:
 					}
 				}
 				result = hclibs.MakeUserMove(move, &p)
+				proto.o(cls)
 				proto.ofln(&p)
 				proto.oln(result)
 
@@ -255,12 +261,12 @@ QUIT:
 				////////////////////////////////////////////////////////////////////////////////
 			case strings.Contains(input, "go") || input == "g" || hclibs.GameForce == true:
 				res, info, _ := hclibs.Go(&p)
+				proto.o(cls)
 				proto.ofln(&p)
 				proto.oln(info)
 				proto.oln(res)
 
 			}
-
 			proto.o("> ")
 		}
 	}
