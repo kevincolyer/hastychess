@@ -161,13 +161,13 @@ func PstScore(p *Pos, nummoves, gamestage int) (score int) { // actually Pst and
 	//      Consider check else where - the King score is used for pl move generation. giving this as the final score means it is check or nothing!
 	//      use killer or killer-mate?
 	// opponent is in check
-	/*if p.InCheck == Xside(p.Side) {
-	          score += CHECK
-	  }
-	  // i am in check :-(
-	  if p.InCheck == p.Side {
-	          score -= CHECK
-	  }*/
+	if p.InCheck == Xside(p.Side) {
+		score += CHECK
+	}
+	// i am in check :-(
+	if p.InCheck == p.Side {
+		score -= CHECK
+	}
 	return score
 }
 
@@ -347,10 +347,11 @@ func init() {
 }
 
 func Gamestage(p *Pos) int {
-	if p.TakenPieces[p.Side] > 12 {
+	// what about castling?
+	if p.TakenPieces[p.Side] > 10 {
 		return ENDGAME
 	}
-	if p.TakenPieces[p.Side] > 4 {
+	if p.Castled[p.Side] || p.TakenPieces[p.Side] > 4 {
 		return MIDGAME
 	}
 	return OPENING

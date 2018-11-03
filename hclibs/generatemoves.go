@@ -13,10 +13,10 @@ func GenerateAllMoves(p *Pos) (moves []Move) {
 			//fmt.Println(all)
 			for _, j := range all {
 				// test legality here...
-                legal,check:=is_legal_move(j, p)
-				if  legal {
-                    if check { // TODO add check flag}
-                    }
+				legal, check := is_legal_move(j, p)
+				if legal {
+					if check { // TODO add check flag}
+					}
 					moves = append(moves, j)
 				}
 			}
@@ -46,10 +46,10 @@ func GenerateMovesForQSearch(p *Pos) (moves []Move) {
 			for _, j := range all {
 				// test legality here...
 				if j.mtype == CAPTURE || j.mtype == PROMOTE { // || j.mtype==EPCAPTURE {
-                    legal,check:=is_legal_move(j, p)
+					legal, check := is_legal_move(j, p)
 					if legal {
-                        if check { // TODO add check flag
-                        }
+						if check { // TODO add check flag
+						}
 						moves = append(moves, j)
 					}
 				}
@@ -434,10 +434,12 @@ func king_is_near(look int, p *Pos) bool {
 	return false
 }
 
-func is_legal_move(m Move, p *Pos) (retval,check bool) {
+func is_legal_move(m Move, p *Pos) (retval, check bool) {
 
 	side := p.Side
 	king := p.King[side]
+	// 	xside:=1-side
+	// 	xking:=p.King[xside]
 	var rook, epcap, eppawn int
 	retval = true
 
@@ -481,11 +483,18 @@ func is_legal_move(m Move, p *Pos) (retval,check bool) {
 		} // cant move and allow king to be in check
 	}
 
-	
 	// TODO test if move puts opponants king in check!!! return check=true
-	
+	// 	switch PieceType(fp) {
+	//         case PAWN: if PieceColour(fp) == WHITE {
+	//             if fp==xking+PM[side][0] || fp==xking+PM[side][2] { check = true ; break }
+	//         }
+	//         case KNIGHT:
+	//             for i:=range NM
+	//         case ROOK,QUEEN:
+	//         case BISHOP,QUEEN:
+	//     }
 	// TODO other moves to check - 3 repetitions or fifty move?
-	
+
 	////// Completed test capture
 	// make UNMOVE
 	if m.mtype == EPCAPTURE {
@@ -518,5 +527,5 @@ func IsValidMove(m Move, p *Pos) bool {
 }
 
 func DoesMoveCheckKing(m, Move, p *Pos) (b bool) {
-    return
+	return
 }

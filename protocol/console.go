@@ -22,15 +22,15 @@ type console struct {
 }
 
 func (p *console) o(s string) {
-	io.WriteString(p.Out, "o "+s)
+	io.WriteString(p.Out, s)
 }
 
 func (p *console) oln(s string) {
-	io.WriteString(p.Out, "o "+s+"\n")
+	io.WriteString(p.Out, s+"\n")
 }
 
 func (p *console) ofln(s interface{}) {
-	io.WriteString(p.Out, fmt.Sprintf("o %v\n", s))
+	io.WriteString(p.Out, fmt.Sprintf("%v\n", s))
 }
 
 func (p *console) debug(s string) {
@@ -39,8 +39,8 @@ func (p *console) debug(s string) {
 
 func NewConsole(in io.Reader, out io.Writer, stderr io.Writer, options CLIOptions) (*console, error) {
 	p := console{Out: out, In: in, Stderr: stderr, Options: options}
-	_, e := io.WriteString(p.Stderr, "Stderr: Started "+options.NameVersion+"\n")
-	return &p, e
+	p.debug("Started Console Protocol for "+options.NameVersion+"\n")
+	return &p, nil
 }
 
 func (p *console) Echo() (e error) {
@@ -59,8 +59,6 @@ func (p *console) Start() error {
 	if err != nil {
 		return fmt.Errorf("Error creating engine: %v", err)
 	}
-	p.debug("Engine started ok\n")
-	p.o("hello world\n")
 	p.MainLoop(myEngine)
 	// 	if myEngine.Stop() {
 	// 		io.WriteString(p.Stderr, "Stderr: Engine stopped ok\n")

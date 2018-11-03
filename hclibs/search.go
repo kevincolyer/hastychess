@@ -88,7 +88,6 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, srch *Search) (bestmove Move
 			// update for next round of sorting when iterative deepening. Do after unmakemove as the move score change is recorded in history array
 			move.score = val
 
-
 			if val > bestscore {
 				bestmove = move
 				bestscore = val
@@ -101,15 +100,15 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, srch *Search) (bestmove Move
 					fmt.Printf("# depth: %v score: %v pv: %v\n", depth, bestscore, globalpv)
 				}
 			}
-			
+
 			if srch.Nodes > srch.ExplosionLimit || srch.StopSearch() {
 				return
 			}
-			
+
 			if val > alpha {
 				alpha = val
 			}
-			
+
 			// stop search as found better
 			if val > beta {
 				break
@@ -145,17 +144,17 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, srch *Search) (bestmove Move
 
 // negamaxab search: searches between window so prunes the search tree.
 func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, searchdepth int, srch *Search) int {
-    // Implimenting NegaMaxAB failsoft
-    //https://www.chessprogramming.org/Alpha-Beta
+	// Implimenting NegaMaxAB failsoft
+	//https://www.chessprogramming.org/Alpha-Beta
 
 	childpv := PV{ply: p.Ply + 1}
 	srch.Nodes++
 
 	if srch.Nodes > srch.ExplosionLimit || srch.StopSearch() {
-        return Eval(p, 0, Gamestage(p))
-    }
-    
-	if depth == 0{
+		return Eval(p, 0, Gamestage(p))
+	}
+
+	if depth == 0 {
 		parentpv.count = 0 // reset because we are at a leaf...
 
 		// Quiese?
@@ -167,11 +166,10 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 		return Eval(p, 0, Gamestage(p))
 	}
 
-
 	consider := GenerateAllMoves(p)
 
 	// need to know if we are in mate before we return an eval at a leaf as this is the only way we check for mate!!! Not done in eval!
-    if len(consider) == 0 {
+	if len(consider) == 0 {
 		if p.InCheck != -1 {
 			//                         fmt.Println("found a checkmate")
 			return -CHECKMATE + searchdepth
@@ -179,16 +177,16 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 		//                 fmt.Println("found a stalemate")
 		return -STALEMATE + searchdepth // Unless we can't win because of lack of material then stalemate makes sense -- impliment this!
 	}
-	
+
 	// give initial order for searching
 	OrderMoves(&consider, p, parentpv)
-    
-    // reset PV and choose the
+
+	// reset PV and choose the
 	bestmove := consider[0]
 	childpv.moves[0] = bestmove // in case we don't find anything better set first move to return
 	childpv.count = 1
 	count := 0
-	
+
 	bestscore := NEGINF
 	for _, move := range consider {
 		// prevent search explosion by reducing search width with increasing depth - probably doesn't work with iterative deepening...
@@ -196,7 +194,7 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 			break
 		}
 		count++
-		
+
 		MakeMove(move, p)
 		score := -negamaxab(-beta, -alpha, depth-1, p, &childpv, enterquiesce, searchdepth+1, srch)
 		UnMakeMove(move, p)
@@ -206,7 +204,7 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 			// history table here...
 			return beta
 		}
-		
+
 		if score > bestscore {
 			bestscore = score
 			bestmove = move
@@ -216,11 +214,11 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 			copy(parentpv.moves[1:], childpv.moves[:])
 			parentpv.count = childpv.count + 1
 		}
-		
+
 		if bestscore > alpha {
 			alpha = bestscore
 		}
-		
+
 		// Check if we have been asked to stop...
 		if srch.StopSearch() {
 			return alpha
@@ -353,12 +351,12 @@ func OrderMoves(moves *[]Move, p *Pos, pv *PV) bool {
 			(*moves)[i].score = (*moves)[i].mtype + p.Board[(*moves)[i].from]*2 // type of move + which piece is moving
 		}
 
-		if (*moves)[i].mtype == QUIET || (*moves)[i].mtype == ENPASSANT {
+		if (*moves)[i].mtype == QUIET {
 			//for now
 			(*moves)[i].score = QUIET
 			// boost history
 			// boost killers
-			// boost check?????
+			//TODO  boost check?????
 		}
 
 		// boost PV to top here
@@ -372,6 +370,11 @@ func OrderMoves(moves *[]Move, p *Pos, pv *PV) bool {
 	}
 
 	sort.Slice((*moves), func(i, j int) bool { return (*moves)[i].score > (*moves)[j].score }) // descending
+	//assert
+	l := len((*moves))
+	if l > 0 && (*moves)[0].score < (*moves)[l-1].score {
+		panic("sort is not descending")
+	}
 	return true
 }
 
