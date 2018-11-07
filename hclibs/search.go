@@ -49,8 +49,9 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, srch *Search) (bestmove Move
 	}
 	alpha := NEGINF
 	beta := POSINF
-	bestscore = NEGINF
 	bestmove = consider[0]
+	bestscore = bestmove.score
+	//	beta := bestscore+50
 	// reset pv
 	globalpv.count = 1
 	globalpv.moves[0] = bestmove
@@ -61,14 +62,14 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, srch *Search) (bestmove Move
 	searchdepth := 0
 	// 	for depth := 2; depth < maxdepth+1; depth++ {
 	for depth := maxdepth; depth < maxdepth+1; depth++ {
-		enterquiesce := (depth == maxdepth)
+		enterquiesce := false //(depth == maxdepth)
 		childpv := PV{ply: p.Ply + 1}
 		count := 0
 
 		// from CPW: if only one move and searched 4 deep then move...
-		if len(consider) == 1 && depth > 4 {
-			break
-		}
+		// 		if len(consider) == 1 && depth > 4 {
+		// 			break
+		// 		}
 
 		if GameProtocol == PROTOCONSOLE {
 			fmt.Printf("# Searching to depth %v\n", depth)
@@ -82,7 +83,7 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, srch *Search) (bestmove Move
 
 			MakeMove(move, p)
 			// need neg here as we switch sides in make move and evaluation happens relative to side
-			val := -negamaxab(alpha, beta, depth, p, &childpv, enterquiesce, searchdepth+1, srch)
+			val := negamaxab(alpha, beta, depth, p, &childpv, enterquiesce, searchdepth+1, srch)
 			//fmt.Printf("# move %v scored %v\n", move, val)
 			UnMakeMove(move, p)
 			// update for next round of sorting when iterative deepening. Do after unmakemove as the move score change is recorded in history array
@@ -109,10 +110,10 @@ func SearchRoot(p *Pos, maxdepth int, globalpv *PV, srch *Search) (bestmove Move
 				alpha = val
 			}
 
-			// stop search as found better
-			if val > beta {
-				break
-			}
+			// 			// stop search as found better
+			// 			if val > beta {
+			// 				break
+			// 			}
 
 			count++
 		}
@@ -188,9 +189,13 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 	count := 0
 
 	bestscore := NEGINF
+	// depth first search...
+	// iterative deepening tries to convert to breadth first...
 	for _, move := range consider {
-		// prevent search explosion by reducing search width with increasing depth - probably doesn't work with iterative deepening...
-		if count > MAXSEARCHDEPTH-searchdepth {
+		// prevent search explosion by reducing search width with increasing depth.
+		// search entire space to depth of 2, then go deeper
+		// May not be needed with iterative deepening...
+		if searchdepth >= 2 && count > MAXSEARCHDEPTH-searchdepth {
 			break
 		}
 		count++

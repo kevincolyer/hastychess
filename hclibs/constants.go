@@ -54,18 +54,19 @@ const queen = 7 + 8
 // used for mtype in struct move
 // this is useful for ordering moves - ascending order is interesting for us.
 const (
-	BADCAPTURE  = 0
-	QUIET       = 50 // sorted by history
-	ENPASSANT   = 51
-	KILLERS     = 100
-	O_O_O       = 200
-	O_O         = 201
-	EPCAPTURE   = 300
-	CAPTURE     = 301
-	GOODCAPTURE = 400
-	PROMOTE     = 500
-	PVBONUS     = 600
-	INCHECK     = 700
+	UNINITIALISED = 0
+	BADCAPTURE    = 1
+	QUIET         = 50 // sorted by history
+	ENPASSANT     = 51
+	KILLERS       = 100
+	O_O_O         = 200
+	O_O           = 201
+	EPCAPTURE     = 300
+	CAPTURE       = 301
+	GOODCAPTURE   = 400
+	PROMOTE       = 500
+	PVBONUS       = 600
+	INCHECK       = 700
 )
 
 const OPENING = 0

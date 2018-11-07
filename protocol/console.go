@@ -88,7 +88,7 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 	hclibs.GameProtocol = hclibs.PROTOCONSOLE
 	hclibs.GameOver = false
 	hclibs.GameDisplayOn = true
-	hclibs.GameDepthSearch = hclibs.MAXSEARCHDEPTH // 8 or 4 // don't delete this or search depth = 0!
+	hclibs.GameDepthSearch = 8 // hclibs.MAXSEARCHDEPTH // 8 or 4 // don't delete this or search depth = 0!
 	hclibs.GameForce = false
 	if hclibs.GameDisplayOn {
 		proto.ofln(&p)
@@ -132,7 +132,7 @@ QUIT:
 					}
 				}
 				result = hclibs.MakeUserMove(move, &p)
-				proto.o(cls)
+				// proto.o(cls)
 				proto.ofln(&p)
 				proto.oln(result)
 
@@ -261,7 +261,7 @@ QUIT:
 				////////////////////////////////////////////////////////////////////////////////
 			case strings.Contains(input, "go") || input == "g" || hclibs.GameForce == true:
 				res, info, _ := hclibs.Go(&p)
-				proto.o(cls)
+				// proto.o(cls)
 				proto.ofln(&p)
 				proto.oln(info)
 				proto.oln(res)

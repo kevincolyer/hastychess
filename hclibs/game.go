@@ -23,58 +23,90 @@ func GameInit() {
 var pv PV
 
 type Search struct {
-	Nodes       int
-	QNodes      int
-	TtHits      int
-	TtWrites    int
-	TtCulls     int
-	TtUpdates   int
-	UpperCuts   int
-	LowerCuts   int
-	TimeStart   time.Time
-	TimeElapsed time.Duration
+	Nodes     int
+	QNodes    int
+	TtHits    int
+	TtWrites  int
+	TtCulls   int
+	TtUpdates int
+	UpperCuts int
+	LowerCuts int
 
+	TimeStart           time.Time
+	TimeElapsed         time.Duration
 	MaxDurationOfSearch time.Duration
-	ParentPV            *PV
-	ChildPV             *PV
-	Score               int
-	BestMove            Move
-	Stop                bool
-	ExplosionLimit      int
-	MaxDepthToSearch    int
+
+	FEN    Fen
+	P      *Pos
+	NewFEN Fen
+
+	Result           string
+	Info             string
+	PV               *PV
+	ParentPV         *PV
+	ChildPV          *PV
+	Score            int
+	BestMove         Move
+	Stop             bool
+	ExplosionLimit   int
+	MaxDepthToSearch int
+
+	UseTT   bool
+	UseBook bool
+}
+
+func NewSearch(FEN Fen) *Search {
+	if FEN == "" {
+		FEN = Fen(STARTFEN)
+	}
+	srch := Search{
+		Score:               NEGINF,
+		ExplosionLimit:      2000000,
+		MaxDurationOfSearch: time.Second * 30,
+		MaxDepthToSearch:    8, // just a default
+		FEN:                 FEN,
+		UseTT:               true,
+		UseBook:             true,
+	}
+	p := FEN.NewBoard()
+	srch.P = &p
+	return &srch
+}
+
+func (srch Search) Search(depth int) (completed bool) {
+	srch.MaxDepthToSearch = depth
+	//srch.StartSearch()
+	completed = !srch.Stop // flag is raised if we must stop or hit explosion limit
+	if srch.BestMove.mtype == UNINITIALISED {
+		panic("StartSearch has returned a nil best move")
+	}
+	return
 }
 
 func (stat Search) String() string {
 	return fmt.Sprintf("STATS score %v | nodes %v | qnodes %v (%v%%)| nps %v | uppercuts %v | lowercuts %v |\n# STATS tt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v |\n", Comma(stat.Score), Comma(stat.Nodes), Comma(stat.QNodes), Comma(int((float64(stat.QNodes) / float64(stat.Nodes+stat.QNodes) * 100))), Comma(int(float64(stat.Nodes+stat.QNodes)/stat.TimeElapsed.Seconds())), Comma(stat.UpperCuts), Comma(stat.LowerCuts), Comma(stat.TtHits), Comma(int((float64(stat.TtHits) / float64(stat.Nodes) * 100))), Comma(stat.TtWrites), Comma(stat.TtUpdates), Comma(len(tt)), Comma(stat.TtCulls))
-
 }
 
-func (fen Fen) Search(depth int, control chan string) (res string, info string, search Search, newfen Fen) {
-	p := fen.NewBoard()
-	res, info, search = Go(&p)
-	newfen = Fen(BoardToFEN(&p))
-	return
-}
-
-func Go(p *Pos) (res string, info string, search Search) {
+func Go(p *Pos) (res string, info string, srch Search) {
 	// computer makes moves now!
 	// 	var pv PV
 	// 	var move Move
 	// 	var score int
 	var bookSuccess bool
 
-	search = Search{
-		TimeStart:      time.Now(),
-		Score:          NEGINF,
-		ExplosionLimit: 2000000,
+	srch = Search{
+		TimeStart:        time.Now(),
+		Score:            NEGINF,
+		ExplosionLimit:   2000000,
+		MaxDepthToSearch: 6,
 	}
 
 	// 	StatTimeElapsed = 0
 	// 	GameStopSearch = false
 
-	search.BestMove, bookSuccess = ChooseBookMove(p)
+	srch.BestMove, bookSuccess = ChooseBookMove(p)
 	if bookSuccess == false {
-		// search root
+		// srch root
 		// adjust pv if filled
 		if pv.count > 0 {
 			for pv.ply < p.Ply && pv.count > 0 {
@@ -89,27 +121,27 @@ func Go(p *Pos) (res string, info string, search Search) {
 		if pv.ply > p.Ply {
 			pv.ply = p.Ply
 		} // in case reset game - pv is global (yuk) and not reset so far
-		search.TimeStart = time.Now()
+		srch.TimeStart = time.Now()
 		// some computation
-		search.BestMove, search.Score = SearchRoot(p, GameDepthSearch, &pv, &search) // global variable for depth of search...
-		search.TimeElapsed = time.Since(search.TimeStart)
-		if GameUseStats && GameProtocol == PROTOCONSOLE {
+		srch.BestMove, srch.Score = SearchRoot(p, srch.MaxDepthToSearch, &pv, &srch) // global variable for depth of search...
+		srch.TimeElapsed = time.Since(srch.TimeStart)
+		if GameProtocol == PROTOCONSOLE {
 			info += "# fen: (" + BoardToFEN(p) + ")"
 			info += fmt.Sprintf("\n# PV %v", pv)
-			info += fmt.Sprintf("\n# %v", search)
+			info += fmt.Sprintf("\n# %v", srch)
 		}
 	}
 
 	info += result(p)
 
-	res = fmt.Sprintf("move %v", MoveToAlg(search.BestMove))
+	res = fmt.Sprintf("move %v", MoveToAlg(srch.BestMove))
 
 	//TODO if UCI() {
 	//    res = "best" + res
 	//} /*else {
 	//		res += "#\n"
 	//	}*/
-	MakeMove(search.BestMove, p)
+	MakeMove(srch.BestMove, p)
 
 	return
 }

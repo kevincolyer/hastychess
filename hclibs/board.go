@@ -397,6 +397,88 @@ func AlgToMove(s string) (move Move) {
 	return
 }
 
-/* TODO
-func AlgMove(from, to, type, extra int) string {}
-*/
+/* TODO SAN notation so that...
+ * https://en.wikipedia.org/wiki/Portable_Game_Notation#Example
+ *
+ * SANtoMove Move,error (if not parsable) - would only let you know if parsable not if legal in this position.
+ * MovetoSAN(Move) string
+ */
+
+func MoveToSAN(move Move) (san string) {
+	if move.mtype == O_O {
+		return "O-O"
+	}
+	if move.mtype == O_O_O {
+		return "O-O-O"
+	}
+
+	//prefix
+	if move.piece != PAWN {
+		san = pieceToInitial(move.piece)
+	}
+
+	// disambiguate here? (need to see either board or move list to determine - move list handier!)
+	// TODO
+
+	// if capture
+	if move.mtype == CAPTURE || move.mtype == EPCAPTURE {
+		san += "x"
+	}
+
+	// to square
+	san += DecToAlg(move.to)
+
+	// suffix
+	if move.mtype == PROMOTE {
+		san += "=" + pieceToInitial(move.extra)
+	}
+	if move.subtype == CHECK {
+		san += "+"
+	}
+	// if move.subtype==CHECKMATE { san+="+" }  or RESULT
+	return
+}
+
+func pieceToInitial(p int) (s string) {
+	if p == PAWN {
+		s = "P"
+	}
+	if p == KING {
+		s = "K"
+	}
+	if p == QUEEN {
+		s = "Q"
+	}
+	if p == BISHOP {
+		s = "B"
+	}
+	if p == ROOK {
+		s = "R"
+	}
+	if p == NIGHT {
+		s = "N"
+	}
+	return
+}
+
+func initialToPiece(s string) (p int) {
+	if s == "K" {
+		p = KING
+	}
+	if s == "Q" {
+		p = QUEEN
+	}
+	if s == "B" {
+		p = BISHOP
+	}
+	if s == "R" {
+		p = ROOK
+	}
+	if s == "N" {
+		p = NIGHT
+	}
+	if s == "" || s == "P" {
+		p = PAWN
+	}
+	return
+}

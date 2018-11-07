@@ -77,7 +77,7 @@ func GenerateMoves(from int, p *Pos) (moves []Move) {
 			if (from+m)&0x88 == 0 { // not off board
 				pc = p.Board[from+m]
 				if pc == EMPTY || (((pc >> 3) == xside) && ((pc & 7) != KING)) {
-					moves = append(moves, Move{from: from, to: from + m, mtype: move_type(pc, xside), extra: 0}) // ! capture king
+					moves = append(moves, Move{from: from, to: from + m, mtype: move_type(pc, xside), extra: 0, piece: NIGHT}) // ! capture king
 				}
 			}
 		}
@@ -89,7 +89,7 @@ func GenerateMoves(from int, p *Pos) (moves []Move) {
 				pc = p.Board[from+m]
 
 				if !InCheck(from+m, side, p) && (pc == EMPTY || (pc>>3) == xside) && !king_is_near(from+m, p) {
-					moves = append(moves, Move{from: from, to: from + m, mtype: move_type(pc, xside), extra: 0})
+					moves = append(moves, Move{from: from, to: from + m, mtype: move_type(pc, xside), extra: 0, piece: KING})
 				}
 			}
 		}
@@ -99,25 +99,25 @@ func GenerateMoves(from int, p *Pos) (moves []Move) {
 			if p.Castled[side*2+KS] == false { // kingsside
 				if EMPTY == p.Board[from+1] && EMPTY == p.Board[from+2] && !InCheck(from+1, side, p) && !InCheck(from+2, side, p) && !king_is_near(from+2, p) {
 
-					moves = append(moves, Move{from: from, to: from + 2, mtype: O_O, extra: 0})
+					moves = append(moves, Move{from: from, to: from + 2, mtype: O_O, extra: 0, piece: KING})
 				}
 			}
 			if p.Castled[side*2+QS] == false { // queens side
 				if EMPTY == p.Board[from-1] && EMPTY == p.Board[from-2] && EMPTY == p.Board[from-3] && !InCheck(from-1, side, p) && !InCheck(from-2, side, p) && !king_is_near(from-2, p) {
 
-					moves = append(moves, Move{from: from, to: from - 2, mtype: O_O_O, extra: 0})
+					moves = append(moves, Move{from: from, to: from - 2, mtype: O_O_O, extra: 0, piece: KING})
 				}
 			}
 		}
 
 	case ROOK:
-		moves = append(moves, slider_moves(from, p, RM[:])...)
+		moves = append(moves, slider_moves(from, p, RM[:], ROOK)...)
 
 	case BISHOP:
-		moves = append(moves, slider_moves(from, p, BM[:])...)
+		moves = append(moves, slider_moves(from, p, BM[:], BISHOP)...)
 
 	case QUEEN:
-		moves = append(moves, slider_moves(from, p, QM[:])...)
+		moves = append(moves, slider_moves(from, p, QM[:], QUEEN)...)
 
 	case PAWN: // TODO capture to promote -- need a test && check for this...
 		var promfile int
@@ -151,9 +151,9 @@ func GenerateMoves(from int, p *Pos) (moves []Move) {
 					//                         my type=
 					if (from >> 4) == promfile {
 						// 4 possible promotions
-						moves = append(moves, Move{from: from, to: to, mtype: PROMOTE, extra: QUEEN}, Move{from: from, to: to, mtype: PROMOTE, extra: BISHOP}, Move{from: from, to: to, mtype: PROMOTE, extra: ROOK}, Move{from: from, to: to, mtype: PROMOTE, extra: NIGHT})
+						moves = append(moves, Move{from: from, to: to, mtype: PROMOTE, extra: QUEEN, piece: PAWN}, Move{from: from, to: to, mtype: PROMOTE, extra: BISHOP, piece: PAWN}, Move{from: from, to: to, mtype: PROMOTE, extra: ROOK, piece: PAWN}, Move{from: from, to: to, mtype: PROMOTE, extra: NIGHT, piece: PAWN})
 					} else {
-						moves = append(moves, Move{from: from, to: to, mtype: move_type(pc, xside), extra: 0})
+						moves = append(moves, Move{from: from, to: to, mtype: move_type(pc, xside), extra: 0, piece: PAWN})
 					} // capture || check || promote
 				}
 			}
@@ -187,10 +187,10 @@ func GenerateMoves(from int, p *Pos) (moves []Move) {
 			if p.EnPassant > -1 && file == epfile { // empty or -1?
 				//                     debug ==2 && say "considering epcapture for p.en_passant"
 				if from+m[0] == p.EnPassant { // ep to one side
-					moves = append(moves, Move{from: from, to: from + m[0], mtype: EPCAPTURE, extra: 0})
+					moves = append(moves, Move{from: from, to: from + m[0], mtype: EPCAPTURE, extra: 0, piece: PAWN})
 				}
 				if from+m[1] == p.EnPassant { // ep to other side
-					moves = append(moves, Move{from: from, to: from + m[1], mtype: EPCAPTURE, extra: 0})
+					moves = append(moves, Move{from: from, to: from + m[1], mtype: EPCAPTURE, extra: 0, piece: PAWN})
 				}
 				// || ! at all (too far away)
 			}
@@ -204,7 +204,7 @@ func GenerateMoves(from int, p *Pos) (moves []Move) {
 			if i == 3 {
 
 				if p.Board[from+m[2]] == EMPTY { // blocked in between inital && double move forward
-					moves = append(moves, Move{from: from, to: to, mtype: ENPASSANT, extra: from + m[2]})
+					moves = append(moves, Move{from: from, to: to, mtype: ENPASSANT, extra: from + m[2], piece: PAWN})
 
 					break
 				}
@@ -215,13 +215,13 @@ func GenerateMoves(from int, p *Pos) (moves []Move) {
 			// promotions
 			if file == promfile {
 				// 4 possible promotions
-				moves = append(moves, Move{from: from, to: to, mtype: PROMOTE, extra: QUEEN}, Move{from: from, to: to, mtype: PROMOTE, extra: BISHOP}, Move{from: from, to: to, mtype: PROMOTE, extra: ROOK}, Move{from: from, to: to, mtype: PROMOTE, extra: NIGHT})
+				moves = append(moves, Move{from: from, to: to, mtype: PROMOTE, extra: QUEEN, piece: PAWN}, Move{from: from, to: to, mtype: PROMOTE, extra: BISHOP, piece: PAWN}, Move{from: from, to: to, mtype: PROMOTE, extra: ROOK, piece: PAWN}, Move{from: from, to: to, mtype: PROMOTE, extra: NIGHT, piece: PAWN})
 
 				break
 			}
 
 			// just push on ahead - default
-			moves = append(moves, Move{from: from, to: to, mtype: QUIET, extra: 0}) // default move
+			moves = append(moves, Move{from: from, to: to, mtype: QUIET, extra: 0, piece: PAWN}) // default move
 
 			i++
 		}
@@ -244,7 +244,7 @@ func move_type(piece, xside int) int {
 }
 
 // Helper function for generate
-func slider_moves(from int, p *Pos, dirs []int) (moves []Move) {
+func slider_moves(from int, p *Pos, dirs []int, mypiece int) (moves []Move) {
 
 	side := p.Side
 	xside := 1 - side
@@ -255,17 +255,21 @@ func slider_moves(from int, p *Pos, dirs []int) (moves []Move) {
 		// follow a ray
 		for (n & 0x88) == 0 {
 			piece = p.Board[n]
+			// if king then too far
 			if piece == KING+(xside<<3) {
 				break
-			} // if king then too far
+			}
+			// if one of ours, too far!
 			if piece != EMPTY && (piece>>3) == side {
 				break
-			} // one of ours, too far!
+			}
+			// capture
 			if piece != EMPTY {
-				moves = append(moves, Move{from: from, to: n, mtype: CAPTURE, extra: 0})
+				moves = append(moves, Move{from: from, to: n, mtype: CAPTURE, extra: 0, piece: mypiece})
 				break
 			}
-			moves = append(moves, Move{from: from, to: n, mtype: QUIET, extra: 0})
+			// quiet
+			moves = append(moves, Move{from: from, to: n, mtype: QUIET, extra: 0, piece: mypiece})
 			n += m
 		}
 	}

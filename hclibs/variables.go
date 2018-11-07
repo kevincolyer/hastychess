@@ -10,24 +10,16 @@ type Move struct {
 	from    int
 	to      int
 	mtype   int // uses constants defined in constants.go
-	extra   int
-	subtype int
+	piece   int // color masked
+	extra   int // promotion
+	subtype int // check
 	score   int
 }
 
 func (mv Move) String() string {
-	return fmt.Sprintf("%v", MoveToAlg(mv))
+	// 	return fmt.Sprintf("%v", MoveToAlg(mv))
+	return fmt.Sprintf("%v", MoveToSAN(mv))
 }
-
-// type PVmoves []Move
-//
-// func (moves PVmoves) String() (s string) {
-//     s = fmt.Sprintf("PV=$v  ", MoveToAlg(moves[0].from,moves[0].to,moves[0].extra))
-//     for i:=len(moves); i==1;i-- {
-//         s+= fmt.Sprintf("$v  ", MoveToAlg(moves[i].from,moves[i].to,moves[i].extra))
-//     }
-//     return
-// }
 
 type Fen string
 
@@ -66,7 +58,7 @@ type History struct {
 
 }
 
-var history [1000]History
+var history [1024]History
 
 //////////////////////////////////////////////////////////////////////////
 //PV struct
