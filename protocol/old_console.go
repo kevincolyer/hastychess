@@ -14,41 +14,36 @@ import (
 	"time"
 )
 
-type console struct {
+type oldconsole struct {
 	In      io.Reader
 	Out     io.Writer
 	Stderr  io.Writer
 	Options CLIOptions
 }
 
-type EngineInfo struct {
-    *hclibs.Statistics
-    *hclibs.PV
-}
-
-func (p *console) o(s string) {
+func (p *oldconsole) o(s string) {
 	io.WriteString(p.Out, s)
 }
 
-func (p *console) oln(s string) {
+func (p *oldconsole) oln(s string) {
 	io.WriteString(p.Out, s+"\n")
 }
 
-func (p *console) ofln(s interface{}) {
+func (p *oldconsole) ofln(s interface{}) {
 	io.WriteString(p.Out, fmt.Sprintf("%v\n", s))
 }
 
-func (p *console) debug(s string) {
+func (p *oldconsole) debug(s string) {
 	io.WriteString(p.Stderr, "Stderr: "+s)
 }
 
-func NewConsole(in io.Reader, out io.Writer, stderr io.Writer, options CLIOptions) (*console, error) {
-	p := console{Out: out, In: in, Stderr: stderr, Options: options}
-	p.debug("Started Console Protocol for " + options.NameVersion + "\n")
-	return &p, nil
-}
+// func NewConsole(in io.Reader, out io.Writer, stderr io.Writer, options CLIOptions) (*oldconsole, error) {
+// 	p := oldconsole{Out: out, In: in, Stderr: stderr, Options: options}
+// 	p.debug("Started Console Protocol for " + options.NameVersion + "\n")
+// 	return &p, nil
+// }
 
-func (p *console) Echo() (e error) {
+func (p *oldconsole) Echo() (e error) {
 	b := make([]byte, 256)
 	if n, err := p.In.Read(b); err != io.EOF {
 		io.WriteString(p.Out, string(b[:n]))
@@ -59,7 +54,7 @@ func (p *console) Echo() (e error) {
 	return
 }
 
-func (p *console) Start() error {
+func (p *oldconsole) Start() error {
 	myEngine, err := engine.New(engine.EngineOptions{})
 	if err != nil {
 		return fmt.Errorf("Error creating engine: %v", err)
@@ -74,7 +69,7 @@ func (p *console) Start() error {
 
 //===========================================================================
 
-func (proto *console) MainLoop(myEngine *engine.Engine) {
+func (proto *oldconsole) MainLoop(myEngine *engine.Engine) {
 	scanner := bufio.NewScanner(proto.In)
 	var err string
 	var result string

@@ -7,6 +7,8 @@ import "strings"
 import "regexp"
 import "time"
 
+import "github.com/jinzhu/copier"
+
 func GameInit() {
 	//tt = make(map[string]TtData)
 	if err := InitHashSize(8); err != nil {
@@ -20,9 +22,10 @@ func GameInit() {
 	return
 }
 
-var pv PV
+//var pv PV
 
-type Search struct {
+type Statistics struct {
+        Score     int
 	Nodes     int
 	QNodes    int
 	TtHits    int
@@ -31,9 +34,15 @@ type Search struct {
 	TtUpdates int
 	UpperCuts int
 	LowerCuts int
+	TimeElapsed         time.Duration
+}
+
+
+
+type Search struct {
+        stats   *Statistics
 
 	TimeStart           time.Time
-	TimeElapsed         time.Duration
 	MaxDurationOfSearch time.Duration
 
 	FEN    Fen
@@ -55,6 +64,23 @@ type Search struct {
 	UseBook bool
 }
 
+type EngineInfo struct {
+    pv   *PV
+    stats *Statistics
+}
+
+
+func NewEngineInfo(srch *Search) *EngineInfo {
+    ei:=EngineInfo{}
+    pv:=PV{}
+    stats:=Statistics{}
+    copier.Copy(&stats,srch.stats)
+    copier.Copy(&pv,srch.PV)
+    ei.pv=&pv
+    ei.stats=&stats
+    return &ei
+}
+
 func NewSearch(FEN Fen) *Search {
 	if FEN == "" {
 		FEN = Fen(STARTFEN)
@@ -70,6 +96,11 @@ func NewSearch(FEN Fen) *Search {
 	}
 	p := FEN.NewBoard()
 	srch.P = &p
+	s:=Statistics{}
+	srch.stats= &s
+	pv:=PV{}
+	srch.PV=&pv
+	
 	return &srch
 }
 
@@ -83,23 +114,24 @@ func (srch Search) Search(depth int) (completed bool) {
 	return
 }
 
-func (stat Search) String() string {
+func (stat Statistics) String() string {
 	return fmt.Sprintf("STATS score %v | nodes %v | qnodes %v (%v%%)| nps %v | uppercuts %v | lowercuts %v |\n# STATS tt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v |\n", Comma(stat.Score), Comma(stat.Nodes), Comma(stat.QNodes), Comma(int((float64(stat.QNodes) / float64(stat.Nodes+stat.QNodes) * 100))), Comma(int(float64(stat.Nodes+stat.QNodes)/stat.TimeElapsed.Seconds())), Comma(stat.UpperCuts), Comma(stat.LowerCuts), Comma(stat.TtHits), Comma(int((float64(stat.TtHits) / float64(stat.Nodes) * 100))), Comma(stat.TtWrites), Comma(stat.TtUpdates), Comma(len(tt)), Comma(stat.TtCulls))
 }
 
-func Go(p *Pos) (res string, info string, srch Search) {
+func Go(p *Pos) (res string, info string, srch *Search) {
 	// computer makes moves now!
 	// 	var pv PV
 	// 	var move Move
 	// 	var score int
 	var bookSuccess bool
 
-	srch = Search{
-		TimeStart:        time.Now(),
-		Score:            NEGINF,
-		ExplosionLimit:   2000000,
-		MaxDepthToSearch: 6,
-	}
+	
+	srch = NewSearch(Fen(""))
+	srch.TimeStart=        time.Now()
+		srch.Score=            NEGINF
+		srch.ExplosionLimit=   2000000
+		srch.MaxDepthToSearch= 8
+	
 
 	// 	StatTimeElapsed = 0
 	// 	GameStopSearch = false
@@ -108,27 +140,27 @@ func Go(p *Pos) (res string, info string, srch Search) {
 	if bookSuccess == false {
 		// srch root
 		// adjust pv if filled
-		if pv.count > 0 {
-			for pv.ply < p.Ply && pv.count > 0 {
-				pv.ply++ // walking forward up plies
-				pv.count--
-				copy(pv.moves[0:], pv.moves[1:]) // shift movelist up by one
+		if srch.PV.count > 0 {
+			for srch.PV.ply < p.Ply && srch.PV.count > 0 {
+				srch.PV.ply++ // walking forward up plies
+				srch.PV.count--
+				copy(srch.PV.moves[0:], srch.PV.moves[1:]) // shift movelist up by one
 				if GameProtocol == PROTOCONSOLE {
-					info += fmt.Sprintf("# pv chomp p.ply=%v, pv.ply=%v -- %v\n", p.Ply, pv.ply, pv)
+					info += fmt.Sprintf("# pv chomp p.ply=%v, PV.ply=%v -- %v\n", p.Ply, srch.PV.ply, srch.PV)
 				}
 			}
 		}
-		if pv.ply > p.Ply {
-			pv.ply = p.Ply
+		if srch.PV.ply > p.Ply {
+			srch.PV.ply = p.Ply
 		} // in case reset game - pv is global (yuk) and not reset so far
 		srch.TimeStart = time.Now()
 		// some computation
-		srch.BestMove, srch.Score = SearchRoot(p, srch.MaxDepthToSearch, &pv, &srch) // global variable for depth of search...
-		srch.TimeElapsed = time.Since(srch.TimeStart)
+		srch.BestMove, srch.Score = SearchRoot(p,  srch) // global variable for depth of search...
+		srch.stats.TimeElapsed = time.Since(srch.TimeStart)
 		if GameProtocol == PROTOCONSOLE {
 			info += "# fen: (" + BoardToFEN(p) + ")"
-			info += fmt.Sprintf("\n# PV %v", pv)
-			info += fmt.Sprintf("\n# %v", srch)
+			info += fmt.Sprintf("\n# PV %v", srch.PV)
+			info += fmt.Sprintf("\n# %v", srch.stats)
 		}
 	}
 
@@ -239,8 +271,8 @@ func (s Search) StopSearch() bool {
 	if s.Stop {
 		return true
 	} // yes
-	// otherwise only check every 1000 nodes
-	if (s.Nodes+s.QNodes)%1000 != 0 {
+	// otherwise only check every 1024 nodes
+	if (s.stats.Nodes+s.stats.QNodes)%1024 != 0 {
 		return false
 	}
 	// GameDurationToSearch ==0 means search forever
