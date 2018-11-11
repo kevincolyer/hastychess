@@ -109,25 +109,25 @@ var tt map[string]TtData
 var book map[string][]Move
 
 // for stat gathering
-var StatNodes int
-var StatQNodes int
-var StatUpperCuts int
-var StatLowerCuts int
-
-var StatTimeStart time.Time
-var StatTimeElapsed int
-
-var StatTtHits int
-var StatTtWrites int
-var StatTtUpdates int
-var StatTtCulls int
-var TtAgeCounter int64
+// var StatNodes int
+// var StatQNodes int
+// var StatUpperCuts int
+// var StatLowerCuts int
+//
+// var StatTimeStart time.Time
+// var StatTimeElapsed int
+//
+// var StatTtHits int
+// var StatTtWrites int
+// var StatTtUpdates int
+// var StatTtCulls int
+// var TtAgeCounter int64
 
 // for game
-var GameOver bool
-var GameDisplayOn bool
-var GameDepthSearch int
-var GameForce bool
+// var GameOver bool
+// var GmeDisplayOn bool
+// var GameDepthSearch int
+// var GameForce bool
 var GameUseBook bool
 var GameUseTt bool
 var GameUseStats bool

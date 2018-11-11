@@ -25,22 +25,20 @@ func GameInit() {
 //var pv PV
 
 type Statistics struct {
-        Score     int
-	Nodes     int
-	QNodes    int
-	TtHits    int
-	TtWrites  int
-	TtCulls   int
-	TtUpdates int
-	UpperCuts int
-	LowerCuts int
-	TimeElapsed         time.Duration
+	Score       int
+	Nodes       int
+	QNodes      int
+	TtHits      int
+	TtWrites    int
+	TtCulls     int
+	TtUpdates   int
+	UpperCuts   int
+	LowerCuts   int
+	TimeElapsed time.Duration
 }
 
-
-
 type Search struct {
-        stats   *Statistics
+	stats *Statistics
 
 	TimeStart           time.Time
 	MaxDurationOfSearch time.Duration
@@ -65,20 +63,19 @@ type Search struct {
 }
 
 type EngineInfo struct {
-    pv   *PV
-    stats *Statistics
+	pv    *PV
+	stats *Statistics
 }
 
-
 func NewEngineInfo(srch *Search) *EngineInfo {
-    ei:=EngineInfo{}
-    pv:=PV{}
-    stats:=Statistics{}
-    copier.Copy(&stats,srch.stats)
-    copier.Copy(&pv,srch.PV)
-    ei.pv=&pv
-    ei.stats=&stats
-    return &ei
+	ei := EngineInfo{}
+	pv := PV{}
+	stats := Statistics{}
+	copier.Copy(&stats, srch.stats)
+	copier.Copy(&pv, srch.PV)
+	ei.pv = &pv
+	ei.stats = &stats
+	return &ei
 }
 
 func NewSearch(FEN Fen) *Search {
@@ -96,11 +93,11 @@ func NewSearch(FEN Fen) *Search {
 	}
 	p := FEN.NewBoard()
 	srch.P = &p
-	s:=Statistics{}
-	srch.stats= &s
-	pv:=PV{}
-	srch.PV=&pv
-	
+	s := Statistics{}
+	srch.stats = &s
+	pv := PV{}
+	srch.PV = &pv
+
 	return &srch
 }
 
@@ -125,13 +122,11 @@ func Go(p *Pos) (res string, info string, srch *Search) {
 	// 	var score int
 	var bookSuccess bool
 
-	
 	srch = NewSearch(Fen(""))
-	srch.TimeStart=        time.Now()
-		srch.Score=            NEGINF
-		srch.ExplosionLimit=   2000000
-		srch.MaxDepthToSearch= 8
-	
+	srch.TimeStart = time.Now()
+	srch.Score = NEGINF
+	srch.ExplosionLimit = 2000000
+	srch.MaxDepthToSearch = 8
 
 	// 	StatTimeElapsed = 0
 	// 	GameStopSearch = false
@@ -155,7 +150,7 @@ func Go(p *Pos) (res string, info string, srch *Search) {
 		} // in case reset game - pv is global (yuk) and not reset so far
 		srch.TimeStart = time.Now()
 		// some computation
-		srch.BestMove, srch.Score = SearchRoot(p,  srch) // global variable for depth of search...
+		srch.BestMove, srch.Score = SearchRoot(p, srch) // global variable for depth of search...
 		srch.stats.TimeElapsed = time.Since(srch.TimeStart)
 		if GameProtocol == PROTOCONSOLE {
 			info += "# fen: (" + BoardToFEN(p) + ")"
@@ -179,15 +174,15 @@ func Go(p *Pos) (res string, info string, srch *Search) {
 }
 
 func result(p *Pos) (s string) {
-	// ICS handles winning and losing. Plus sending these strings to KDE Knights crashes it!
-	if GameProtocol == PROTOUCI {
-		return
-	}
+	// TODO ICS handles winning and losing. Plus sending these strings to KDE Knights crashes it!
+	// 	if GameProtocol == PROTOUCI {
+	// 		return
+	// 	}
 	var win, lose string
 	nummoves := len(GenerateAllMoves(p))
 
 	if nummoves == 0 {
-		GameOver = true
+		// 		GameOver = true
 		if p.InCheck == BLACK {
 			win = "white"
 			lose = "black"
@@ -204,7 +199,7 @@ func result(p *Pos) (s string) {
 		}
 	}
 	if p.Fifty >= 50 {
-		GameOver = true
+		// 		GameOver = true
 		s += fmt.Sprintf("result 1/2 - 1/2 {draw - fifty move rule}\n")
 	}
 	return
@@ -257,10 +252,10 @@ func ParseUserMove(input string, p *Pos) (m Move, err string) {
 
 func MakeUserMove(m Move, p *Pos) (s string) {
 
-	if GameOver == true {
-		s = "Game Over"
-		return
-	}
+	// 	if GameOver == true {
+	// 		s = "Game Over"
+	// 		return
+	// 	}
 	MakeMove(m, p)
 	s = result(p)
 	return

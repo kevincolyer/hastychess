@@ -233,6 +233,7 @@ func BoardToStrColour(p *Pos) string {
 	whitesq := color.New(color.BgRed).SprintFunc()
 	blackpc := color.New(color.FgWhite).SprintFunc()
 	blacksq := color.New(color.BgBlack).SprintFunc()
+	s += "     A  B  C  D  E  F  G  H\n\n"
 	for rank := 7; rank >= 0; rank-- { // reverse order
 		s += fmt.Sprintf(" %v  ", rank+1)
 
@@ -250,7 +251,8 @@ func BoardToStrColour(p *Pos) string {
 			}
 			tog = !tog
 		}
-		s += "\n"
+		s += fmt.Sprintf("  %v\n", rank+1)
+		//s += "\n"
 		tog = !tog
 	}
 	s += "\n     A  B  C  D  E  F  G  H\n"
