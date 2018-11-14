@@ -44,7 +44,7 @@ func MVVLVA(m Move, p *Pos) int {
 		return -csshash[p.Board[m.from]] + csshash[m.extra] + csshash[p.Board[m.to]] // If promotion then m.extra has value of piece we promote to, otherwise it is 0
 	}
 	// standard capture
-	return -csshash[p.Board[m.from]] + csshash[p.Board[m.to]]
+	return -csshash[p.Board[m.from]] + csshash[p.Board[m.to]] // pxQ == 800 Qxp==-800
 	// 	return -csshash[p.Board[m.to]] + csshash[m.extra] + csshash[p.Board[m.from]] // If promotion then m.extra has value of piece we promote to, otherwise it is 0
 	//     return csshash[p.Board[m.to]]-csshash[p.Board[m.from]] // If promotion then m.extra has value of piece we promote to, otherwise it is 0
 }

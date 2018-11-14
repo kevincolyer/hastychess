@@ -94,15 +94,16 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 				bestscore = val
 				//update PV (stack based)
 				srch.PV.moves[0] = bestmove
+				srch.Stats.Score = bestscore
 				copy(srch.PV.moves[1:], childpv.moves[:])
 				srch.PV.count = childpv.count + 1
 
-				if GameProtocol == PROTOCONSOLE {
-					fmt.Printf("# depth: %v score: %v pv: %v\n", depth, bestscore, srch.PV)
-				}
+				// 				if GameProtocol == PROTOCONSOLE {
+				// 					fmt.Printf("# depth: %v score: %v pv: %v\n", depth, bestscore, srch.PV)
+				// 				}
 			}
 
-			if srch.stats.Nodes > srch.ExplosionLimit || srch.StopSearch() {
+			if srch.Stats.Nodes > srch.ExplosionLimit || srch.StopSearch() {
 				return
 			}
 
@@ -133,11 +134,11 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 		elapsed := time.Since(srch.TimeStart)
 		if UCI() {
 			// upperbound or lowerbound or cp for exact
-			fmt.Printf("info depth %v score upperbound %v time %v nodes %v nps %v pv %v\n", depth, bestscore, Milliseconds(elapsed), srch.stats.Nodes+srch.stats.QNodes, int(float64(srch.stats.Nodes+srch.stats.QNodes)/elapsed.Seconds()), srch.PV)
+			fmt.Printf("info depth %v score upperbound %v time %v nodes %v nps %v pv %v\n", depth, bestscore, Milliseconds(elapsed), srch.Stats.Nodes+srch.Stats.QNodes, int(float64(srch.Stats.Nodes+srch.Stats.QNodes)/elapsed.Seconds()), srch.PV)
 		}
 		if GamePostStats == true && GameProtocol == PROTOXBOARD {
 			// ply	Integer score Integer in centipawns.time in centiseconds (ex:1028 = 10.28 seconds). nodes Nodes searched. pv freeform
-			fmt.Printf("%v %v %v %v %v\n", depth, bestscore, float64(Milliseconds(elapsed)/100), srch.stats.Nodes+srch.stats.QNodes, srch.PV)
+			fmt.Printf("%v %v %v %v %v\n", depth, bestscore, float64(Milliseconds(elapsed)/100), srch.Stats.Nodes+srch.Stats.QNodes, srch.PV)
 		}
 	}
 	return
@@ -149,9 +150,9 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 	//https://www.chessprogramming.org/Alpha-Beta
 
 	childpv := PV{ply: p.Ply + 1}
-	srch.stats.Nodes++
+	srch.Stats.Nodes++
 
-	if srch.stats.Nodes > srch.ExplosionLimit || srch.StopSearch() {
+	if srch.Stats.Nodes > srch.ExplosionLimit || srch.StopSearch() {
 		return Eval(p, 0, Gamestage(p))
 	}
 
@@ -216,6 +217,7 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 
 			// update PV on stack
 			parentpv.moves[0] = bestmove
+			srch.Stats.Score = bestscore
 			copy(parentpv.moves[1:], childpv.moves[:])
 			parentpv.count = childpv.count + 1
 		}
@@ -234,7 +236,7 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 
 func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int, srch *Search) int {
 	gamestage := Gamestage(p)
-	srch.stats.QNodes++
+	srch.Stats.QNodes++
 
 	// need a standpat score
 	val := EvalQ(p, 0, gamestage) // custom evaluator here for QUIESENCE TODO
@@ -253,7 +255,7 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int, srch *S
 	// to prevent search explosion while testing TODO remove!
 	// when at end of search
 	// someone signals we should stop
-	if qdepth == 0 || srch.StopSearch() || srch.stats.QNodes > srch.ExplosionLimit/4 {
+	if qdepth == 0 || srch.StopSearch() || srch.Stats.QNodes > srch.ExplosionLimit/4 {
 		// 		fmt.Println("# Qnode explosion - bottling!")
 		return alpha
 	}
@@ -342,18 +344,23 @@ func OrderMoves(moves *[]Move, p *Pos, pv *PV) bool {
 		// boost or lower captures depending on good or bad
 		// boost good captures and punish bad captures
 		if (*moves)[i].mtype == CAPTURE {
-			if BLIND((*moves)[i], p) {
-				(*moves)[i].score = p.Board[(*moves)[i].from]*2 + GOODCAPTURE
-			} else {
-				(*moves)[i].score = p.Board[(*moves)[i].from]*2 + BADCAPTURE
+			mvvlva := MVVLVA((*moves)[i], p)
+			if mvvlva > 0 {
+				(*moves)[i].score = PieceType(p.Board[(*moves)[i].from])*2 + GOODCAPTURE
 			}
-			if PieceType((*moves)[i].to) != PieceType((*moves)[i].from) {
-				(*moves)[i].score = p.Board[(*moves)[i].from]*2 + CAPTURE
+			if mvvlva < 0 {
+				(*moves)[i].score = PieceType(p.Board[(*moves)[i].from])*2 + BADCAPTURE
 			}
+			if mvvlva == 0 {
+				(*moves)[i].score = PieceType(p.Board[(*moves)[i].from])*2 + CAPTURE
+			}
+			// 			if PieceType((*moves)[i].to) != PieceType((*moves)[i].from) {
+			// 				(*moves)[i].score = p.Board[(*moves)[i].from]*2 + CAPTURE
+			// 			}
 		}
 
 		if (*moves)[i].mtype == EPCAPTURE || (*moves)[i].mtype == O_O_O || (*moves)[i].mtype == O_O {
-			(*moves)[i].score = (*moves)[i].mtype + p.Board[(*moves)[i].from]*2 // type of move + which piece is moving
+			(*moves)[i].score = (*moves)[i].mtype + PieceType(p.Board[(*moves)[i].from])*2 // type of move + which piece is moving
 		}
 
 		if (*moves)[i].mtype == QUIET {

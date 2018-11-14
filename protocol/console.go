@@ -88,6 +88,8 @@ type tui struct {
 
 	spinner     string
 	ShowSpinner bool
+	Update      bool
+	UpdateOnce  bool
 	proto       *console
 }
 
@@ -116,8 +118,11 @@ func pad(s string, size int) string {
 func (proto *console) MainLoop(myEngine *engine.Engine) {
 	hiwhite := color.New(color.FgHiWhite).SprintfFunc()
 	ui := tui{Title: hiwhite("Hello and welcome to %v\n\n", proto.Options.NameVersion), Cls: "\033[H\033[2J",
-		Pv: "pv", Stats: "stats", History: "History", Info: "Info", Cmdline: "> ",
+		Pv: "pv", Stats: "stats", History: "History", Info: "Info", Cmdline: "> ", Update: true,
 	}
+	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
+	ui.Board = hclibs.BoardToStrColour(&p)
+	ui.Status = "awaiting user input"
 	ui.proto = proto
 	uictl := make(chan bool)
 	// closure over ui to provide the new sparkly text ui system!!! woot!
@@ -134,40 +139,48 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 				return
 			default:
 			}
-			ui.proto.o(ui.Cls)
-			ui.proto.o(ui.Title)
-			lc = nil
-			lc = append(lc, splitIt(ui.Board)...)
-			lc = append(lc, splitItN(ui.Result)...)
-			lc = append(lc, splitItN(ui.Cmdline)...)
-			lc = append(lc, splitItN(ui.Info)...)
+			if ui.Update || ui.UpdateOnce {
+				ui.UpdateOnce = false
 
-			rc = nil
-			sp := "Status: " + ui.Status
-			if ui.ShowSpinner {
-				sp += " " + ui.spinner
-			}
-			rc = append(rc, splitItN(sp)...)
-			rc = append(rc, splitItN(ui.Pv)...)
-			rc = append(rc, splitItN(ui.Stats)...)
-			rc = append(rc, splitItN(ui.History)...)
+				ui.proto.o(ui.Cls)
+				ui.proto.o(ui.Title)
+				lc = nil
+				lc = append(lc, splitIt(ui.Board)...)
+				lc = append(lc, splitItN("Response: "+ui.Result)...)
+				// 			lc = append(lc, splitItN(ui.Cmdline)...)
+				// 			lc = append(lc, splitItN(ui.Info)...)
 
-			lencols := hclibs.Max(len(rc), len(lc))
-			for i := 0; i < lencols; i++ {
-				l := ""
-				r := ""
-
-				if i < len(lc) {
-					l = lc[i]
+				rc = nil
+				sp := "Status: " + ui.Status
+				if ui.ShowSpinner {
+					sp += " " + ui.spinner
 				}
-				if i < len(rc) {
-					r = rc[i]
+				rc = append(rc, splitItN(sp)...)
+				rc = append(rc, splitItN("PV: "+ui.Pv)...)
+				rc = append(rc, splitItN("Stats: "+ui.Stats)...)
+				rc = append(rc, splitItN("History: "+ui.History)...)
+
+				lencols := hclibs.Max(len(rc), len(lc))
+				for i := 0; i < lencols; i++ {
+					l := ""
+					r := ""
+
+					if i < len(lc) {
+						l = lc[i]
+					}
+					if i < len(rc) {
+						r = rc[i]
+					}
+					// magic numbers from guesswork
+					ui.proto.oln(pad(l, 31) + " | " + pad(r, 60))
 				}
-				// magic numbers from guesswork
-				ui.proto.oln(pad(l, 31) + " | " + pad(r, 60))
+				if ui.Info != "" {
+					ui.proto.oln("Info: " + ui.Info)
+				}
+				ui.proto.o(ui.Cmdline)
 			}
 
-			time.Sleep(time.Millisecond * 500)
+			time.Sleep(time.Millisecond * 100)
 			ui.spinner = spinners[spincounter]
 			spincounter += 1
 			spincounter %= 4
@@ -182,176 +195,206 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 
 	re := regexp.MustCompile("[a-h][1-8][a-h][1-8][qbnr]?")
 	// 	proto.o(ui.cls)
-	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
-	ui.Board = hclibs.BoardToStrColour(&p)
-	ui.Status = "awaiting user input"
 	quit := false
 
-	hclibs.Control = make(chan string)
+	// 	hclibs.Control = make(chan string)
+	engineInfo := make(chan hclibs.EngineInfo)
+	go func(ei chan hclibs.EngineInfo) {
+		//             var data EngineInfo
+		i := 0
+		for {
+			select {
+			case data := <-ei:
+				ui.Pv = fmt.Sprintf("%v", data.Pv)
+				ui.Stats = fmt.Sprintf("%v", data.Stats)
+				ui.History = fmt.Sprintf("%v", i)
+				i++
+			default:
+			}
+		}
+	}(engineInfo)
 	// main input loop
 
-QUIT:
+	// QUIT:
 	for quit == false {
-	next:
-		for scanner.Scan() {
-			input := strings.TrimSpace(scanner.Text())
-			switch {
-			case input == "quit" || input == "q":
-				quit = true
-				break QUIT
+		// 	net:
+		//                 time.Sleep(time.Millisecond * 100)
+		ui.Update = false
+		ui.UpdateOnce = true
+		// 		for scanner.Scan() {
+		scanner.Scan()
+		quit = (scanner.Err() == io.EOF)
+		//                 }
 
-			case strings.Contains(input, "move"):
-				fields := strings.Fields(input)
-				if len(fields) > 1 {
-					move, err = hclibs.ParseUserMove(fields[1], &p)
-					if err != "" {
-						ui.Info = err
-						break next
-					}
-				}
-				result = hclibs.MakeUserMove(move, &p)
-				ui.Board = hclibs.BoardToStrColour(&p)
-				ui.Result = result
+		input := strings.TrimSpace(scanner.Text())
+		ui.Update = true
+		ui.Info = ""
+		ui.Result = ""
+		switch {
+		case input == "quit" || input == "q":
+			quit = true
+			// 				break QUIT
 
-			case re.MatchString(input):
-				move, err = hclibs.ParseUserMove(input, &p)
+		case strings.Contains(input, "move"):
+			fields := strings.Fields(input)
+			if len(fields) > 1 {
+				move, err = hclibs.ParseUserMove(fields[1], &p)
 				if err != "" {
-					ui.Info = err
-					break next
+					ui.Result = err
+					break //next
 				}
-				result = hclibs.MakeUserMove(move, &p)
-				ui.Board = hclibs.BoardToStrColour(&p)
-				ui.Result = result
-
-			case strings.Contains(input, "new"):
-				p = hclibs.FENToNewBoard(hclibs.STARTFEN)
-				// 				hclibs.GameOver = false
-				ui.Board = hclibs.BoardToStrColour(&p)
-
-			// special commands that allow testing of certain positions
-			case strings.Contains(input, "kiwipete"):
-				p = hclibs.FENToNewBoard("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1")
-				// 				hclibs.GameOver = false
-				ui.Board = hclibs.BoardToStrColour(&p)
-
-			case strings.Contains(input, "pos4"):
-				p = hclibs.FENToNewBoard("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1")
-				// 				hclibs.GameOver = false
-				ui.Board = hclibs.BoardToStrColour(&p)
-
-			case strings.Contains(input, "pos5"):
-				p = hclibs.FENToNewBoard("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8")
-				// 				hclibs.GameOver = false
-				ui.Board = hclibs.BoardToStrColour(&p)
-
-			case strings.Contains(input, "end1"):
-				p = hclibs.FENToNewBoard("8/8/4k3/7p/8/8/2K5/R6Q w - - 0 1")
-				// 				hclibs.GameOver = false
-				ui.Board = hclibs.BoardToStrColour(&p)
-
-			case strings.Contains(input, "end2"):
-				p = hclibs.FENToNewBoard("8/8/8/1bn5/8/2k5/8/2K5 w - - 0 1")
-				// 				hclibs.GameOver = false
-				ui.Board = hclibs.BoardToStrColour(&p)
-
-			case strings.Contains(input, "end3"):
-				p = hclibs.FENToNewBoard("8/8/8/1k6/8/7Q/3R4/2K5 w - - 0 1")
-				// 				hclibs.GameOver = false
-				ui.Board = hclibs.BoardToStrColour(&p)
-
-			case strings.Contains(input, "end4"):
-				p = hclibs.FENToNewBoard("8/8/8/k7/8/7Q/1R6/2K5 w - - 0 1")
-				// 				hclibs.GameOver = false
-				ui.Board = hclibs.BoardToStrColour(&p)
-
-				// normal commands
-			case strings.HasPrefix(input, "setboard"):
-				fields := strings.Fields(input)
-				if len(fields) == 1 {
-					proto.oln("Error (no Fen): " + input)
-					break next
-				}
-				fen := strings.Join(fields[1:], " ")
-				proto.oln("# parsing fen [" + fen + "]")
-				p = hclibs.FENToNewBoard(fen)
-				// 				proto.oln("Error (Not implemented yet!!!): " + input)
-				break next
-
-			case strings.Contains(input, "ping"):
-				ui.Status = "pong"
-
-			case strings.Contains(input, "divide"):
-				fields := strings.Fields(input)
-				if len(fields) == 1 {
-					proto.oln("Please specify a number to divide down to")
-					break next
-				}
-				d, err := strconv.Atoi(fields[1])
-				if err != nil {
-					proto.oln("Please specify a number")
-					break next
-				}
-				_, s := hclibs.Divide(d, &p)
-				proto.ofln(s)
-
-			case strings.Contains(input, "perft"):
-				fields := strings.Fields(input)
-				if len(fields) == 1 {
-					proto.oln("Please specify a number to perft down to")
-					break next
-				}
-				d, err := strconv.Atoi(fields[1])
-				if err != nil {
-					proto.oln("Please specify a number")
-					break next
-				}
-				start := time.Now()
-				nodes := hclibs.Perft(d, &p)
-				elapsed := time.Since(start)
-				proto.o(fmt.Sprintf("Perft to depth %v gives %v nodes ", d, hclibs.Comma(nodes)))
-				proto.o(fmt.Sprintf("(nps: %v)\n", hclibs.Comma(int(float64(nodes)/elapsed.Seconds()))))
-
-				// 			case strings.Contains(input, "depth"):
-				// 				//  case strings.Contains(input,"fen") || strings.Contains(input,"setboard"):
-				// 				fields := strings.Fields(input)
-				// 				if len(fields) == 1 {
-				// 					proto.o(fmt.Sprintf("Current depth is %d.\n", hclibs.GameDepthSearch))
-				// 					break next
-				// 				}
-				// 				d, err := strconv.Atoi(fields[1])
-				// 				if err != nil {
-				// 					proto.oln("Please specify a number")
-				// 					break next
-				// 				}
-				// 				if d > hclibs.MAXSEARCHDEPTH {
-				// 					d = hclibs.MAXSEARCHDEPTH
-				// 				}
-				// 				proto.o(fmt.Sprintf("Current depth is %d. Setting depth to %d.\n", hclibs.GameDepthSearch, d))
-				// 				hclibs.GameDepthSearch = d
-
-			case input == "help":
-				proto.o("Commands: move [a2a4],[a2a4], g[o], auto, quit, new, ping, depth #, perft #, divide #,\n          setboard [fen], kiwipete, pos4, pos5, end1, end2, end3, end4\n")
-
-				// 			case strings.Contains(input, "auto"):
-				// 				hclibs.GameForce = !hclibs.GameForce
-
-				////////////////////////////////////////////////////////////////////////////////
-			case strings.Contains(input, "go") || input == "g": // || hclibs.GameForce == true:
-				ui.Status = "Thinking..."
-				ui.ShowSpinner = true
-				res, info, _ := hclibs.Go(&p)
-				// proto.o(cls)
-				ui.Board = hclibs.BoardToStrColour(&p)
-				ui.Info = info
-				ui.Result = res
-				ui.Status = "Awaiting user input..."
-				ui.ShowSpinner = false
-
 			}
-			//
+			result = hclibs.MakeUserMove(move, &p)
+			ui.Board = hclibs.BoardToStrColour(&p)
+			ui.Result = result
 
+		case re.MatchString(input):
+			move, err = hclibs.ParseUserMove(input, &p)
+			if err != "" {
+				ui.Result = err
+				break //next
+			}
+			result = hclibs.MakeUserMove(move, &p)
+			ui.Board = hclibs.BoardToStrColour(&p)
+			ui.Result = result
+
+		case strings.Contains(input, "new"):
+			p = hclibs.FENToNewBoard(hclibs.STARTFEN)
+			// 				hclibs.GameOver = false
+			ui.Board = hclibs.BoardToStrColour(&p)
+
+		// special commands that allow testing of certain positions
+		case strings.Contains(input, "kiwipete"):
+			p = hclibs.FENToNewBoard("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1")
+			// 				hclibs.GameOver = false
+			ui.Board = hclibs.BoardToStrColour(&p)
+
+		case strings.Contains(input, "pos4"):
+			p = hclibs.FENToNewBoard("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1")
+			// 				hclibs.GameOver = false
+			ui.Board = hclibs.BoardToStrColour(&p)
+
+		case strings.Contains(input, "pos5"):
+			p = hclibs.FENToNewBoard("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8")
+			// 				hclibs.GameOver = false
+			ui.Board = hclibs.BoardToStrColour(&p)
+
+		case strings.Contains(input, "end1"):
+			p = hclibs.FENToNewBoard("8/8/4k3/7p/8/8/2K5/R6Q w - - 0 1")
+			// 				hclibs.GameOver = false
+			ui.Board = hclibs.BoardToStrColour(&p)
+
+		case strings.Contains(input, "end2"):
+			p = hclibs.FENToNewBoard("8/8/8/1bn5/8/2k5/8/2K5 w - - 0 1")
+			// 				hclibs.GameOver = false
+			ui.Board = hclibs.BoardToStrColour(&p)
+
+		case strings.Contains(input, "end3"):
+			p = hclibs.FENToNewBoard("8/8/8/1k6/8/7Q/3R4/2K5 w - - 0 1")
+			// 				hclibs.GameOver = false
+			ui.Board = hclibs.BoardToStrColour(&p)
+
+		case strings.Contains(input, "end4"):
+			p = hclibs.FENToNewBoard("8/8/8/k7/8/7Q/1R6/2K5 w - - 0 1")
+			// 				hclibs.GameOver = false
+			ui.Board = hclibs.BoardToStrColour(&p)
+
+			// normal commands
+		case strings.HasPrefix(input, "setboard"):
+			fields := strings.Fields(input)
+			if len(fields) == 1 {
+				ui.Result = "Error (no Fen): " + input
+				break //next
+			}
+			fen := strings.Join(fields[1:], " ")
+			ui.Result = "Parsing fen [" + fen + "]"
+			p = hclibs.FENToNewBoard(fen)
+			// 				proto.oln("Error (Not implemented yet!!!): " + input)
+			// 				break next
+
+		case strings.Contains(input, "ping"):
+			ui.Status = "pong"
+
+		case strings.Contains(input, "divide"):
+			fields := strings.Fields(input)
+			if len(fields) == 1 {
+				ui.Result = "Please specify a number to divide down to"
+				break //next
+			}
+			d, err := strconv.Atoi(fields[1])
+			if err != nil {
+				ui.Result = "Please specify a number"
+				break //next
+			}
+			_, s := hclibs.Divide(d, &p)
+			ui.Update = false
+			proto.ofln(s)
+			proto.o("Press return to continue")
+			scanner.Scan()
+
+		case strings.Contains(input, "perft"):
+			fields := strings.Fields(input)
+			if len(fields) == 1 {
+				ui.Result = "Please specify a number to perft down to"
+				break //next
+			}
+			d, err := strconv.Atoi(fields[1])
+			if err != nil {
+				ui.Result = "Please specify a number"
+				break //next
+			}
+			start := time.Now()
+			nodes := hclibs.Perft(d, &p)
+			elapsed := time.Since(start)
+			ui.Update = false
+			proto.o(fmt.Sprintf("Perft to depth %v gives %v nodes ", d, hclibs.Comma(nodes)))
+			proto.o(fmt.Sprintf("(nps: %v)\n", hclibs.Comma(int(float64(nodes)/elapsed.Seconds()))))
+			proto.o("Press return to continue")
+			scanner.Scan()
+			// 			case strings.Contains(input, "depth"):
+			// 				//  case strings.Contains(input,"fen") || strings.Contains(input,"setboard"):
+			// 				fields := strings.Fields(input)
+			// 				if len(fields) == 1 {
+			// 					proto.o(fmt.Sprintf("Current depth is %d.\n", hclibs.GameDepthSearch))
+			// 					break next
+			// 				}
+			// 				d, err := strconv.Atoi(fields[1])
+			// 				if err != nil {
+			// 					proto.oln("Please specify a number")
+			// 					break next
+			// 				}
+			// 				if d > hclibs.MAXSEARCHDEPTH {
+			// 					d = hclibs.MAXSEARCHDEPTH
+			// 				}
+			// 				proto.o(fmt.Sprintf("Current depth is %d. Setting depth to %d.\n", hclibs.GameDepthSearch, d))
+			// 				hclibs.GameDepthSearch = d
+
+		case input == "help":
+			ui.Info = "Commands: move [a2a4],[a2a4], g[o], auto, quit, new, ping, depth #, perft #, divide #,\n          setboard [fen], kiwipete, pos4, pos5, end1, end2, end3, end4\n"
+
+			// 			case strings.Contains(input, "auto"):
+			// 				hclibs.GameForce = !hclibs.GameForce
+
+			////////////////////////////////////////////////////////////////////////////////
+		case strings.Contains(input, "go") || input == "g": // || hclibs.GameForce == true:
+			ui.Status = "Thinking..."
+			ui.ShowSpinner = true
+			res, info, srch := hclibs.Go(&p, engineInfo)
+			// proto.o(cls)
+			ui.Board = hclibs.BoardToStrColour(&p)
+			ui.Info = info
+			ui.Result = res
+			ui.Stats = srch.Stats.String()
+			ui.Pv = srch.PV.String()
+			ui.Status = "Awaiting user input..."
+			ui.ShowSpinner = false
+
+		default:
+			ui.Result = "[" + input + "] not understood"
 		}
+		//
+
 	}
-	// tell ui to stop
+	// tell ui go routine to stop
 	uictl <- true
 }
