@@ -198,7 +198,7 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 	quit := false
 
 	// 	hclibs.Control = make(chan string)
-	engineInfo := make(chan hclibs.EngineInfo)
+	engineInfo := make(chan hclibs.EngineInfo,1)
 	go func(ei chan hclibs.EngineInfo) {
 		//             var data EngineInfo
 		i := 0

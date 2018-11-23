@@ -266,7 +266,7 @@ func (srch Search) StopSearch() bool {
 		return true
 	} // yes
 	// otherwise only check every 8192 nodes
-	if (srch.Stats.Nodes+srch.Stats.QNodes)%8192 != 0 {
+	if (srch.Stats.Nodes+srch.Stats.QNodes) & 0x7fff != 0 {
 		return false
 	}
 	// send statistics (note will block if no listener!)
@@ -283,41 +283,5 @@ func (srch Search) StopSearch() bool {
 	}
 	srch.Stop = true
 	return true
-	// func StopSearch() bool {
-	// 	// are we stopping?
-	// 	if GameStopSearch {
-	// 		return true
-	// 	} // yes
-	//
-	// 	// otherwise only check every 1000 nodes
-	// 	if (StatNodes+StatQNodes)%1000 != 0 {
-	// 		return false
-	// 	}
-	// 	// GameDurationToSearch ==0 means search forever
-	// 	if GameDurationToSearch == 0 {
-	// 		return false
-	// 	}
-	// 	// have we passed the time limit for searching?
-	// 	if time.Since(StatTimeStart) < GameDurationToSearch {
-	// 		return false
-	// 	}
-	// 	//         fmt.Println(time.Since(StatTimeStart))
-	// 	//         fmt.Println(StatTimeStart)
-	// 	//         fmt.Println(GameDurationToSearch)
-	// 	// yes, so halt now and forever
-	// 	if !UCI() {
-	// 		fmt.Print("# Out of time to search...\n")
-	// 	}
-	// 	GameStopSearch = true
-	// 	return true
 
-	// 	select {
-	// 	case <-Control:
-	// 		if !UCI() {
-	// 			fmt.Print("# detected search stop\n")
-	// 		} // open channel means we can keep searching
-	// 		return true
-	// 	default:
-	//return false
-	// 	}
 }
