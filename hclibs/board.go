@@ -263,8 +263,8 @@ func BoardToStrColour(p *Pos) string {
 	var s string
 	tog := false // true==black square
 	whitepc := color.New(color.FgHiWhite).SprintFunc()
-	whitesq := color.New(color.BgRed).SprintFunc()
-	blackpc := color.New(color.FgWhite).SprintFunc()
+	whitesq := color.New(color.BgBlue).SprintFunc()
+	blackpc := color.New(color.FgRed).SprintFunc()
 	blacksq := color.New(color.BgBlack).SprintFunc()
 	s += "     A  B  C  D  E  F  G  H\n\n"
 	for rank := 7; rank >= 0; rank-- { // reverse order
