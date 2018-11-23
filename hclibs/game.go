@@ -114,21 +114,21 @@ func (srch Search) Search(depth int) (completed bool) {
 
 func (stat Statistics) String() string {
 	return fmt.Sprintf(
-        "\nscore %v | nodes %v | qnodes %v (%v%%)| nps %v | uppercuts %v | lowercuts %v\ntt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v",
+		"\nscore %v | nodes %v | qnodes %v (%v%%)| nps %v | uppercuts %v | lowercuts %v\ntt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v",
 		Comma(stat.Score),
 		Comma(stat.Nodes),
-        Comma(stat.QNodes),
-        Comma(int((float64(stat.QNodes) / float64(stat.Nodes+stat.QNodes) * 100))),
-        Comma(int(float64(stat.Nodes+stat.QNodes)/stat.TimeElapsed.Seconds())),
-        Comma(stat.UpperCuts),
-        Comma(stat.LowerCuts),
-        Comma(stat.TtHits),
-        Comma(int((float64(stat.TtHits) / float64(stat.Nodes) * 100))),
-        Comma(stat.TtWrites),
-        Comma(stat.TtUpdates),
-        Comma(len(tt)),
-        Comma(stat.TtCulls)
-        )
+		Comma(stat.QNodes),
+		Comma(int((float64(stat.QNodes) / float64(stat.Nodes+stat.QNodes) * 100))),
+		Comma(int(float64(stat.Nodes+stat.QNodes)/stat.TimeElapsed.Seconds())),
+		Comma(stat.UpperCuts),
+		Comma(stat.LowerCuts),
+		Comma(stat.TtHits),
+		Comma(int((float64(stat.TtHits) / float64(stat.Nodes) * 100))),
+		Comma(stat.TtWrites),
+		Comma(stat.TtUpdates),
+		Comma(len(tt)),
+		Comma(stat.TtCulls),
+	)
 }
 
 func Go(p *Pos, eiChan chan EngineInfo) (res string, info string, srch *Search) {
@@ -172,7 +172,7 @@ func Go(p *Pos, eiChan chan EngineInfo) (res string, info string, srch *Search) 
 
 	MakeMove(srch.BestMove, p)
 
-	info += "fen: (" + BoardToFEN(p) + ")"
+	info += "fen: (" + BoardToFEN(p) + ")\n"
 	info += result(p)
 	res = fmt.Sprintf("move %v", MoveToAlg(srch.BestMove))
 	return

@@ -66,6 +66,18 @@ func TestBoardToFEN(t *testing.T) {
 	}
 }
 
+func TestNewRBCFEN(t *testing.T) {
+	comp := NewRBCFEN(0)
+
+	if comp != STARTFEN {
+		t.Errorf("Board does not match STARTFEN on roundtrip\n[%v]", comp)
+	}
+	for i := 0; i < 100; i++ {
+		p := FENToNewBoard(NewRBCFEN(i % 4))
+		_ = p
+	}
+}
+
 func TestSide(t *testing.T) {
 	if Side(PAWN) != WHITE {
 		t.Error("Side does not guess piece colour corretly - white")

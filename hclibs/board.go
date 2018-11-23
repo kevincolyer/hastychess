@@ -32,6 +32,39 @@ func FENToNewBoard(f string) Pos {
 	return p
 }
 
+func NewRBCFEN(diff int) string {
+	//"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+	b := []byte("rnbqkbnr/pppppppp")
+	bp := []byte("rnbq")
+	w := []byte("PPPPPPPP/RNBQKBNR")
+	wp := []byte("RNBQ")
+	if diff > 0 {
+		if diff > 3 {
+			diff = 3
+		}
+		for s := 0; s < diff*5; s++ {
+			// swap black piece at index i with one from table at rndindex
+			i := rbcrand(15)
+			if b[i] != 'k' {
+				b[i] = bp[rbcrand(3)]
+			}
+			// swap white piece at index i with one from table at rndindex
+			i = rbcrand(15)
+			if w[i] != 'K' {
+				w[i] = wp[rbcrand(3)]
+			}
+		}
+	}
+	return string(b) + "/8/8/8/8/" + string(w) + " w KQkq - 0 1"
+}
+
+func rbcrand(n int) int {
+	i := rand.Intn(n)
+	if i == 8 {
+		i++
+	}
+	return i
+}
 func BoardToFEN(p *Pos) string {
 
 	ptos := [...]string{".", "P", "N", "K", "-", "B", "R", "Q", "-", "p", "n", "k", "-", "b", "r", "q"}

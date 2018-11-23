@@ -121,6 +121,10 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 		Pv: "pv", Stats: "stats", History: "History", Cmdline: "> ", Update: true,
 	}
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
+	if proto.Options.RBC > 0 {
+		p = hclibs.FENToNewBoard(hclibs.NewRBCFEN(proto.Options.RBC))
+	}
+
 	ui.Board = hclibs.BoardToStrColour(&p)
 	ui.Status = "awaiting user input"
 	ui.proto = proto
@@ -251,6 +255,9 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 
 		case strings.Contains(input, "new"):
 			p = hclibs.FENToNewBoard(hclibs.STARTFEN)
+			if proto.Options.RBC > 0 {
+				p = hclibs.FENToNewBoard(hclibs.NewRBCFEN(proto.Options.RBC))
+			}
 			// 				hclibs.GameOver = false
 			ui.Board = hclibs.BoardToStrColour(&p)
 
@@ -300,8 +307,23 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 			fen := strings.Join(fields[1:], " ")
 			ui.Result = "Parsing fen [" + fen + "]"
 			p = hclibs.FENToNewBoard(fen)
-			// 				proto.oln("Error (Not implemented yet!!!): " + input)
-			// 				break next
+			ui.Board = hclibs.BoardToStrColour(&p)
+
+		case strings.HasPrefix(input, "rbc"):
+			fields := strings.Fields(input)
+			if len(fields) == 1 {
+				ui.Result = "Error (missing number 1,2 or 3): " + input
+				break //next
+			}
+			d, err := strconv.Atoi(fields[1])
+			if err != nil {
+				ui.Result = "Please specify a number"
+				break //next
+			}
+			fen := hclibs.NewRBCFEN(d)
+			ui.Result = "RBC fen: " + fen
+			p = hclibs.FENToNewBoard(fen)
+			ui.Board = hclibs.BoardToStrColour(&p)
 
 		case strings.Contains(input, "ping"):
 			ui.Status = "pong"
@@ -342,31 +364,12 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 			proto.o(fmt.Sprintf("(nps: %v)\n", hclibs.Comma(int(float64(nodes)/elapsed.Seconds()))))
 			proto.o("Press return to continue")
 			scanner.Scan()
-			// 			case strings.Contains(input, "depth"):
-			// 				//  case strings.Contains(input,"fen") || strings.Contains(input,"setboard"):
-			// 				fields := strings.Fields(input)
-			// 				if len(fields) == 1 {
-			// 					proto.o(fmt.Sprintf("Current depth is %d.\n", hclibs.GameDepthSearch))
-			// 					break next
-			// 				}
-			// 				d, err := strconv.Atoi(fields[1])
-			// 				if err != nil {
-			// 					proto.oln("Please specify a number")
-			// 					break next
-			// 				}
-			// 				if d > hclibs.MAXSEARCHDEPTH {
-			// 					d = hclibs.MAXSEARCHDEPTH
-			// 				}
-			// 				proto.o(fmt.Sprintf("Current depth is %d. Setting depth to %d.\n", hclibs.GameDepthSearch, d))
-			// 				hclibs.GameDepthSearch = d
 
 		case input == "help":
-			ui.Info = "Commands: move [a2a4],[a2a4], g[o], auto, quit, new, ping, depth #, perft #, divide #,\n          setboard [fen], kiwipete, pos4, pos5, end1, end2, end3, end4\n"
-
-			// 			case strings.Contains(input, "auto"):
-			// 				hclibs.GameForce = !hclibs.GameForce
+			ui.Info = "Commands: move [a2a4],[a2a4], g[o], auto, quit, new, rbc #, ping, depth #, perft #, divide #,\n          setboard [fen], kiwipete, pos4, pos5, end1, end2, end3, end4\n"
 
 			////////////////////////////////////////////////////////////////////////////////
+
 		case strings.Contains(input, "go") || input == "g": // || hclibs.GameForce == true:
 			ui.Status = "Thinking..."
 			ui.ShowSpinner = true
@@ -382,10 +385,11 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 
 			ui.ShowSpinner = false
 
+			////////////////////////////////////////////////////////////////////////////////
+
 		default:
 			ui.Result = "[" + input + "] not understood"
 		}
-		//
 
 	}
 	// tell ui go routine to stop

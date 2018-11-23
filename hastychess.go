@@ -14,7 +14,7 @@ type ProtocolSpeaker interface {
 }
 
 func main() {
-	o := protocol.CLIOptions{NameVersion: "HastyChess 1.90 (Bonehead)"}
+	o := protocol.CLIOptions{NameVersion: "HastyChess 1.91 (Bonehead)"}
 
 	var flagXboard = flag.Bool("xboard", false, "Select xboard mode")
 	var flagIcs = flag.Bool("ics", false, "Select ics server mode")
@@ -33,6 +33,8 @@ func main() {
 	var flagConsoleNoColor = flag.Bool("no-color", false, "Disable color output")
 	var flagFen = flag.String("fen", "", "Send fen to engine (quotes needed)")
 	var flagDepth = flag.Int("depth", 0, "Depth for search - used for perft and divide")
+	var flagDebug = flag.Bool("debug", false, "Print extra debug information")
+	var flagRBC = flag.Int("rbc", 0, "Really Bad Chess mode - 0 off, 1 easy, 2 hard, 3+ really hard")
 
 	flag.Parse()
 
@@ -52,6 +54,8 @@ func main() {
 	o.ConsoleNoColor = *(flagConsoleNoColor)
 	o.Fen = *(flagFen)
 	o.Depth = *(flagDepth)
+	o.Debug = *(flagDebug)
+	o.RBC = *(flagRBC)
 
 	switch {
 	case *(flagXboard):

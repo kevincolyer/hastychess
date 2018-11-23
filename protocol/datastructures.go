@@ -13,4 +13,6 @@ type CLIOptions struct {
 	Difficulty     int    // several uses but for crazy chess 1-3
 	GameType       string // normal eq empty string. or "crazy" etc
 	NameVersion    string
+	Debug          bool
+	RBC            int
 }

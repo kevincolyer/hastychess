@@ -32,19 +32,12 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 
 	// 1a. check that we are not in checkmate or stalemate
 	if len(consider) == 0 {
-		// 		if p.InCheck == p.Side {
-		// 			bestscore = -CHECKMATE
-		// 		} else {
-		// 			bestscore = -STALEMATE
-		// 		}
 		return // result routine works out what the win/lose/draw state is.
 	}
 
 	// 2. give a rough order
-	// 	OrderMoves(consider, p)
 	srch.Info = fmt.Sprintf("moves to consider: %v\n", consider)
 	OrderMoves(&consider, p, srch.PV)
-	// 	fmt.Println(" ",consider[0])
 	srch.Info += fmt.Sprintf("moves sorted     : %v\n", consider)
 
 	alpha := NEGINF
@@ -66,24 +59,11 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 		childpv := PV{ply: p.Ply + 1}
 		count := 0
 
-		// from CPW: if only one move and searched 4 deep then move...
-		// 		if len(consider) == 1 && depth > 4 {
-		// 			break
-		// 		}
-
-		// 		if GameProtocol == PROTOCONSOLE {
-		// 			fmt.Printf("# Searching to depth %v\n", depth)
-		// 		}
 		for _, move := range consider {
-			//negamax sorts ENTIRE search space! With iterative deepening and some pruning we can cut the search space down.
-			// so if done shallow search and looked at about 4 moves already and current move looks no better than best break and search deeper...
-			// 			if depth > 2 && count > 3 && move.score < bestscore+25 {
-			// 				break
-			// 			}
 
 			MakeMove(move, p)
 			// need neg here as we switch sides in make move and evaluation happens relative to side
-			val := negamaxab(alpha, beta, depth, p, &childpv, enterquiesce, searchdepth+1, srch)
+			val := -negamaxab(-beta, -alpha, depth, p, &childpv, enterquiesce, searchdepth+1, srch)
 			//fmt.Printf("# move %v scored %v\n", move, val)
 			UnMakeMove(move, p)
 			// update for next round of sorting when iterative deepening. Do after unmakemove as the move score change is recorded in history array
