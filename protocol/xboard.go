@@ -39,6 +39,10 @@ func (p *xboard) Start() (e error) {
 	return
 }
 
+// 		if GamePostStats == true && GameProtocol == PROTOXBOARD {
+// 			// ply	Integer score Integer in centipawns.time in centiseconds (ex:1028 = 10.28 seconds). nodes Nodes searched. pv freeform
+// 			fmt.Printf("%v %v %v %v %v\n", depth, bestscore, float64(Milliseconds(elapsed)/100), srch.Stats.Nodes+srch.Stats.QNodes, srch.PV)
+
 //===========================================================================
 
 // func mainXboard(scanner *bufio.Scanner) {

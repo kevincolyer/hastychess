@@ -40,6 +40,10 @@ func (p *uci) Start() (e error) {
 	return
 }
 
+//uci feedback
+// 			fmt.Printf("info depth %v score upperbound %v time %v nodes %v nps %v pv %v\n", depth, bestscore, Milliseconds(elapsed), srch.Stats.Nodes+srch.Stats.QNodes, int(float64(srch.Stats.Nodes+srch.Stats.QNodes)/elapsed.Seconds()), srch.PV)
+// 		}
+
 //===========================================================================
 
 /***************************************************************

@@ -68,11 +68,15 @@ type EngineInfo struct {
 	//Stats *Statistics
 	Pv    PV
 	Stats Statistics
+	Info  string
 }
 
 func NewEngineInfo(srch Search) EngineInfo {
-	return EngineInfo{Stats: *(srch.Stats),
-		Pv: *(srch.PV)}
+	return EngineInfo{
+		Stats: *(srch.Stats),
+		Pv:    *(srch.PV),
+		Info:  srch.Info,
+	}
 }
 
 func NewSearch(FEN Fen) *Search {
@@ -109,7 +113,22 @@ func (srch Search) Search(depth int) (completed bool) {
 }
 
 func (stat Statistics) String() string {
-	return fmt.Sprintf("\nscore %v | nodes %v | qnodes %v (%v%%)| nps %v | uppercuts %v | lowercuts %v\ntt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v", Comma(stat.Score), Comma(stat.Nodes), Comma(stat.QNodes), Comma(int((float64(stat.QNodes) / float64(stat.Nodes+stat.QNodes) * 100))), Comma(int(float64(stat.Nodes+stat.QNodes)/stat.TimeElapsed.Seconds())), Comma(stat.UpperCuts), Comma(stat.LowerCuts), Comma(stat.TtHits), Comma(int((float64(stat.TtHits) / float64(stat.Nodes) * 100))), Comma(stat.TtWrites), Comma(stat.TtUpdates), Comma(len(tt)), Comma(stat.TtCulls))
+	return fmt.Sprintf(
+        "\nscore %v | nodes %v | qnodes %v (%v%%)| nps %v | uppercuts %v | lowercuts %v\ntt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v",
+		Comma(stat.Score),
+		Comma(stat.Nodes),
+        Comma(stat.QNodes),
+        Comma(int((float64(stat.QNodes) / float64(stat.Nodes+stat.QNodes) * 100))),
+        Comma(int(float64(stat.Nodes+stat.QNodes)/stat.TimeElapsed.Seconds())),
+        Comma(stat.UpperCuts),
+        Comma(stat.LowerCuts),
+        Comma(stat.TtHits),
+        Comma(int((float64(stat.TtHits) / float64(stat.Nodes) * 100))),
+        Comma(stat.TtWrites),
+        Comma(stat.TtUpdates),
+        Comma(len(tt)),
+        Comma(stat.TtCulls)
+        )
 }
 
 func Go(p *Pos, eiChan chan EngineInfo) (res string, info string, srch *Search) {
@@ -126,9 +145,6 @@ func Go(p *Pos, eiChan chan EngineInfo) (res string, info string, srch *Search) 
 	srch.MaxDepthToSearch = 8
 	srch.EngineInfoChan = eiChan
 
-	// 	StatTimeElapsed = 0
-	// 	GameStopSearch = false
-
 	srch.BestMove, bookSuccess = ChooseBookMove(p)
 	if bookSuccess == false {
 		// srch root
@@ -138,45 +154,32 @@ func Go(p *Pos, eiChan chan EngineInfo) (res string, info string, srch *Search) 
 				srch.PV.ply++ // walking forward up plies
 				srch.PV.count--
 				copy(srch.PV.moves[0:], srch.PV.moves[1:]) // shift movelist up by one
-				// 				if GameProtocol == PROTOCONSOLE {
-				info += fmt.Sprintf("# pv chomp p.ply=%v, PV.ply=%v -- %v\n", p.Ply, srch.PV.ply, srch.PV)
-				// 				}
+				info += fmt.Sprintf("pv chomp p.ply=%v, PV.ply=%v -- %v\n", p.Ply, srch.PV.ply, srch.PV)
 			}
 		}
+
 		if srch.PV.ply > p.Ply {
 			srch.PV.ply = p.Ply
-		} // in case reset game - pv is global (yuk) and not reset so far
-		srch.TimeStart = time.Now()
-		// some computation
-		srch.BestMove, srch.Stats.Score = SearchRoot(p, srch) // global variable for depth of search...
+		}
 
+		srch.TimeStart = time.Now()
+		srch.BestMove, srch.Stats.Score = SearchRoot(p, srch)
 		srch.Stats.TimeElapsed = time.Since(srch.TimeStart)
-		// 		if GameProtocol == PROTOCONSOLE {
-		info += "# fen: (" + BoardToFEN(p) + ")"
-		info += fmt.Sprintf("\n# PV %v", srch.PV)
-		info += fmt.Sprintf("\n# %v", srch.Stats)
-		// 		}
+
+	} else {
+		info = "Book move found"
 	}
 
-	info += result(p)
-
-	res = fmt.Sprintf("move %v", MoveToAlg(srch.BestMove))
-
-	//TODO if UCI() {
-	//    res = "best" + res
-	//} /*else {
-	//		res += "#\n"
-	//	}*/
 	MakeMove(srch.BestMove, p)
 
+	info += "fen: (" + BoardToFEN(p) + ")"
+	info += result(p)
+	res = fmt.Sprintf("move %v", MoveToAlg(srch.BestMove))
 	return
 }
 
 func result(p *Pos) (s string) {
 	// TODO ICS handles winning and losing. Plus sending these strings to KDE Knights crashes it!
-	// 	if GameProtocol == PROTOUCI {
-	// 		return
-	// 	}
 	var win, lose string
 	nummoves := len(GenerateAllMoves(p))
 
@@ -266,7 +269,7 @@ func (srch Search) StopSearch() bool {
 		return true
 	} // yes
 	// otherwise only check every 8192 nodes
-	if (srch.Stats.Nodes+srch.Stats.QNodes) & 0x7fff != 0 {
+	if (srch.Stats.Nodes+srch.Stats.QNodes)&0x7fff != 0 {
 		return false
 	}
 	// send statistics (note will block if no listener!)

@@ -118,7 +118,7 @@ func pad(s string, size int) string {
 func (proto *console) MainLoop(myEngine *engine.Engine) {
 	hiwhite := color.New(color.FgHiWhite).SprintfFunc()
 	ui := tui{Title: hiwhite("Hello and welcome to %v\n\n", proto.Options.NameVersion), Cls: "\033[H\033[2J",
-		Pv: "pv", Stats: "stats", History: "History", Info: "Info", Cmdline: "> ", Update: true,
+		Pv: "pv", Stats: "stats", History: "History", Cmdline: "> ", Update: true,
 	}
 	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
 	ui.Board = hclibs.BoardToStrColour(&p)
@@ -175,7 +175,7 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 					ui.proto.oln(pad(l, 31) + " | " + pad(r, 60))
 				}
 				if ui.Info != "" {
-					ui.proto.oln("Info: " + ui.Info)
+					ui.proto.oln("Info:\n" + ui.Info)
 				}
 				ui.proto.o(ui.Cmdline)
 			}
@@ -184,7 +184,6 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 			ui.spinner = spinners[spincounter]
 			spincounter += 1
 			spincounter %= 4
-
 		}
 	}(uictl)
 
@@ -197,39 +196,31 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 	// 	proto.o(ui.cls)
 	quit := false
 
-	// 	hclibs.Control = make(chan string)
-	engineInfo := make(chan hclibs.EngineInfo,1)
+	// 	Channel to pass EngineInfo to ui.
+	engineInfo := make(chan hclibs.EngineInfo, 1)
 	go func(ei chan hclibs.EngineInfo) {
-		//             var data EngineInfo
-		i := 0
+		// block until we have data...
 		for {
-			select {
-			case data := <-ei:
-				ui.Pv = fmt.Sprintf("%v", data.Pv)
-				ui.Stats = fmt.Sprintf("%v", data.Stats)
-				ui.History = fmt.Sprintf("%v", i)
-				i++
-			default:
-			}
+			data := <-ei //:
+			ui.Pv = fmt.Sprintf("%v", data.Pv)
+			ui.Stats = fmt.Sprintf("%v", data.Stats)
+			ui.Info = data.Info
 		}
 	}(engineInfo)
-	// main input loop
 
-	// QUIT:
+	// main input loop
 	for quit == false {
-		// 	net:
-		//                 time.Sleep(time.Millisecond * 100)
 		ui.Update = false
 		ui.UpdateOnce = true
-		// 		for scanner.Scan() {
+
 		scanner.Scan()
 		quit = (scanner.Err() == io.EOF)
-		//                 }
-
 		input := strings.TrimSpace(scanner.Text())
-		ui.Update = true
+
 		ui.Info = ""
 		ui.Result = ""
+		ui.Update = true
+
 		switch {
 		case input == "quit" || input == "q":
 			quit = true
@@ -379,14 +370,16 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 		case strings.Contains(input, "go") || input == "g": // || hclibs.GameForce == true:
 			ui.Status = "Thinking..."
 			ui.ShowSpinner = true
+
 			res, info, srch := hclibs.Go(&p, engineInfo)
-			// proto.o(cls)
+
 			ui.Board = hclibs.BoardToStrColour(&p)
-			ui.Info = info
+			ui.Info = ui.Info + info
 			ui.Result = res
 			ui.Stats = srch.Stats.String()
 			ui.Pv = srch.PV.String()
 			ui.Status = "Awaiting user input..."
+
 			ui.ShowSpinner = false
 
 		default:

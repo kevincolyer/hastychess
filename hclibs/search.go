@@ -42,16 +42,16 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 
 	// 2. give a rough order
 	// 	OrderMoves(consider, p)
+	srch.Info = fmt.Sprintf("moves to consider: %v\n", consider)
 	OrderMoves(&consider, p, srch.PV)
 	// 	fmt.Println(" ",consider[0])
-	if GameProtocol == PROTOCONSOLE {
-		fmt.Printf("# moves to consider: %v\n", consider)
-	}
+	srch.Info += fmt.Sprintf("moves sorted     : %v\n", consider)
+
 	alpha := NEGINF
 	beta := POSINF
 	bestmove = consider[0]
 	bestscore = bestmove.score
-	//	beta := bestscore+50
+
 	// reset pv
 	srch.PV.count = 1
 	srch.PV.moves[0] = bestmove
@@ -71,9 +71,9 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 		// 			break
 		// 		}
 
-		if GameProtocol == PROTOCONSOLE {
-			fmt.Printf("# Searching to depth %v\n", depth)
-		}
+		// 		if GameProtocol == PROTOCONSOLE {
+		// 			fmt.Printf("# Searching to depth %v\n", depth)
+		// 		}
 		for _, move := range consider {
 			//negamax sorts ENTIRE search space! With iterative deepening and some pruning we can cut the search space down.
 			// so if done shallow search and looked at about 4 moves already and current move looks no better than best break and search deeper...
@@ -131,15 +131,10 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 		// 			alpha = consider[0].score - 50
 		// 			beta = consider[0].score + 50
 		// 		}
-		elapsed := time.Since(srch.TimeStart)
-		if UCI() {
-			// upperbound or lowerbound or cp for exact
-			fmt.Printf("info depth %v score upperbound %v time %v nodes %v nps %v pv %v\n", depth, bestscore, Milliseconds(elapsed), srch.Stats.Nodes+srch.Stats.QNodes, int(float64(srch.Stats.Nodes+srch.Stats.QNodes)/elapsed.Seconds()), srch.PV)
-		}
-		if GamePostStats == true && GameProtocol == PROTOXBOARD {
-			// ply	Integer score Integer in centipawns.time in centiseconds (ex:1028 = 10.28 seconds). nodes Nodes searched. pv freeform
-			fmt.Printf("%v %v %v %v %v\n", depth, bestscore, float64(Milliseconds(elapsed)/100), srch.Stats.Nodes+srch.Stats.QNodes, srch.PV)
-		}
+		// 		elapsed := time.Since(srch.TimeStart)
+		// 		if UCI() {
+		// 			// upperbound or lowerbound or cp for exact
+		// 		}
 	}
 	return
 }
@@ -336,10 +331,8 @@ SORT_KILL  80*/ // killer move
 // usr blind here to put bad captures (blind==0) back of the queue after ordinary captures
 
 func OrderMoves(moves *[]Move, p *Pos, pv *PV) bool {
-	// order by move type (capture and promotion first down to quiet moves)
-	// 	plydelta := p.Ply - pv.ply
-	//         if plydelta<0 {panic("this should not be!")}
-	for i := 0; i < len(*moves); i++ {
+	// order by move type (pv, capture and promotion first down to quiet moves)
+	for i := 0; i < len((*moves)); i++ {
 
 		// boost or lower captures depending on good or bad
 		// boost good captures and punish bad captures
@@ -354,16 +347,13 @@ func OrderMoves(moves *[]Move, p *Pos, pv *PV) bool {
 			if mvvlva == 0 {
 				(*moves)[i].score = PieceType(p.Board[(*moves)[i].from])*2 + CAPTURE
 			}
-			// 			if PieceType((*moves)[i].to) != PieceType((*moves)[i].from) {
-			// 				(*moves)[i].score = p.Board[(*moves)[i].from]*2 + CAPTURE
-			// 			}
 		}
 
 		if (*moves)[i].mtype == EPCAPTURE || (*moves)[i].mtype == O_O_O || (*moves)[i].mtype == O_O {
 			(*moves)[i].score = (*moves)[i].mtype + PieceType(p.Board[(*moves)[i].from])*2 // type of move + which piece is moving
 		}
 
-		if (*moves)[i].mtype == QUIET {
+		if (*moves)[i].mtype == QUIET || (*moves)[i].mtype == ENPASSANT {
 			//for now
 			(*moves)[i].score = QUIET
 			// boost history
@@ -371,11 +361,9 @@ func OrderMoves(moves *[]Move, p *Pos, pv *PV) bool {
 			//TODO  boost check?????
 		}
 
-		// boost PV to top here
 		// cycle through pv to boost all moves in current move list to top
 		for _, m := range pv.moves {
-
-			if (*moves)[i].from == m.from && (*moves)[i].to == m.to && (*moves)[i].extra == m.extra {
+			if (*moves)[i].from == m.from && (*moves)[i].to == m.to { //&& (*moves)[i].extra == m.extra {
 				(*moves)[i].score += PVBONUS
 			}
 		}
