@@ -8,9 +8,9 @@ import "strings"
 func ChooseBookMove(p *Pos) (move Move, success bool) {
 
 	success = false
-	if GameUseBook == false {
-		return
-	}
+	// 	if GameUseBook == false {
+	// 		return
+	// 	}
 	// Are there one or more branches to pick
 	elem, ok := book[TtKey(p)]
 	if ok == false {

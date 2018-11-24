@@ -3,7 +3,8 @@ package hclibs
 
 import "fmt"
 import "github.com/dustin/go-humanize"
-import "time"
+
+// import "time"
 
 //////////////////////////////////////////////////////////////////////////
 type Move struct {
@@ -128,23 +129,23 @@ var book map[string][]Move
 // var GmeDisplayOn bool
 // var GameDepthSearch int
 // var GameForce bool
-var GameUseBook bool
-var GameUseTt bool
-var GameUseStats bool
-var GamePostStats bool
-var GameStopSearch bool
-var GameDurationToSearch time.Duration
+// var GameUseBook bool
+// var GameUseTt bool
+// var GameUseStats bool
+// var GamePostStats bool
+// var GameStopSearch bool
+// var GameDurationToSearch time.Duration
 
 type Proto int
 
-var GameProtocol Proto
+// var GameProtocol Proto
 
-func UCI() bool {
-	if GameProtocol == PROTOUCI {
-		return true
-	}
-	return false
-}
+// func UCI() bool {
+// 	if GameProtocol == PROTOUCI {
+// 		return true
+// 	}
+// 	return false
+// }
 
 func Comma(i int) string {
 	return humanize.Comma(int64(i))
@@ -153,4 +154,4 @@ func Commaf(i float64) string {
 	return humanize.Comma(int64(i))
 }
 
-var Control chan string
+// var Control chan string
