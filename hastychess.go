@@ -14,7 +14,7 @@ type ProtocolSpeaker interface {
 }
 
 func main() {
-	o := protocol.CLIOptions{NameVersion: "HastyChess 1.91 (Bonehead)"}
+	o := protocol.CLIOptions{NameVersion: "HastyChess 1.92 (Bonehead)"}
 
 	var flagXboard = flag.Bool("xboard", false, "Select xboard mode")
 	var flagIcs = flag.Bool("ics", false, "Select ics server mode")

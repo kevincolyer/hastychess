@@ -126,7 +126,7 @@ func (stat Statistics) String() string {
 		ttpercent = 0
 	}
 	return fmt.Sprintf(
-		"\nscore %v | nodes %v | qnodes %v (%v%%)| nps %v | uppercuts %v | lowercuts %v\ntt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v",
+		"\nscore %v\nnodes %v | qnodes %v (%v%%) | nps %v | uppercuts %v | lowercuts %v\ntt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v",
 		Comma(stat.Score),
 		Comma(stat.Nodes),
 		Comma(stat.QNodes),
