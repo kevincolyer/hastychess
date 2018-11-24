@@ -214,13 +214,18 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 
 	// main input loop
 	for quit == false {
+        if p.Side==hclibs.WHITE {
+                ui.Cmdline="WHITE >" 
+        } else {
+            ui.Cmdline="BLACK >"
+        }
 		ui.Update = false
 		ui.UpdateOnce = true
 
 		scanner.Scan()
 		quit = (scanner.Err() == io.EOF)
 		input := strings.TrimSpace(scanner.Text())
-
+        
 		ui.Info = ""
 		ui.Result = ""
 		ui.Update = true

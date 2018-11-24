@@ -16,9 +16,9 @@ func GameInit() {
 	}
 	book = make(map[string][]Move)
 
-	if GameUseBook {
-		InitBook()
-	}
+	// 	if GameUseBook {
+	InitBook()
+	// 	}
 	return
 }
 
@@ -113,17 +113,29 @@ func (srch Search) Search(depth int) (completed bool) {
 }
 
 func (stat Statistics) String() string {
+	qnpercent := int((float64(stat.QNodes) / float64(stat.Nodes+stat.QNodes) * 100))
+	nps := int(float64(stat.Nodes+stat.QNodes) / stat.TimeElapsed.Seconds())
+	ttpercent := int((float64(stat.TtHits) / float64(stat.Nodes) * 100))
+	if stat.QNodes == 0 {
+		qnpercent = 0
+	}
+	if stat.Nodes == 0 {
+		nps = 0
+	}
+	if stat.TtHits == 0 {
+		ttpercent = 0
+	}
 	return fmt.Sprintf(
-		"\nscore %v | nodes %v | qnodes %v (%v%%)| nps %v | uppercuts %v | lowercuts %v\ntt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v",
+		"\nscore %v\nnodes %v | qnodes %v (%v%%) | nps %v | uppercuts %v | lowercuts %v\ntt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v",
 		Comma(stat.Score),
 		Comma(stat.Nodes),
 		Comma(stat.QNodes),
-		Comma(int((float64(stat.QNodes) / float64(stat.Nodes+stat.QNodes) * 100))),
-		Comma(int(float64(stat.Nodes+stat.QNodes)/stat.TimeElapsed.Seconds())),
+		Comma(qnpercent),
+		Comma(nps),
 		Comma(stat.UpperCuts),
 		Comma(stat.LowerCuts),
 		Comma(stat.TtHits),
-		Comma(int((float64(stat.TtHits) / float64(stat.Nodes) * 100))),
+		Comma(ttpercent),
 		Comma(stat.TtWrites),
 		Comma(stat.TtUpdates),
 		Comma(len(tt)),
@@ -132,10 +144,6 @@ func (stat Statistics) String() string {
 }
 
 func Go(p *Pos, eiChan chan EngineInfo) (res string, info string, srch *Search) {
-	// computer makes moves now!
-	// 	var pv PV
-	// 	var move Move
-	// 	var score int
 	var bookSuccess bool
 
 	srch = NewSearch(Fen(""))

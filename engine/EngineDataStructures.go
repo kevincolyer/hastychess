@@ -2,6 +2,7 @@
 
 package engine
 
+import "github.com/kevincolyer/hastychess/hclibs"
 // fen
 // move
 // result
@@ -42,6 +43,8 @@ type EngineThinker interface {
 }
 
 func New(e EngineOptions) (*Engine, error) {
+    // load book here or it will not get loaded and then will not get used!
+    hclibs.GameInit()
 	return &Engine{}, nil
 }
 
