@@ -44,14 +44,14 @@ func NewRBCFEN(diff int) string {
 		}
 		for s := 0; s < diff*5; s++ {
 			// swap black piece at index i with one from table at rndindex
-			i := rbcrand(15)
+			i := rbcrand(16)
 			if b[i] != 'k' {
-				b[i] = bp[rbcrand(3)]
+				b[i] = bp[rbcrand(4)]
 			}
 			// swap white piece at index i with one from table at rndindex
-			i = rbcrand(15)
+			i = rbcrand(16)
 			if w[i] != 'K' {
-				w[i] = wp[rbcrand(3)]
+				w[i] = wp[rbcrand(4)]
 			}
 		}
 	}

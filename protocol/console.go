@@ -305,7 +305,8 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 				break //next
 			}
 			fen := strings.Join(fields[1:], " ")
-			ui.Result = "Parsing fen [" + fen + "]"
+			ui.Info = "Parsing fen [" + fen + "]"
+                        ui.Result = "Setting new position"
 			p = hclibs.FENToNewBoard(fen)
 			ui.Board = hclibs.BoardToStrColour(&p)
 
@@ -321,7 +322,8 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 				break //next
 			}
 			fen := hclibs.NewRBCFEN(d)
-			ui.Result = "RBC fen: " + fen
+			ui.Result = "Setting new position"
+                        ui.Info = "RBC fen: " + fen
 			p = hclibs.FENToNewBoard(fen)
 			ui.Board = hclibs.BoardToStrColour(&p)
 
