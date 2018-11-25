@@ -34,6 +34,12 @@ type Statistics struct {
 	TtUpdates   int
 	UpperCuts   int
 	LowerCuts   int
+	AlphaRaised    int
+	BetaRaised     int
+	HtWrite        int
+	HtHit          int
+	KiWrite        int
+	KiHit          int
 	TimeElapsed time.Duration
 }
 
@@ -46,6 +52,8 @@ type Search struct {
 	FEN    Fen
 	P      *Pos
 	NewFEN Fen
+	HistoryTable   [128][128]int
+	KillerTable   [128][128]int
 
 	Result           string
 	Info             string
@@ -126,18 +134,27 @@ func (stat Statistics) String() string {
 		ttpercent = 0
 	}
 	return fmt.Sprintf(
-		"\nscore %v\nnodes %v | qnodes %v (%v%%) | nps %v | uppercuts %v | lowercuts %v\ntt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v",
+		"\nscore %v\nnodes %v | qnodes %v (%v%%) | nps %v\nalpha cuts %v | beta cuts %v | alpha raised %v | beta raised %v\ntt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v\nHist write %v | Hist hit %v | Killer write %v | Killer hit %v\n",
 		Comma(stat.Score),
 		Comma(stat.Nodes),
 		Comma(stat.QNodes),
 		Comma(qnpercent),
 		Comma(nps),
+                           
 		Comma(stat.UpperCuts),
 		Comma(stat.LowerCuts),
+		Comma(stat.AlphaRaised),
+		Comma(stat.BetaRaised),
+                           
 		Comma(stat.TtHits),
 		Comma(ttpercent),
 		Comma(stat.TtWrites),
 		Comma(stat.TtUpdates),
+                           
+                Comma(     stat.HtWrite),
+                Comma(     stat.HtHit  ),
+                Comma(     stat.KiWrite),
+                Comma(     stat.KiHit  ),
 		Comma(len(tt)),
 		Comma(stat.TtCulls),
 	)
@@ -152,7 +169,9 @@ func Go(p *Pos, eiChan chan EngineInfo) (res string, info string, srch *Search) 
 	srch.ExplosionLimit = 2000000
 	srch.MaxDepthToSearch = 8
 	srch.EngineInfoChan = eiChan
-
+	
+        // zero killer and history tables here...
+	
 	srch.BestMove, bookSuccess = ChooseBookMove(p)
 	if bookSuccess == false {
 		// srch root

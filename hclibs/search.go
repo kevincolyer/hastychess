@@ -88,6 +88,7 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 			}
 
 			if val > alpha {
+                                srch.Stats.AlphaRaised++
 				alpha = val
 			}
 
@@ -183,6 +184,7 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 		if score >= beta {
 			// set killers here
 			// history table here...
+                        srch.Stats.LowerCuts++
 			return beta
 		}
 
@@ -198,6 +200,7 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 		}
 
 		if bestscore > alpha {
+			srch.Stats.AlphaRaised++
 			alpha = bestscore
 		}
 
@@ -206,6 +209,7 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 			return alpha
 		}
 	}
+	srch.Stats.UpperCuts++
 	return alpha
 }
 
@@ -219,10 +223,12 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int, srch *S
 
 	// is move worse than previous worst?
 	if val >= beta {
+                srch.Stats.LowerCuts++
 		return beta
 	}
 	// is move less good than previous best?
-	if alpha <= val {
+	if val>=alpha  {
+                srch.Stats.AlphaRaised++
 		alpha = val
 	}
 
@@ -232,6 +238,7 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int, srch *S
 	// someone signals we should stop
 	if qdepth == 0 || srch.StopSearch() || srch.Stats.QNodes > srch.ExplosionLimit/4 {
 		// 		fmt.Println("# Qnode explosion - bottling!")
+                srch.Stats.UpperCuts++
 		return alpha
 	}
 
@@ -239,6 +246,7 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int, srch *S
 	moves := GenerateMovesForQSearch(p)
 	// nothing more to search...
 	if len(moves) == 0 {
+                srch.Stats.UpperCuts++
 		return alpha
 	}
 
@@ -282,12 +290,16 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int, srch *S
 
 		// adjust window
 		if val >= alpha {
+                        srch.Stats.AlphaRaised++
 			if val > beta {
+                                srch.Stats.BetaRaised++
+                                srch.Stats.LowerCuts++
 				return beta
 			}
 			alpha = val
 		}
 	}
+	srch.Stats.UpperCuts++
 	return alpha
 }
 
