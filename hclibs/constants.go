@@ -55,18 +55,18 @@ const queen = 7 + 8
 // this is useful for ordering moves - ascending order is interesting for us.
 const (
 	UNINITIALISED = 0
-	BADCAPTURE    = 1
 	QUIET         = 50 // sorted by history
 	ENPASSANT     = 51
 	KILLERS       = 100
 	O_O_O         = 200
 	O_O           = 201
-	EPCAPTURE     = 300
-	CAPTURE       = 301
-	GOODCAPTURE   = 400
-	PROMOTE       = 500
-	PVBONUS       = 600
-	INCHECK       = 700
+	BADCAPTURE    = 300
+	EPCAPTURE     = 301
+	CAPTURE       = 400
+	GOODCAPTURE   = 500
+	PROMOTE       = 600
+	PVBONUS       = 700
+	INCHECK       = 800
 )
 
 const OPENING = 0

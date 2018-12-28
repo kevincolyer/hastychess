@@ -34,12 +34,12 @@ type Statistics struct {
 	TtUpdates   int
 	UpperCuts   int
 	LowerCuts   int
-	AlphaRaised    int
-	BetaRaised     int
-	HtWrite        int
-	HtHit          int
-	KiWrite        int
-	KiHit          int
+	AlphaRaised int
+	BetaRaised  int
+	HtWrite     int
+	HtHit       int
+	KiWrite     int
+	KiHit       int
 	TimeElapsed time.Duration
 }
 
@@ -49,11 +49,11 @@ type Search struct {
 	TimeStart           time.Time
 	MaxDurationOfSearch time.Duration
 
-	FEN    Fen
-	P      *Pos
-	NewFEN Fen
-	HistoryTable   [128][128]int
-	KillerTable   [128][128]int
+	FEN          Fen
+	P            *Pos
+	NewFEN       Fen
+	HistoryTable [128][128]int
+	KillerTable  [128][128]int
 
 	Result           string
 	Info             string
@@ -140,21 +140,21 @@ func (stat Statistics) String() string {
 		Comma(stat.QNodes),
 		Comma(qnpercent),
 		Comma(nps),
-                           
+
 		Comma(stat.UpperCuts),
 		Comma(stat.LowerCuts),
 		Comma(stat.AlphaRaised),
 		Comma(stat.BetaRaised),
-                           
+
 		Comma(stat.TtHits),
 		Comma(ttpercent),
 		Comma(stat.TtWrites),
 		Comma(stat.TtUpdates),
-                           
-                Comma(     stat.HtWrite),
-                Comma(     stat.HtHit  ),
-                Comma(     stat.KiWrite),
-                Comma(     stat.KiHit  ),
+
+		Comma(stat.HtWrite),
+		Comma(stat.HtHit),
+		Comma(stat.KiWrite),
+		Comma(stat.KiHit),
 		Comma(len(tt)),
 		Comma(stat.TtCulls),
 	)
@@ -169,9 +169,9 @@ func Go(p *Pos, eiChan chan EngineInfo) (res string, info string, srch *Search) 
 	srch.ExplosionLimit = 2000000
 	srch.MaxDepthToSearch = 8
 	srch.EngineInfoChan = eiChan
-	
-        // zero killer and history tables here...
-	
+
+	// zero killer and history tables here...
+
 	srch.BestMove, bookSuccess = ChooseBookMove(p)
 	if bookSuccess == false {
 		// srch root

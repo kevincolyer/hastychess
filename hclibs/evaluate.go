@@ -261,7 +261,7 @@ func init() {
 		-5, 0, 0, 0, 0, 0, 0, -5,
 		-5, 0, 0, 0, 0, 0, 0, -5,
 		-5, 0, 0, 0, 0, 0, 0, -5,
-		60, 0, 0, 5, 5, 0, 0, 60,
+		0, 0, 0, 5, 5, 0, 0, 0,
 	}
 	Pst[OPENING][ROOK] = loadPst(i)
 	Pst[OPENING][rook] = loadPstRev(i) // rook b

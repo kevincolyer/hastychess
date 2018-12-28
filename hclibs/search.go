@@ -88,7 +88,7 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 			}
 
 			if val > alpha {
-                                srch.Stats.AlphaRaised++
+				srch.Stats.AlphaRaised++
 				alpha = val
 			}
 
@@ -184,7 +184,7 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 		if score >= beta {
 			// set killers here
 			// history table here...
-                        srch.Stats.LowerCuts++
+			srch.Stats.LowerCuts++
 			return beta
 		}
 
@@ -223,12 +223,12 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int, srch *S
 
 	// is move worse than previous worst?
 	if val >= beta {
-                srch.Stats.LowerCuts++
+		srch.Stats.LowerCuts++
 		return beta
 	}
 	// is move less good than previous best?
-	if val>=alpha  {
-                srch.Stats.AlphaRaised++
+	if val >= alpha {
+		srch.Stats.AlphaRaised++
 		alpha = val
 	}
 
@@ -238,7 +238,7 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int, srch *S
 	// someone signals we should stop
 	if qdepth == 0 || srch.StopSearch() || srch.Stats.QNodes > srch.ExplosionLimit/4 {
 		// 		fmt.Println("# Qnode explosion - bottling!")
-                srch.Stats.UpperCuts++
+		srch.Stats.UpperCuts++
 		return alpha
 	}
 
@@ -246,7 +246,7 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int, srch *S
 	moves := GenerateMovesForQSearch(p)
 	// nothing more to search...
 	if len(moves) == 0 {
-                srch.Stats.UpperCuts++
+		srch.Stats.UpperCuts++
 		return alpha
 	}
 
@@ -290,10 +290,10 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int, srch *S
 
 		// adjust window
 		if val >= alpha {
-                        srch.Stats.AlphaRaised++
+			srch.Stats.AlphaRaised++
 			if val > beta {
-                                srch.Stats.BetaRaised++
-                                srch.Stats.LowerCuts++
+				srch.Stats.BetaRaised++
+				srch.Stats.LowerCuts++
 				return beta
 			}
 			alpha = val
@@ -303,7 +303,7 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int, srch *S
 	return alpha
 }
 
-// From https://chessprogramming.wikispaces.com/Move+Ordering
+// From https://www.chessprogramming.org/Move_Ordering
 // A typical move ordering consists as follows:
 // 1.PV-move of the principal variation from the previous iteration of an iterative deepening framework for the leftmost path, often implicitly done by 2.
 // 2.Hash move from hash tables
@@ -320,13 +320,12 @@ SORT_CAPT 100 // capture
 SORT_PROM  90 // promote
 SORT_KILL  80*/ // killer move
 
-// usr blind here to put bad captures (blind==0) back of the queue after ordinary captures
+// use blind here to put bad captures (blind==0) back of the queue after ordinary captures
 
 func OrderMoves(moves *[]Move, p *Pos, pv *PV) bool {
 	// order by move type (pv, capture and promotion first down to quiet moves)
 	for i := 0; i < len((*moves)); i++ {
 
-		// boost or lower captures depending on good or bad
 		// boost good captures and punish bad captures
 		if (*moves)[i].mtype == CAPTURE {
 			mvvlva := MVVLVA((*moves)[i], p)
@@ -346,7 +345,8 @@ func OrderMoves(moves *[]Move, p *Pos, pv *PV) bool {
 		}
 
 		if (*moves)[i].mtype == QUIET || (*moves)[i].mtype == ENPASSANT {
-			//for now
+			//for now - TODO note weakness here is that is will rank Q moves in scan order! Tends to make rooks jitter about for no reason...
+			// should rank by history... or hash table...
 			(*moves)[i].score = QUIET
 			// boost history
 			// boost killers
@@ -371,13 +371,13 @@ func OrderMoves(moves *[]Move, p *Pos, pv *PV) bool {
 }
 
 /*
-BADCAPTURE c
 QUIET     *   sorted by history not piecevalue
 ENPASSANT *
 KILLERS   c
 O_O_O     *
 O_O       *
 EPCAPTURE *
+BADCAPTURE c
 CAPTURE   * (equal)
 GOODCAPTURE c
 PROMOTE   *
