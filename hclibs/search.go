@@ -80,9 +80,6 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 				copy(srch.PV.moves[1:], childpv.moves[:])
 				srch.PV.count = childpv.count + 1
 
-				// 				if GameProtocol == PROTOCONSOLE {
-				// 					fmt.Printf("# depth: %v score: %v pv: %v\n", depth, bestscore, srch.PV)
-				// 				}
 			}
 
 			if srch.Stats.Nodes > srch.ExplosionLimit || srch.StopSearch() {
