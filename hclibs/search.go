@@ -56,6 +56,7 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 	// 	for depth := 2; depth < srch.MaxDepthToSearch+1; depth++ {
 	for depth := srch.MaxDepthToSearch; depth < srch.MaxDepthToSearch+1; depth++ {
 		enterquiesce := false //(depth == srch.MaxDepthToSearch)
+		// create new child PV
 		childpv := PV{ply: p.Ply + 1}
 		count := 0
 
@@ -75,6 +76,7 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 				//update PV (stack based)
 				srch.PV.moves[0] = bestmove
 				srch.Stats.Score = bestscore
+				// update PV with child PV
 				copy(srch.PV.moves[1:], childpv.moves[:])
 				srch.PV.count = childpv.count + 1
 
@@ -161,11 +163,14 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 
 	// reset PV and choose the
 	bestmove := consider[0]
-	childpv.moves[0] = bestmove // in case we don't find anything better set first move to return
-	childpv.count = 1
+	bestscore := NEGINF
+
+	parentpv.moves[0] = bestmove // in case we don't find anything better set first move to return
+	//childpv.moves[0] = bestmove // in case we don't find anything better set first move to return
+	//childpv.count = 0
+	parentpv.count = 1
 	count := 0
 
-	bestscore := NEGINF
 	// depth first search...
 	// iterative deepening tries to convert to breadth first...
 	for _, move := range consider {
