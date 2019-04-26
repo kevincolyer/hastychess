@@ -1,4 +1,5 @@
 // Hastychess, Copyright (C) GPLv3, 2016, Kevin Colyer
+
 package protocol
 
 //

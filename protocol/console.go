@@ -1,72 +1,77 @@
-// Hastychess, Copyright (C) GPLv3, 2016, Kevin Colyer
+//Hastychess, Copyright (C) GPLv3, 2016, Kevin Colyer
+
+// Package protocol ... Text ui
 package protocol
 
 import (
 	"bufio"
 	"fmt"
-	"github.com/fatih/color"
-	"github.com/kevincolyer/hastychess/engine"
-	"github.com/kevincolyer/hastychess/hclibs"
 	"io"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/fatih/color"
+	"github.com/kevincolyer/hastychess/engine"
+	"github.com/kevincolyer/hastychess/hclibs"
 )
 
-type console struct {
+// Console ... provides a text ui to communicate to game engine with
+type Console struct {
 	In      io.Reader
 	Out     io.Writer
 	Stderr  io.Writer
 	Options CLIOptions
 }
 
+// EngineInfo ... datatype for messaging stats and game position info between componants
 type EngineInfo struct {
 	*hclibs.Statistics
 	*hclibs.PV
 }
 
-func (p *console) o(s string) {
-	io.WriteString(p.Out, s)
+func (proto *Console) o(s string) {
+	io.WriteString(proto.Out, s)
 }
 
-func (p *console) oln(s string) {
-	io.WriteString(p.Out, s+"\n")
+func (proto *Console) oln(s string) {
+	io.WriteString(proto.Out, s+"\n")
 }
 
-func (p *console) ofln(s interface{}) {
-	io.WriteString(p.Out, fmt.Sprintf("%v\n", s))
+func (proto *Console) ofln(s interface{}) {
+	io.WriteString(proto.Out, fmt.Sprintf("%v\n", s))
 }
 
-func (p *console) debug(s string) {
-	io.WriteString(p.Stderr, "Stderr: "+s)
+func (proto *Console) debug(s string) {
+	io.WriteString(proto.Stderr, "Stderr: "+s)
 }
 
-func NewConsole(in io.Reader, out io.Writer, stderr io.Writer, options CLIOptions) (*console, error) {
-	p := console{Out: out, In: in, Stderr: stderr, Options: options}
+func NewConsole(in io.Reader, out io.Writer, stderr io.Writer, options CLIOptions) (*Console, error) {
+	p := Console{Out: out, In: in, Stderr: stderr, Options: options}
 	p.debug("Started Console Protocol for " + options.NameVersion + "\n")
 	return &p, nil
 }
 
-func (p *console) Echo() (e error) {
+func (proto *Console) Echo() (e error) {
 	b := make([]byte, 256)
-	if n, err := p.In.Read(b); err != io.EOF {
-		io.WriteString(p.Out, string(b[:n]))
-		io.WriteString(p.Stderr, "Stderr: "+string(b[:n]))
+	if n, err := proto.In.Read(b); err != io.EOF {
+		io.WriteString(proto.Out, string(b[:n]))
+		io.WriteString(proto.Stderr, "Stderr: "+string(b[:n]))
 	} else {
 		e = fmt.Errorf("EOF for input: none sent?")
 	}
 	return
 }
 
-func (p *console) Start() error {
-	myEngine, err := engine.New(engine.EngineOptions{})
+func (proto *Console) Start() error {
+	myEngine, err := engine.New(engine.Options{})
 	if err != nil {
 		return fmt.Errorf("Error creating engine: %v", err)
 	}
-	p.MainLoop(myEngine)
+	proto.MainLoop(myEngine)
 	// 	if myEngine.Stop() {
-	// 		io.WriteString(p.Stderr, "Stderr: Engine stopped ok\n")
+	// 		io.WriteString(proto.Stderr, "Stderr: Engine stopped ok\n")
 	// 	}
 
 	return nil
@@ -90,7 +95,7 @@ type tui struct {
 	ShowSpinner bool
 	Update      bool
 	UpdateOnce  bool
-	proto       *console
+	proto       *Console
 }
 
 // title        status spinner
@@ -115,17 +120,17 @@ func pad(s string, size int) string {
 	return s + (strings.Repeat(" ", reps))
 }
 
-func (proto *console) MainLoop(myEngine *engine.Engine) {
+func (proto *Console) MainLoop(myEngine *engine.Engine) {
 	hiwhite := color.New(color.FgHiWhite).SprintfFunc()
 	ui := tui{Title: hiwhite("Hello and welcome to %v\n\n", proto.Options.NameVersion), Cls: "\033[H\033[2J",
 		Pv: "pv", Stats: "stats", History: "History", Cmdline: "> ", Update: true,
 	}
-	p := hclibs.FENToNewBoard(hclibs.STARTFEN)
+	pos := hclibs.FENToNewBoard(hclibs.STARTFEN)
 	if proto.Options.RBC > 0 {
-		p = hclibs.FENToNewBoard(hclibs.NewRBCFEN(proto.Options.RBC))
+		pos = hclibs.FENToNewBoard(hclibs.NewRBCFEN(proto.Options.RBC))
 	}
 
-	ui.Board = hclibs.BoardToStrColour(&p)
+	ui.Board = hclibs.BoardToStrColour(&pos)
 	ui.Status = "awaiting user input"
 	ui.proto = proto
 	uictl := make(chan bool)
@@ -186,7 +191,7 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 
 			time.Sleep(time.Millisecond * 100)
 			ui.spinner = spinners[spincounter]
-			spincounter += 1
+			spincounter++
 			spincounter %= 4
 		}
 	}(uictl)
@@ -214,18 +219,18 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 
 	// main input loop
 	for quit == false {
-        if p.Side==hclibs.WHITE {
-                ui.Cmdline="WHITE >" 
-        } else {
-            ui.Cmdline="BLACK >"
-        }
+		if pos.Side == hclibs.WHITE {
+			ui.Cmdline = "WHITE >"
+		} else {
+			ui.Cmdline = "BLACK >"
+		}
 		ui.Update = false
 		ui.UpdateOnce = true
 
 		scanner.Scan()
 		quit = (scanner.Err() == io.EOF)
 		input := strings.TrimSpace(scanner.Text())
-        
+
 		ui.Info = ""
 		ui.Result = ""
 		ui.Update = true
@@ -238,69 +243,69 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 		case strings.Contains(input, "move"):
 			fields := strings.Fields(input)
 			if len(fields) > 1 {
-				move, err = hclibs.ParseUserMove(fields[1], &p)
+				move, err = hclibs.ParseUserMove(fields[1], &pos)
 				if err != "" {
 					ui.Result = err
 					break //next
 				}
 			}
-			result = hclibs.MakeUserMove(move, &p)
-			ui.Board = hclibs.BoardToStrColour(&p)
+			result = hclibs.MakeUserMove(move, &pos)
+			ui.Board = hclibs.BoardToStrColour(&pos)
 			ui.Result = result
 
 		case re.MatchString(input):
-			move, err = hclibs.ParseUserMove(input, &p)
+			move, err = hclibs.ParseUserMove(input, &pos)
 			if err != "" {
 				ui.Result = err
 				break //next
 			}
-			result = hclibs.MakeUserMove(move, &p)
-			ui.Board = hclibs.BoardToStrColour(&p)
+			result = hclibs.MakeUserMove(move, &pos)
+			ui.Board = hclibs.BoardToStrColour(&pos)
 			ui.Result = result
 
 		case strings.Contains(input, "new"):
-			p = hclibs.FENToNewBoard(hclibs.STARTFEN)
+			pos = hclibs.FENToNewBoard(hclibs.STARTFEN)
 			if proto.Options.RBC > 0 {
-				p = hclibs.FENToNewBoard(hclibs.NewRBCFEN(proto.Options.RBC))
+				pos = hclibs.FENToNewBoard(hclibs.NewRBCFEN(proto.Options.RBC))
 			}
 			// 				hclibs.GameOver = false
-			ui.Board = hclibs.BoardToStrColour(&p)
+			ui.Board = hclibs.BoardToStrColour(&pos)
 
 		// special commands that allow testing of certain positions
 		case strings.Contains(input, "kiwipete"):
-			p = hclibs.FENToNewBoard("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1")
+			pos = hclibs.FENToNewBoard("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1")
 			// 				hclibs.GameOver = false
-			ui.Board = hclibs.BoardToStrColour(&p)
+			ui.Board = hclibs.BoardToStrColour(&pos)
 
 		case strings.Contains(input, "pos4"):
-			p = hclibs.FENToNewBoard("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1")
+			pos = hclibs.FENToNewBoard("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1")
 			// 				hclibs.GameOver = false
-			ui.Board = hclibs.BoardToStrColour(&p)
+			ui.Board = hclibs.BoardToStrColour(&pos)
 
 		case strings.Contains(input, "pos5"):
-			p = hclibs.FENToNewBoard("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8")
+			pos = hclibs.FENToNewBoard("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8")
 			// 				hclibs.GameOver = false
-			ui.Board = hclibs.BoardToStrColour(&p)
+			ui.Board = hclibs.BoardToStrColour(&pos)
 
 		case strings.Contains(input, "end1"):
-			p = hclibs.FENToNewBoard("8/8/4k3/7p/8/8/2K5/R6Q w - - 0 1")
+			pos = hclibs.FENToNewBoard("8/8/4k3/7p/8/8/2K5/R6Q w - - 0 1")
 			// 				hclibs.GameOver = false
-			ui.Board = hclibs.BoardToStrColour(&p)
+			ui.Board = hclibs.BoardToStrColour(&pos)
 
 		case strings.Contains(input, "end2"):
-			p = hclibs.FENToNewBoard("8/8/8/1bn5/8/2k5/8/2K5 w - - 0 1")
+			pos = hclibs.FENToNewBoard("8/8/8/1bn5/8/2k5/8/2K5 w - - 0 1")
 			// 				hclibs.GameOver = false
-			ui.Board = hclibs.BoardToStrColour(&p)
+			ui.Board = hclibs.BoardToStrColour(&pos)
 
 		case strings.Contains(input, "end3"):
-			p = hclibs.FENToNewBoard("8/8/8/1k6/8/7Q/3R4/2K5 w - - 0 1")
+			pos = hclibs.FENToNewBoard("8/8/8/1k6/8/7Q/3R4/2K5 w - - 0 1")
 			// 				hclibs.GameOver = false
-			ui.Board = hclibs.BoardToStrColour(&p)
+			ui.Board = hclibs.BoardToStrColour(&pos)
 
 		case strings.Contains(input, "end4"):
-			p = hclibs.FENToNewBoard("8/8/8/k7/8/7Q/1R6/2K5 w - - 0 1")
+			pos = hclibs.FENToNewBoard("8/8/8/k7/8/7Q/1R6/2K5 w - - 0 1")
 			// 				hclibs.GameOver = false
-			ui.Board = hclibs.BoardToStrColour(&p)
+			ui.Board = hclibs.BoardToStrColour(&pos)
 
 			// normal commands
 		case strings.HasPrefix(input, "setboard"):
@@ -311,9 +316,9 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 			}
 			fen := strings.Join(fields[1:], " ")
 			ui.Info = "Parsing fen [" + fen + "]"
-                        ui.Result = "Setting new position"
-			p = hclibs.FENToNewBoard(fen)
-			ui.Board = hclibs.BoardToStrColour(&p)
+			ui.Result = "Setting new position"
+			pos = hclibs.FENToNewBoard(fen)
+			ui.Board = hclibs.BoardToStrColour(&pos)
 
 		case strings.HasPrefix(input, "rbc"):
 			fields := strings.Fields(input)
@@ -328,9 +333,9 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 			}
 			fen := hclibs.NewRBCFEN(d)
 			ui.Result = "Setting new position"
-                        ui.Info = "RBC fen: " + fen
-			p = hclibs.FENToNewBoard(fen)
-			ui.Board = hclibs.BoardToStrColour(&p)
+			ui.Info = "RBC fen: " + fen
+			pos = hclibs.FENToNewBoard(fen)
+			ui.Board = hclibs.BoardToStrColour(&pos)
 
 		case strings.Contains(input, "ping"):
 			ui.Status = "pong"
@@ -346,7 +351,7 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 				ui.Result = "Please specify a number"
 				break //next
 			}
-			_, s := hclibs.Divide(d, &p)
+			_, s := hclibs.Divide(d, &pos)
 			ui.Update = false
 			proto.ofln(s)
 			proto.o("Press return to continue")
@@ -364,7 +369,7 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 				break //next
 			}
 			start := time.Now()
-			nodes := hclibs.Perft(d, &p)
+			nodes := hclibs.Perft(d, &pos)
 			elapsed := time.Since(start)
 			ui.Update = false
 			proto.o(fmt.Sprintf("Perft to depth %v gives %v nodes ", d, hclibs.Comma(nodes)))
@@ -378,12 +383,13 @@ func (proto *console) MainLoop(myEngine *engine.Engine) {
 			////////////////////////////////////////////////////////////////////////////////
 
 		case strings.Contains(input, "go") || input == "g": // || hclibs.GameForce == true:
+			ui.Cmdline = "Thinking..."
 			ui.Status = "Thinking..."
 			ui.ShowSpinner = true
 
-			res, info, srch := hclibs.Go(&p, engineInfo)
+			res, info, srch := hclibs.Go(&pos, engineInfo)
 
-			ui.Board = hclibs.BoardToStrColour(&p)
+			ui.Board = hclibs.BoardToStrColour(&pos)
 			ui.Info = ui.Info + info
 			ui.Result = res
 			ui.Stats = srch.Stats.String()

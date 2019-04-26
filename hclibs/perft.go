@@ -72,7 +72,7 @@ func (a by) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a by) Less(i, j int) bool { return a[i].move < a[j].move }
 
 // the useful divide function shows counts of nodes for top level moves
-func Divide(depth int, p *Pos) (nodes_total int, s string) {
+func Divide(depth int, p *Pos) (nodesTotal int, s string) {
 
 	var moves []Move
 	var result []divide
@@ -83,18 +83,17 @@ func Divide(depth int, p *Pos) (nodes_total int, s string) {
 	nodes := 0
 
 	for _, m := range moves {
-
 		MakeMove(m, p)
 		nodes = Perft(depth-1, p)
 		UnMakeMove(m, p)
 		result = append(result, divide{MoveToAlg(m), nodes})
-		nodes_total += nodes
+		nodesTotal += nodes
 	}
 	// returning from perft;
 	sort.Sort(by(result))
 	s = fmt.Sprintf("%v\n", result)
 	s += fmt.Sprintf("Total moves: %v\n", len(result))
-	s += fmt.Sprintf("Total nodes: %v\n", nodes_total)
+	s += fmt.Sprintf("Total nodes: %v\n", nodesTotal)
 	return
 }
 

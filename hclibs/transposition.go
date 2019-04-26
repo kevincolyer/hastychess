@@ -132,7 +132,7 @@ func InitHashSize(size int) (e error) {
 		e = fmt.Errorf("size %d is larger than max allowd %d (or < 1)", size, 1<<TTMAXSIZE)
 		return
 	}
-	var power uint8 = 0
+	var power uint8
 	for size > 0 {
 		size = size >> 1
 		power++

@@ -1,0 +1,176 @@
+locale = LC_CTYPE=en_GB.UTF-8;LC_NUMERIC=en_GB.UTF-8;LC_TIME=en_GB.UTF-8;LC_COLLATE=en_GB.UTF-8;LC_MONETARY=en_GB.UTF-8;LC_MESSAGES=en_GB.UTF-8;LC_PAPER=en_GB.UTF-8;LC_NAME=en_GB.UTF-8;LC_ADDRESS=en_GB.UTF-8;LC_TELEPHONE=en_GB.UTF-8;LC_MEASUREMENT=C.UTF-8;LC_IDENTIFICATION=en_GB.UTF-8
+recognized 'normal' (-1) as variant normal
+recognized 'normal' (-1) as variant normal
+recognized 'normal' (-1) as variant normal
+shuffleOpenings = 0
+shuffleOpenings = 0
+Version: xboard 4.8.0 + fairymax ()
+Reset(1, 0) from gameMode 0
+recognized 'normal' (-1) as variant normal
+GameEnds(0, (null), 2)
+shuffleOpenings = 0
+StartChildProcess (dir=".") fairymax
+236 >first : xboard
+protover 2
+366 <first : tellics say     Fairy-Max 4.8V
+366 <first : tellics say     by H.G. Muller
+366 <first : tellics say Gothic Chess is protected by U.S. patent #6,481,716 by Ed Trice.
+366 <first : tellics say Falcon Chess is protected by U.S. patent #5,690,334 by George W. Duke
+367 <first : feature myname="Fairy-Max 4.8V"
+367 >first : accepted myname
+367 <first : feature memory=1
+367 >first : accepted memory
+367 <first : feature setboard=0 xedit=1 ping=1 done=0
+367 >first : accepted setboard
+367 >first : accepted xedit
+367 >first : accepted ping
+367 >first : accepted done
+367 <first : feature variants="normal,nocastle,shatranj,asean,makruk,cambodian,ai-wok,courier,knightmate,capablanca,gothic,falcon,cylinder,berolina,super,seirawan,spartan,great,light-brigade,king-of-the-hill,bifurcator,team-mate,fairy"
+367 >first : accepted variants
+367 <first : feature option="Resign -check 0"
+367 >first : accepted option
+367 <first : feature option="Resign Threshold -spin 800 200 1200"
+367 >first : accepted option
+367 <first : feature option="Claim draw after -spin 50 0 200"
+367 >first : accepted option
+367 <first : feature option="Ini File -file /usr/share/games/fairymax/fmax.ini"
+367 >first : accepted option
+367 <first : feature option="Multi-PV Margin -spin 0 0 1000"
+367 >first : accepted option
+367 <first : feature option="Variant fairy selects -combo FIDE-Clobberers /// Clobberers-FIDE /// FIDE-Nutters /// Nutters-FIDE /// Clobberers-Nutters /// Nutters-Clobberers /// FIDE-Rookies /// Rookies-FIDE /// Clobberers-Rookies /// Rookies-Clobberers"
+367 >first : accepted option
+367 <first : feature option="Makruk rules -combo makruk /// Cambodian /// Ai-wok"
+367 >first : accepted option
+367 <first : feature option="Dummy Slider Example -slider 20 0 100"
+367 >first : accepted option
+367 <first : feature option="Dummy String Example -string happy birthday!"
+367 >first : accepted option
+367 <first : feature option="Dummy Path Example -path ."
+367 >first : accepted option
+367 <first : feature option="Info -button"
+367 >first : accepted option
+367 <first : feature option="Clear Hash -button"
+367 >first : accepted option
+367 <first : feature done=1
+367 >first : accepted done
+369 >first : memory 68
+369 >first : new
+random
+369 >first : level 40 5 0
+369 >first : post
+369 >first : hard
+369 >first : ping 1
+Impossible move , type = 0
+408 <first : pong 1
+nps: w=-1, b=-1
+nps: w=-1, b=-1
+6790 >first : time 30000
+6790 >first : otim 30000
+book hit = (NULL)
+6790 >first : c2c4
+6794 <first : # times @ 3708883173
+6794 <first : # 16+16 pieces, centr = (1,1) R=40
+6794 <first :  1     14        0          3 c7c5
+6795 <first :  1     21        0          5 f7f6
+6795 <first :  2    -13        0         17 f7f6 d2d4
+6795 <first :  2      0        0         30 f7f5 d2d4
+6795 <first :  2      4        0         54 g7g6 d2d4
+6795 <first :  2      5        0        151 c7c5 d2d4
+6795 <first :  2     11        0        164 c7c6 d2d4
+6795 <first :  2     24        0        243 d7d5 b2b3
+6796 <first :  3     14        0        896 d7d5 d1a4 c8d7 a4b4
+6796 <first :  3     30        0       1125 f7f5 d2d4 b8c6
+6797 <first :  4     11        0       1525 f7f5 d2d4 b8c6 b1c3
+6811 <first :  4     21        2       7616 d7d5 c4d5 d8d5 d2d4
+6821 <first :  5      1        3      13476 d7d5 c4d5 d8d5 b1c3 d5e5
+6860 <first :  5     27        7      35286 f7f5 d2d4 b8c6 b1c3 g8f6
+6895 <first :  6    -10       10      55524 f7f5 d2d4 b8c6 b1c3 g8f6 c1f4
+6932 <first :  6      3       14      78347 f7f6 d2d4 d7d5 c4d5 d8d5 b1c3
+7044 <first :  6      8       25     147648 b8c6 b1c3 g8f6 d2d3 d7d5 c1f4
+7255 <first :  7     22       46     282358 b8c6 b1c3 g8f6 d2d3 d7d5 c1f4 c8e6
+7546 <first :  7     24       75     464732 c7c5 b1c3 d7d6 d2d4 c8e6 c1e3 b8c6
+7868 <first :  8     -4      107     668828 c7c5 b1c3 d7d6 d2d3 b8c6 c1f4 c8f5 g1f3
+8341 <first :  8      6      155     974540 d7d5 c4d5 d8d5 b1c3 d5f5 d2d4 b8c6 c1e3
+9678 <first :  8      7      288    1812261 d7d6 b1c3 b8c6 d2d3
+10759 <first :  8     15      396    2500782 b8c6 b1c3 g8f6 g1f3 d7d5 c4d5 f6d5 d2d4
+11028 <first : # times @ 3708887411: real=4238 cpu=4240
+11028 <first : # promo = 0 (`) GT = 0
+11028 <first : move b8c6
+Interrupting first
+14662 >first : force
+14664 >first : quit
+Unload first
+StartChildProcess (dir=".") /home/kevin/development-nonsync/go/src/github.com/kevincolyer/hastychess/hastychess -uci
+14670 >first : xboard
+protover 2
+14671 <first : /home/kevin/development-nonsync/go/src/github.com/kevincolyer/hastychess/hastychess: No such file or directory
+Unload first
+StartChildProcess (dir=".") /home/kevin/development-nonsync/go/bin/hastychess -xboard
+18251 >first : xboard
+protover 2
+18300 <first : tellics Hello and welcome to HastyChess v1.01
+18300 <first : 
+18300 <first : feature debug=1
+18301 >first : accepted debug
+18301 <first : 
+18301 <first : feature done=0
+18301 >first : accepted done
+18301 <first : feature myname="HastyChess v1.01"
+18301 >first : accepted myname
+18301 <first : feature usermove=1
+18301 >first : accepted usermove
+18301 <first : feature setboard=1
+18301 >first : accepted setboard
+18301 <first : feature ping=1
+18301 >first : accepted ping
+18301 <first : feature sigint=0
+18301 >first : accepted sigint
+18301 <first : feature variants="normal"
+18301 >first : accepted variants
+18301 <first : feature debug=1
+18301 >first : accepted debug
+18301 <first : feature done=1
+18301 >first : accepted done
+recognized 'normal' (-1) as variant normal
+18303 >first : new
+random
+18303 >first : level 40 5 0
+18303 >first : post
+18303 >first : hard
+18303 >first : ping 1
+Impossible move b8c6, type = 0
+18303 >first : usermove 18303 >first : c2c4
+18303 >first : usermove 18303 >first : b8c6
+18304 <first : pong 1
+18304 <first : 
+18304 <first : 
+18304 <first : move e7e6
+Ignoring extra move from first
+18304 <first : 
+18304 <first : Illegal move: b8c6
+nps: w=-1, b=-1
+nps: w=-1, b=-1
+25105 >first : time 29576
+25105 >first : otim 30000
+book hit = (NULL)
+25105 >first : usermove 25105 >first : b2b3
+25109 <first : 
+25109 <first : # detected search stop
+25128 <first : 2 105 0 1456 [d8g5 b1c3]
+Impossible move b8c6, type = 36
+25145 <first : 2 105 0 4895 [d8g5 b1c3]
+Impossible move b8c6, type = 36
+25165 <first : 3 105 0 9674 [d8g5 b1c3]
+Impossible move b8c6, type = 36
+25883 <first : 3 105 7 132629 [d8g5 b1c3]
+Impossible move b8c6, type = 36
+27274 <first : 4 105 21 386351 [d8g5 b1c3]
+Impossible move b8c6, type = 36
+27274 <first : 
+27274 <first : move d8g5
+27279 <first : 
+GameEnds(29, xboard exit, 2)
+35669 >first : result * {xboard exit}
+35669 >first : force
+35670 >first : ping 2
+35670 >first : quit

@@ -1,4 +1,5 @@
 // Hastychess, Copyright (C) GPLv3, 2016, Kevin Colyer
+
 package protocol
 
 import (
@@ -12,31 +13,31 @@ import (
 	// 	"time"
 )
 
-type uci struct {
+type Uci struct {
 	In      io.Reader
 	Out     io.Writer
 	Options CLIOptions
 }
 
-func NewUCI(in io.Reader, out io.Writer, options CLIOptions) (*uci, error) {
-	p := uci{Out: out, In: in, Options: options}
-	_, e := io.WriteString(p.Out, "Welcome to "+options.NameVersion+"\n")
-	return &p, e
+func NewUCI(in io.Reader, out io.Writer, options CLIOptions) (*Uci, error) {
+	proto := Uci{Out: out, In: in, Options: options}
+	_, e := io.WriteString(proto.Out, "Welcome to "+options.NameVersion+"\n")
+	return &proto, e
 }
 
-func (p *uci) Echo() (e error) {
+func (proto *Uci) Echo() (e error) {
 	b := make([]byte, 256)
-	if n, err := p.In.Read(b); err != io.EOF {
-		io.WriteString(p.Out, string(b[:n]))
+	if n, err := proto.In.Read(b); err != io.EOF {
+		io.WriteString(proto.Out, string(b[:n]))
 	} else {
 		e = fmt.Errorf("EOF for input: none sent?")
 	}
 	return
 }
 
-func (p *uci) Start() (e error) {
-	io.WriteString(p.Out, "started ok\n")
-	e = fmt.Errorf("Done!")
+func (proto *Uci) Start() (e error) {
+	io.WriteString(proto.Out, "started ok\n")
+	e = fmt.Errorf("done")
 	return
 }
 

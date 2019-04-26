@@ -13,7 +13,7 @@ func GenerateAllMoves(p *Pos) (moves []Move) {
 			//fmt.Println(all)
 			for _, j := range all {
 				// test legality here...
-				legal, check := is_legal_move(j, p)
+				legal, check := IsLegalMove(j, p)
 				if legal {
 					if check { // TODO add check flag}
 					}
@@ -46,7 +46,7 @@ func GenerateMovesForQSearch(p *Pos) (moves []Move) {
 			for _, j := range all {
 				// test legality here...
 				if j.mtype == CAPTURE || j.mtype == PROMOTE { // || j.mtype==EPCAPTURE {
-					legal, check := is_legal_move(j, p)
+					legal, check := IsLegalMove(j, p)
 					if legal {
 						if check { // TODO add check flag
 						}
@@ -71,7 +71,8 @@ func GenerateMoves(from int, p *Pos) (moves []Move) {
 	} // can't move opponents pieces!
 	var pc, to int // for holding pices. // for square to move to
 
-	switch piece & 7 { // What kind of piece am I? mask off the side bit 4
+	// What kind of piece am I? mask off the side bit 4
+	switch piece & 7 {
 	case NIGHT:
 		for _, m := range NM {
 			if (from+m)&0x88 == 0 { // not off board
@@ -88,7 +89,7 @@ func GenerateMoves(from int, p *Pos) (moves []Move) {
 			if (from+m)&0x88 == 0 { // off board
 				pc = p.Board[from+m]
 
-				if !InCheck(from+m, side, p) && (pc == EMPTY || (pc>>3) == xside) && !king_is_near(from+m, p) {
+				if !InCheck(from+m, side, p) && (pc == EMPTY || (pc>>3) == xside) && !KingIsNear(from+m, p) {
 					moves = append(moves, Move{from: from, to: from + m, mtype: move_type(pc, xside), extra: 0, piece: KING})
 				}
 			}
@@ -97,13 +98,13 @@ func GenerateMoves(from int, p *Pos) (moves []Move) {
 		if p.InCheck != side { //&& (p.Castled[side*2+KS] == false || p.Castled[side*2+QS] == false) { // CASTLING//
 
 			if p.Castled[side*2+KS] == false { // kingsside
-				if EMPTY == p.Board[from+1] && EMPTY == p.Board[from+2] && !InCheck(from+1, side, p) && !InCheck(from+2, side, p) && !king_is_near(from+2, p) {
+				if EMPTY == p.Board[from+1] && EMPTY == p.Board[from+2] && !InCheck(from+1, side, p) && !InCheck(from+2, side, p) && !KingIsNear(from+2, p) {
 
 					moves = append(moves, Move{from: from, to: from + 2, mtype: O_O, extra: 0, piece: KING})
 				}
 			}
 			if p.Castled[side*2+QS] == false { // queens side
-				if EMPTY == p.Board[from-1] && EMPTY == p.Board[from-2] && EMPTY == p.Board[from-3] && !InCheck(from-1, side, p) && !InCheck(from-2, side, p) && !king_is_near(from-2, p) {
+				if EMPTY == p.Board[from-1] && EMPTY == p.Board[from-2] && EMPTY == p.Board[from-3] && !InCheck(from-1, side, p) && !InCheck(from-2, side, p) && !KingIsNear(from-2, p) {
 
 					moves = append(moves, Move{from: from, to: from - 2, mtype: O_O_O, extra: 0, piece: KING})
 				}
@@ -427,7 +428,7 @@ func IsAttacked(square, side int, p *Pos) bool {
 	return false // nothing threatens me!!! Muhahahaha!
 }
 
-func king_is_near(look int, p *Pos) bool {
+func KingIsNear(look int, p *Pos) bool {
 	// search around king next move for other king, if one found then invalid
 	k := p.King[1-p.Side]
 	for _, i := range KM {
@@ -438,7 +439,7 @@ func king_is_near(look int, p *Pos) bool {
 	return false
 }
 
-func is_legal_move(m Move, p *Pos) (retval, check bool) {
+func IsLegalMove(m Move, p *Pos) (retval, check bool) {
 
 	side := p.Side
 	king := p.King[side]

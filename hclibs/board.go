@@ -1,4 +1,4 @@
-//Hastychess, Copyright (C) GPLv3, 2016, Kevin Colyer
+//Package hclibs ... Hastychess, Copyright (C) GPLv3, 2016, Kevin Colyer
 package hclibs
 
 import "strings"
@@ -341,9 +341,8 @@ func Offboard(i int) bool {
 func PieceColour(piece int) int {
 	if piece>>3 > 0 {
 		return BLACK
-	} else {
-		return WHITE
 	}
+	return WHITE
 }
 
 func Max(a, b int) int {
@@ -381,9 +380,8 @@ func DecToAlg(dec int) string {
 func OtherSide(p Pos) int {
 	if p.Side == WHITE {
 		return BLACK
-	} else {
-		return WHITE
 	}
+	return WHITE
 }
 
 func Abs(n int) int {

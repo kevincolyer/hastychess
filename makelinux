@@ -1,0 +1,2 @@
+go build -v -o hastychess
+cp hastychess /home/kevin/Nextcloud/0_shared\ -\ house/Kevin/

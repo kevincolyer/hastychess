@@ -4,10 +4,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/kevincolyer/hastychess/protocol"
 	"os"
+
+	"github.com/kevincolyer/hastychess/protocol"
 )
 
+// ProtocolSpeaker ... for a way to add different ui or chess engines to drive hastychess.
 type ProtocolSpeaker interface {
 	Start() error
 	//     Echo() error

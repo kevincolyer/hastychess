@@ -3,17 +3,19 @@
 package engine
 
 import "github.com/kevincolyer/hastychess/hclibs"
+
 // fen
 // move
 // result
 // stats
 // pv
-// engineoptions - tt, ttsize,
+// options - tt, ttsize,
 
+// Engine ... type for game engines
 type Engine struct {
 }
 
-type EngineOptions struct {
+type Options struct {
 }
 
 type PV struct {
@@ -30,10 +32,10 @@ type Result struct {
 
 type Fen string
 
-type EngineThinker interface {
-	New(EngineOptions) (*Engine, error)
-	Search(Fen, PV, EngineOptions) Move
-	Ponder(Fen, PV, EngineOptions) PV
+type Thinker interface {
+	New(Options) (*Engine, error)
+	Search(Fen, PV, Options) Move
+	Ponder(Fen, PV, Options) PV
 	MakeMove(Fen, Move) Result
 	Stop() bool
 	GetPV() PV
@@ -42,9 +44,9 @@ type EngineThinker interface {
 	IsLegal(Fen, Move) bool
 }
 
-func New(e EngineOptions) (*Engine, error) {
-    // load book here or it will not get loaded and then will not get used!
-    hclibs.GameInit()
+func New(e Options) (*Engine, error) {
+	// load book here or it will not get loaded and then will not get used!
+	hclibs.GameInit()
 	return &Engine{}, nil
 }
 

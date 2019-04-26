@@ -1,16 +1,17 @@
 //Hastychess, Copyright (C) GPLv3, 2016, Kevin Colyer
+
 package hclibs
 
 // Versioning
-const VERSION = "1.11 'Blockhead'"
 
-// import "fmt"
+const VERSION = "1.11 'Blockhead'"
 
 const BLACK = 1
 const WHITE = 0
 const STARTFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 // board and piece numbering suggestions from https://cis.uab.edu/hyatt/boardrep.html
+
 const PREVENTEXPLOSION = 2000000 // 2mil nodes to made debugging easier!!! TODO remove!
 const MAXSEARCHDEPTH = 10        // for manual play - easier to know what you have done wrong
 const MAXSEARCHDEPTHX = 8        // for xboard
@@ -25,6 +26,7 @@ const ETTHASH = 4
 // const USETTABLE=true
 
 // pawn=1, knight=2, king=3, bishop=5, rook=6 and queen=7
+
 //WHITE
 const EMPTY = 0
 const PAWN = 1
@@ -51,8 +53,9 @@ const queen = 7 + 8
 // const O_O = 32
 // const EPCAPTURE = 64
 
-// used for mtype in struct move
+// Values used for mtype in struct move
 // this is useful for ordering moves - ascending order is interesting for us.
+
 const (
 	UNINITIALISED = 0
 	QUIET         = 50 // sorted by history
@@ -128,24 +131,11 @@ var QM = [8]int{NORTH, EAST, WEST, SOUTH, NE, NW, SE, SW}
 var KM = [8]int{NORTH, EAST, WEST, SOUTH, NE, NW, SE, SW}
 var NM = [8]int{31, 33, -31, -33, 14, 18, -14, -18}
 
-// # pwn
+//  pawn
 var PM = [2][4]int{
 	[4]int{NW, NORTH, NE, NN},
 	[4]int{SE, SOUTH, SW, SS},
 }
-
-// func MakeGrid() [64]int {
-// 	var GRID [64]int
-// 	var i int
-// 	j := 0
-// 	for ; i < 128; i++ {
-// 		if i&0x88 == 0 {
-// 			GRID[j] = i
-// 			j++
-// 		}
-// 	}
-// 	return GRID
-// }
 
 var GRID = [64]int{
 	A1, B1, C1, D1, E1, F1, G1, H1,
@@ -158,7 +148,8 @@ var GRID = [64]int{
 	A8, B8, C8, D8, E8, F8, G8, H8,
 }
 
-var REVGRID = [64]int{ // this is actually how we display the board on a screen or in FEN - top down !
+// REVGRID ... this is actually how we display the board on a screen or in FEN - top down !
+var REVGRID = [64]int{
 	A8, B8, C8, D8, E8, F8, G8, H8,
 	A7, B7, C7, D7, E7, F7, G7, H7,
 	A6, B6, C6, D6, E6, F6, G6, H6,

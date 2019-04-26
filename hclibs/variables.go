@@ -92,6 +92,7 @@ func (a bymovescore) Len() int           { return len(a) }
 func (a bymovescore) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a bymovescore) Less(i, j int) bool { return a[i].score > a[j].score } // > means descending.
 ///////////////////////////////////////////////////////////////////////
+
 type TtData struct {
 	score    int // score found
 	ply      int // ply first discovered at (to avoid loops)
