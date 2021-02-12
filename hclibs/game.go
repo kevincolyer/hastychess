@@ -95,7 +95,7 @@ func NewSearch(FEN Fen) *Search {
 		Score:               NEGINF,
 		ExplosionLimit:      2000000,
 		MaxDurationOfSearch: time.Second * 30,
-		MaxDepthToSearch:    8, // just a default
+		MaxDepthToSearch:    6, // just a default
 		FEN:                 FEN,
 		UseTT:               true,
 		UseBook:             true,
@@ -176,20 +176,21 @@ func Go(p *Pos, eiChan chan EngineInfo) (res string, info string, srch *Search) 
 	if bookSuccess == false {
 		// srch root
 		// adjust pv if filled
-		if srch.PV.count > 0 {
-			for srch.PV.ply < p.Ply && srch.PV.count > 0 {
-				srch.PV.ply++ // walking forward up plies
-				srch.PV.count--
-				copy(srch.PV.moves[0:], srch.PV.moves[1:]) // shift movelist up by one
-				info += fmt.Sprintf("pv chomp p.ply=%v, PV.ply=%v -- %v\n", p.Ply, srch.PV.ply, srch.PV)
-			}
-		}
-
-		if srch.PV.ply > p.Ply {
-			srch.PV.ply = p.Ply
-		}
+// 		if srch.PV.count > 0 {
+// 			for srch.PV.ply < p.Ply && srch.PV.count > 0 {
+// 				srch.PV.ply++ // walking forward up plies
+// 				srch.PV.count--
+// 				copy(srch.PV.moves[0:], srch.PV.moves[1:]) // shift movelist up by one
+// 				info += fmt.Sprintf("pv chomp p.ply=%v, PV.ply=%v -- %v\n", p.Ply, srch.PV.ply, srch.PV)
+// 			}
+// 		}
+// 
+// 		if srch.PV.ply > p.Ply {
+// 			srch.PV.ply = p.Ply
+// 		}
 
 		srch.TimeStart = time.Now()
+        // start search from root
 		srch.BestMove, srch.Stats.Score = SearchRoot(p, srch)
 		srch.Stats.TimeElapsed = time.Since(srch.TimeStart)
 
@@ -200,6 +201,7 @@ func Go(p *Pos, eiChan chan EngineInfo) (res string, info string, srch *Search) 
 	MakeMove(srch.BestMove, p)
 
 	info += "fen: (" + BoardToFEN(p) + ")\n"
+    info += "PV=" + fmt.Sprintf("%v", srch.PV)  +"\n"
 	info += result(p)
 	res = fmt.Sprintf("move %v #(%v)", MoveToAlg(srch.BestMove),MoveToSAN(srch.BestMove))
 	return

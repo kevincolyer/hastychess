@@ -73,9 +73,11 @@ type PV struct { // PV array
 // pretty printer for PV struct
 func (pv PV) String() (res string) {
 	if pv.count < 1 {
-		res = fmt.Sprintf("%v", pv.moves[:pv.count])
+		res = fmt.Sprintf("%v", pv.moves[0])
 	} else {
-		res = fmt.Sprintf("%v", pv.moves[:pv.count-1])
+        for i:=0;i<pv.count;i++ {
+		res += fmt.Sprintf("%v ", pv.moves[i])
+        }
 	}
 	res = res[1 : len(res)-1]
 	return

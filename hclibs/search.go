@@ -60,8 +60,8 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 	srch.PV.ply = p.Ply // syncronise new PV
 	searchdepth := 0
 	// 	for depth := 2; depth < srch.MaxDepthToSearch+1; depth++ {
-	for depth := srch.MaxDepthToSearch; depth < srch.MaxDepthToSearch+1; depth++ {
-		enterquiesce := true //(depth == srch.MaxDepthToSearch)
+	for depth := 0; depth < srch.MaxDepthToSearch; depth++ {
+		enterquiesce := (depth>2) //(depth == srch.MaxDepthToSearch)
 		// create new child PV
 		childpv := PV{ply: p.Ply + 1}
 		count := 0
@@ -75,16 +75,17 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 			UnMakeMove(move, p)
 			// update for next round of sorting when iterative deepening. Do after unmakemove as the move score change is recorded in history array
 			move.score = val
+            copy(srch.PV.moves[1:], childpv.moves[:])
+            srch.PV.count = childpv.count + 1
 
 			if val > bestscore {
-				bestmove = move
+				bestmove = move // (and hence score too)
 				bestscore = val
 				//update PV (stack based)
 				srch.PV.moves[0] = bestmove
 				srch.Stats.Score = bestscore
 				// update PV with child PV
-				copy(srch.PV.moves[1:], childpv.moves[:])
-				srch.PV.count = childpv.count + 1
+
 
 			}
 
@@ -130,6 +131,7 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 	// Implimenting NegaMaxAB failsoft
 	//https://www.chessprogramming.org/Alpha-Beta
 
+    // create a new child pv to pass down
 	childpv := PV{ply: p.Ply + 1}
 	srch.Stats.Nodes++
 
@@ -138,7 +140,7 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 	}
 
 	if depth == 0 {
-		parentpv.count = 0 // reset because we are at a leaf...
+		//parentpv.count = 0 // reset because we are at a leaf...
 
 		// Quiese?
 		if enterquiesce {
@@ -164,13 +166,13 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 	// give initial order for searching
 	OrderMoves(&consider, p, parentpv)
 
-	// reset PV and choose the
+	// choose the
 	bestmove := consider[0]
 	bestscore := NEGINF
 
+	//reset the PV
 	parentpv.moves[0] = bestmove // in case we don't find anything better set first move to return
-	//childpv.moves[0] = bestmove // in case we don't find anything better set first move to return
-	//childpv.count = 0
+	childpv.count = 0
 	parentpv.count = 1
 	count := 0
 
@@ -180,9 +182,9 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 		// prevent search explosion by reducing search width with increasing depth.
 		// search entire space to depth of 2, then go deeper
 		// May not be needed with iterative deepening...
-		if searchdepth >= 2 && count > MAXSEARCHDEPTH-searchdepth {
-			break
-		}
+// 		if searchdepth >= 2 && count > MAXSEARCHDEPTH-searchdepth {
+// 			break
+// 		}
 		count++
 
 		MakeMove(move, p)
