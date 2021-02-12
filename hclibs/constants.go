@@ -25,24 +25,24 @@ const ETTHASH = 4
 // const USEBOOK=false
 // const USETTABLE=true
 
-// pawn=1, knight=2, king=3, bishop=5, rook=6 and queen=7
+// pawn=1, knight=2, king=3, bishop=5, rook=6 and queen=7 ---? WHY?
 
 //WHITE
 const EMPTY = 0
 const PAWN = 1
-const NIGHT = 2
-const KING = 3
+const NIGHT = 3
+const ROOK = 4
 const BISHOP = 5
-const ROOK = 6
+const KING = 6
 const QUEEN = 7
 
 //black
-const pawn = 1 + 8
-const night = 2 + 8
-const king = 3 + 8
-const bishop = 5 + 8
-const rook = 6 + 8
-const queen = 7 + 8
+const pawn = PAWN + 8
+const night = NIGHT + 8
+const king = KING + 8
+const bishop = BISHOP + 8
+const rook = ROOK + 8
+const queen = QUEEN + 8
 
 // used for mtype in struct move
 // const QUIET = 0
@@ -79,10 +79,10 @@ const ENDGAME = 2
 const QS = 0
 const KS = 1
 
-const CHECKMATE = 200000 //
-const STALEMATE = 50000  //
+const CHECKMATE = 200000 // 200_000
+const STALEMATE = 0  // 50000
 const CHECK = 20000      // sign dictates who we award it to
-const NEGINF = -1000001
+const NEGINF = -1000001  // -1_000_001
 const INF = -NEGINF
 const POSINF = INF
 

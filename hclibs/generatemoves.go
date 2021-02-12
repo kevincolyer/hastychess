@@ -45,7 +45,7 @@ func GenerateMovesForQSearch(p *Pos) (moves []Move) {
 			// filter moves for QS search - just return the noisy ones
 			for _, j := range all {
 				// test legality here...
-				if j.mtype == CAPTURE || j.mtype == PROMOTE { // || j.mtype==EPCAPTURE {
+				if j.mtype == CAPTURE || j.mtype == EPCAPTURE || j.mtype == PROMOTE { // || j.mtype==EPCAPTURE {
 					legal, check := IsLegalMove(j, p)
 					if legal {
 						if check { // TODO add check flag

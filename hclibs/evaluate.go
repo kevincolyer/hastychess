@@ -33,15 +33,18 @@ var csshash = map[int]int{
 	BISHOP: 330, bishop: 330,
 	NIGHT: 320, night: 320,
 	PAWN: 100, pawn: 100,
-	KING: 0, king: 0} // ignore kings as evaluated elsewhere...
+	KING: 0, king: 0,
+    0: 0,
+} // ignore kings as evaluated elsewhere...
 
 // Most Valuable Victim, Least Valuable Agressor
+// best captures scored high, worst lowest (or negative)
 func MVVLVA(m Move, p *Pos) int {
 	if m.mtype == EPCAPTURE {
 		return 0
 	}
 	if m.mtype == PROMOTE {
-		return -csshash[p.Board[m.from]] + csshash[m.extra] + csshash[p.Board[m.to]] // If promotion then m.extra has value of piece we promote to, otherwise it is 0
+		return -csshash[PAWN] + csshash[m.extra] + csshash[p.Board[m.to]] // If promotion then m.extra has value of piece we promote to, otherwise it is 0
 	}
 	// standard capture
 	return -csshash[p.Board[m.from]] + csshash[p.Board[m.to]] // pxQ == 800 Qxp==-800
@@ -351,7 +354,7 @@ func Gamestage(p *Pos) int {
 	if p.TakenPieces[p.Side] > 10 {
 		return ENDGAME
 	}
-	if p.Castled[p.Side] || p.TakenPieces[p.Side] > 4 {
+	if p.Castled[p.Side] || p.TakenPieces[p.Side] > 6 {
 		return MIDGAME
 	}
 	return OPENING

@@ -39,7 +39,12 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 	// 2. give a rough order
 	srch.Info = fmt.Sprintf("moves to consider: %v\n", consider)
 	OrderMoves(&consider, p, srch.PV)
-	srch.Info += fmt.Sprintf("moves sorted     : %v\n", consider)
+// 	srch.Info += fmt.Sprintf("moves sorted     : %v\n", consider)
+    srch.Info += fmt.Sprintf("moves sorted     : ")
+    for i:=range consider {
+     srch.Info += fmt.Sprintf("%v(%v) ", consider[i],consider[i].score)   
+    }
+    srch.Info += "\n"
 
 	alpha := NEGINF
 	beta := POSINF
@@ -56,7 +61,7 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 	searchdepth := 0
 	// 	for depth := 2; depth < srch.MaxDepthToSearch+1; depth++ {
 	for depth := srch.MaxDepthToSearch; depth < srch.MaxDepthToSearch+1; depth++ {
-		enterquiesce := false //(depth == srch.MaxDepthToSearch)
+		enterquiesce := true //(depth == srch.MaxDepthToSearch)
 		// create new child PV
 		childpv := PV{ply: p.Ply + 1}
 		count := 0
@@ -186,8 +191,11 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 
 		if score >= beta {
 			// set killers here
+			// this would be a killer move but the opponent wont let us reach it!
+			// but lets keep it for the future.
 			// history table here...
 			srch.Stats.LowerCuts++
+			srch.Stats.BetaRaised++
 			return beta
 		}
 
@@ -222,14 +230,14 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int, srch *S
 
 	// need a standpat score
 	val := EvalQ(p, 0, gamestage) // custom evaluator here for QUIESENCE TODO
-	standpat := val
+	//standpat := val
 
-	// is move worse than previous worst?
+	// is so good our our opponent wont allow??
 	if val >= beta {
 		srch.Stats.LowerCuts++
 		return beta
 	}
-	// is move less good than previous best?
+	// is move better than previous best?
 	if val >= alpha {
 		srch.Stats.AlphaRaised++
 		alpha = val
@@ -260,6 +268,8 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int, srch *S
 	//
 	// 		}
 	// 	}
+    //squareControlledByOpponentPawnPenalty := 350;
+	//capturedPieceValueMultiplier := 10;
 
 	// score them by Most Valuable Victim - Least Valuable Aggressor
 	for i := range moves {
@@ -268,6 +278,12 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int, srch *S
 
 	// And order descending to provoke cuts
 	sort.Slice(moves, func(i, j int) bool { return moves[i].score > moves[j].score }) // by score type descending
+    
+//     for i:=range moves {
+//      fmt.Printf("%vx%v(%v) ", p.Board[moves[i].from],p.Board[moves[i].to],moves[i].score  ) 
+//     }
+//     fmt.Println()
+//    
 
 	// loop over all moves, searching deeper until no moves left and all is "quiet" - return this score...)
 	for _, m := range moves {
@@ -276,15 +292,15 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int, srch *S
 		// 		// adjust each score for delta cut offs and badmoves skipping to next each time
 		// 		// delta - if not promotion and not endgame and is a low scoring capture then don't look deeper
 		// 		// delta cut qnodes from 20M to 640,000 in one case!
-		if m.mtype != PROMOTE && gamestage != ENDGAME && standpat+csshash[p.Board[m.to]]+200 < alpha {
+		/*if m.mtype != PROMOTE && gamestage != ENDGAME && standpat+csshash[p.Board[m.to]]+200 < alpha {
 			continue
-		}
+		}*/
 		//
 		// 		// badmoves - cut qnodes from 640,000 to 64,000
 		// 		// capture by pawn is ok so skip
-		if PieceType(p.Board[m.from]) == PAWN && m.mtype != PROMOTE {
-			continue
-		}
+ 		if PieceType(p.Board[m.from]) == PAWN && m.mtype != PROMOTE {
+ 			continue
+ 		}
 
 		// search deeper until quiet
 		MakeMove(m, p)
@@ -292,16 +308,17 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int, srch *S
 		UnMakeMove(m, p)
 
 		// adjust window
-		if val >= alpha {
-			srch.Stats.AlphaRaised++
-			if val > beta {
+        if val > beta {
 				srch.Stats.BetaRaised++
 				srch.Stats.LowerCuts++
 				return beta
 			}
+		
+		if val >= alpha {
+			srch.Stats.AlphaRaised++
 			alpha = val
 		}
-	}
+    }
 	srch.Stats.UpperCuts++
 	return alpha
 }
@@ -336,7 +353,7 @@ func OrderMoves(moves *[]Move, p *Pos, pv *PV) bool {
 				(*moves)[i].score = PieceType(p.Board[(*moves)[i].from])*2 + GOODCAPTURE
 			}
 			if mvvlva < 0 {
-				(*moves)[i].score = PieceType(p.Board[(*moves)[i].from])*2 + BADCAPTURE
+				(*moves)[i].score = PieceType(p.Board[(*moves)[i].from])*-2 + BADCAPTURE
 			}
 			if mvvlva == 0 {
 				(*moves)[i].score = PieceType(p.Board[(*moves)[i].from])*2 + CAPTURE
@@ -356,6 +373,8 @@ func OrderMoves(moves *[]Move, p *Pos, pv *PV) bool {
 			//TODO  boost check?????
 		}
 
+		// boost by pst
+		(*moves)[i].score+=Pst[Gamestage(p)][(*moves)[i].piece][(*moves)[i].to]
 		// cycle through pv to boost all moves in current move list to top
 		for _, m := range pv.moves {
 			if (*moves)[i].from == m.from && (*moves)[i].to == m.to { //&& (*moves)[i].extra == m.extra {

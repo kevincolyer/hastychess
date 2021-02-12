@@ -201,7 +201,7 @@ func Go(p *Pos, eiChan chan EngineInfo) (res string, info string, srch *Search) 
 
 	info += "fen: (" + BoardToFEN(p) + ")\n"
 	info += result(p)
-	res = fmt.Sprintf("move %v", MoveToAlg(srch.BestMove))
+	res = fmt.Sprintf("move %v #(%v)", MoveToAlg(srch.BestMove),MoveToSAN(srch.BestMove))
 	return
 }
 

@@ -244,7 +244,8 @@ func FENToBoard(f string, p *Pos) *Pos {
 }
 
 func BoardToStr(p *Pos) string {
-	ptos := [...]string{".", "P", "N", "K", "-", "B", "R", "Q", "-", "p", "n", "k", "-", "b", "r", "q"}
+	// see constants for definitions of why these are at these indexes
+	ptos := [...]string{".", "P", "-", "N", "R", "B", "K", "Q", "-", "p", "-", "n", "r", "b", "k", "q"}
 	var s string
 	for rank := 7; rank >= 0; rank-- { // reverse order
 		s += " "
@@ -259,7 +260,8 @@ func BoardToStr(p *Pos) string {
 }
 
 func BoardToStrColour(p *Pos) string {
-	ptos := [...]string{" ", "P", "N", "K", "-", "B", "R", "Q", "-", "p", "n", "k", "-", "b", "r", "q"}
+	// see constants for definitions of why these are at these indexes
+	ptos := [...]string{" ", "P", "-", "N", "R", "B", "K", "Q", "-", "p", "-", "n", "r", "b", "k", "q"}
 	var s string
 	tog := false // true==black square
 	whitepc := color.New(color.FgHiWhite).SprintFunc()
@@ -275,7 +277,7 @@ func BoardToStrColour(p *Pos) string {
 			if strings.ToUpper(pc) == pc {
 				pc = whitepc(pc + " ")
 			} else {
-				pc = blackpc(pc + " ")
+				pc = blackpc(strings.ToUpper(pc) + " ") // converts printed piece to upper here for pleasanter display
 			}
 			if tog {
 				s += whitesq(" " + pc)
@@ -293,7 +295,8 @@ func BoardToStrColour(p *Pos) string {
 }
 
 func BoardToStrWide(p *Pos) string {
-	ptos := [...]string{".", "P", "N", "K", "-", "B", "R", "Q", "-", "p", "n", "k", "-", "b", "r", "q"}
+    // see constants for definitions of why these are at these indexes
+	ptos := [...]string{".", "P", "-", "N", "R", "B", "K", "Q", "-", "p", "-", "n", "r", "b", "k", "q"}
 	var s string
 	for rank := 7; rank >= 0; rank-- { // reverse order
 		s += fmt.Sprintf(" %v   ", rank+1)
