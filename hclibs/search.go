@@ -352,7 +352,7 @@ func OrderMoves(moves *[]Move, p *Pos, pv *PV) bool {
 		if (*moves)[i].mtype == CAPTURE {
 			mvvlva := MVVLVA((*moves)[i], p)
 			if mvvlva > 0 {
-				(*moves)[i].score = PieceType(p.Board[(*moves)[i].from])*2 + GOODCAPTURE
+				(*moves)[i].score = PieceType(p.Board[(*moves)[i].to])*2 + GOODCAPTURE
 			}
 			if mvvlva < 0 {
 				(*moves)[i].score = PieceType(p.Board[(*moves)[i].from])*-2 + BADCAPTURE

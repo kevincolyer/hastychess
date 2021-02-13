@@ -93,9 +93,9 @@ func NewSearch(FEN Fen) *Search {
 	}
 	srch := Search{
 		Score:               NEGINF,
-		ExplosionLimit:      2000000,
+		ExplosionLimit:      3000000,
 		MaxDurationOfSearch: time.Second * 30,
-		MaxDepthToSearch:    6, // just a default
+		MaxDepthToSearch:    8, // just a default
 		FEN:                 FEN,
 		UseTT:               true,
 		UseBook:             true,

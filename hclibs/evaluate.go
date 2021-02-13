@@ -144,7 +144,8 @@ func PstScore(p *Pos, nummoves, gamestage int) (score int) { // actually Pst and
 			score -= pawnscore
 		}
 	}
-
+	// TODO good to look for pins here...
+    // TODO restore mobility score
 	// M-M'
 	// just a rough estimate of how many moves...
 	/*	if nummoves>0 {
@@ -164,13 +165,13 @@ func PstScore(p *Pos, nummoves, gamestage int) (score int) { // actually Pst and
 	//      Consider check else where - the King score is used for pl move generation. giving this as the final score means it is check or nothing!
 	//      use killer or killer-mate?
 	// opponent is in check
-	if p.InCheck == Xside(p.Side) {
-		score += CHECK
-	}
-	// i am in check :-(
-	if p.InCheck == p.Side {
-		score -= CHECK
-	}
+// 	if p.InCheck == Xside(p.Side) {
+// 		score += CHECK
+// 	}
+// 	// i am in check :-(
+// 	if p.InCheck == p.Side {
+// 		score -= CHECK
+// 	}
 	return score
 }
 
