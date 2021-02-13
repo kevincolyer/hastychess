@@ -49,7 +49,7 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 	alpha := NEGINF
 	beta := POSINF
 	bestmove = consider[0]
-	bestscore = bestmove.score
+	//bestscore = bestmove.score
 
 	// reset pv
 	srch.PV.count = 1
@@ -75,13 +75,15 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 			UnMakeMove(move, p)
 			// update for next round of sorting when iterative deepening. Do after unmakemove as the move score change is recorded in history array
 			move.score = val
-            copy(srch.PV.moves[1:], childpv.moves[:])
-            srch.PV.count = childpv.count + 1
+            
 
-			if val > bestscore {
+			if val > alpha {
 				bestmove = move // (and hence score too)
-				bestscore = val
+                srch.Stats.AlphaRaised++
+				alpha = val
 				//update PV (stack based)
+				copy(srch.PV.moves[1:], childpv.moves[:])
+                srch.PV.count = childpv.count + 1
 				srch.PV.moves[0] = bestmove
 				srch.Stats.Score = bestscore
 				// update PV with child PV
@@ -92,16 +94,6 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 			if srch.Stats.Nodes > srch.ExplosionLimit || srch.StopSearch() {
 				return
 			}
-
-			if val > alpha {
-				srch.Stats.AlphaRaised++
-				alpha = val
-			}
-
-			// 			// stop search as found better
-			// 			if val > beta {
-			// 				break
-			// 			}
 
 			count++
 		}
