@@ -60,8 +60,8 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 	srch.PV.ply = p.Ply // syncronise new PV
 	searchdepth := 0
 	// 	for depth := 2; depth < srch.MaxDepthToSearch+1; depth++ {
-	for depth := 0; depth < srch.MaxDepthToSearch; depth++ {
-		enterquiesce := (depth>2) //(depth == srch.MaxDepthToSearch)
+	for depth := 1; depth < srch.MaxDepthToSearch; depth++ {
+		enterquiesce := (depth>4) //(depth == srch.MaxDepthToSearch)
 		// create new child PV
 		childpv := PV{ply: p.Ply + 1}
 		count := 0
@@ -98,8 +98,7 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 			count++
 		}
 		// re-sort for next loop when iterative deepening
-
-		//sort.Slice(consider, func(i, j int) bool { return consider[i].score > consider[j].score }) // by score type descending
+		sort.Slice(consider, func(i, j int) bool { return consider[i].score > consider[j].score }) // by score type descending
 		//if bestscore <= alpha -50 || bestscore >= beta+50 {
 		//alpha = NEGINF
 		//beta = POSINF
@@ -152,7 +151,7 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 			return -CHECKMATE + searchdepth
 		}
 		//                 fmt.Println("found a stalemate")
-		return -STALEMATE + searchdepth // Unless we can't win because of lack of material then stalemate makes sense -- impliment this!
+		return 0 //-STALEMATE + searchdepth // Unless we can't win because of lack of material then stalemate makes sense -- impliment this!
 	}
 
 	// give initial order for searching
@@ -160,7 +159,7 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 
 	// choose the
 	bestmove := consider[0]
-	bestscore := NEGINF
+	bestscore := alpha
 
 	//reset the PV
 	parentpv.moves[0] = bestmove // in case we don't find anything better set first move to return
@@ -193,21 +192,19 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 			return beta
 		}
 
-		if score > bestscore {
+		if score > alpha {
 			bestscore = score
 			bestmove = move
 
 			// update PV on stack
 			parentpv.moves[0] = bestmove
-			srch.Stats.Score = bestscore
+            srch.Stats.Score = bestscore
 			copy(parentpv.moves[1:], childpv.moves[:])
 			parentpv.count = childpv.count + 1
-		}
-
-		if bestscore > alpha {
 			srch.Stats.AlphaRaised++
 			alpha = bestscore
 		}
+
 
 		// Check if we have been asked to stop...
 		if srch.StopSearch() {
@@ -347,7 +344,7 @@ func OrderMoves(moves *[]Move, p *Pos, pv *PV) bool {
 				(*moves)[i].score = PieceType(p.Board[(*moves)[i].to])*2 + GOODCAPTURE
 			}
 			if mvvlva < 0 {
-				(*moves)[i].score = PieceType(p.Board[(*moves)[i].from])*-2 + BADCAPTURE
+				(*moves)[i].score = PieceType(p.Board[(*moves)[i].from])*2 - BADCAPTURE
 			}
 			if mvvlva == 0 {
 				(*moves)[i].score = PieceType(p.Board[(*moves)[i].from])*2 + CAPTURE
@@ -367,7 +364,7 @@ func OrderMoves(moves *[]Move, p *Pos, pv *PV) bool {
 			//TODO  boost check?????
 		}
 
-		// boost by pst
+		// TODO - this might be best ditched! boost by pst
 		(*moves)[i].score+=Pst[Gamestage(p)][(*moves)[i].piece][(*moves)[i].to]
 		// cycle through pv to boost all moves in current move list to top
 		for _, m := range pv.moves {
