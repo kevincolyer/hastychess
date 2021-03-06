@@ -39,12 +39,12 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 	// 2. give a rough order
 	srch.Info = fmt.Sprintf("moves to consider: %v\n", consider)
 	OrderMoves(&consider, p, srch.PV)
-// 	srch.Info += fmt.Sprintf("moves sorted     : %v\n", consider)
-    srch.Info += fmt.Sprintf("moves sorted     : ")
-    for i:=range consider {
-     srch.Info += fmt.Sprintf("%v(%v) ", consider[i],consider[i].score)   
-    }
-    srch.Info += "\n"
+	// 	srch.Info += fmt.Sprintf("moves sorted     : %v\n", consider)
+	srch.Info += fmt.Sprintf("moves sorted     : ")
+	for i := range consider {
+		srch.Info += fmt.Sprintf("%v(%v) ", consider[i], consider[i].score)
+	}
+	srch.Info += "\n"
 
 	alpha := NEGINF
 	beta := POSINF
@@ -61,7 +61,7 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 	searchdepth := 0
 	// 	for depth := 2; depth < srch.MaxDepthToSearch+1; depth++ {
 	for depth := 1; depth < srch.MaxDepthToSearch; depth++ {
-		enterquiesce := (depth>4) //(depth == srch.MaxDepthToSearch)
+		enterquiesce := (depth > 4) //(depth == srch.MaxDepthToSearch)
 		// create new child PV
 		childpv := PV{ply: p.Ply + 1}
 		count := 0
@@ -72,22 +72,21 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 			// need neg here as we switch sides in make move and evaluation happens relative to side
 			val := -negamaxab(-beta, -alpha, depth, p, &childpv, enterquiesce, searchdepth+1, srch)
 			//fmt.Printf("# move %v scored %v\n", move, val)
+            // this is the point we could filter out illeagal moves (note then need count differently)
 			UnMakeMove(move, p)
 			// update for next round of sorting when iterative deepening. Do after unmakemove as the move score change is recorded in history array
 			move.score = val
-            
 
 			if val > alpha {
 				bestmove = move // (and hence score too)
-                srch.Stats.AlphaRaised++
+				srch.Stats.AlphaRaised++
 				alpha = val
 				//update PV (stack based)
 				copy(srch.PV.moves[1:], childpv.moves[:])
-                srch.PV.count = childpv.count + 1
+				srch.PV.count = childpv.count + 1
 				srch.PV.moves[0] = bestmove
 				srch.Stats.Score = bestscore
 				// update PV with child PV
-
 
 			}
 
@@ -122,7 +121,7 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 	// Implimenting NegaMaxAB failsoft
 	//https://www.chessprogramming.org/Alpha-Beta
 
-    // create a new child pv to pass down
+	// create a new child pv to pass down
 	childpv := PV{ply: p.Ply + 1}
 	srch.Stats.Nodes++
 
@@ -173,13 +172,14 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 		// prevent search explosion by reducing search width with increasing depth.
 		// search entire space to depth of 2, then go deeper
 		// May not be needed with iterative deepening...
-// 		if searchdepth >= 2 && count > MAXSEARCHDEPTH-searchdepth {
-// 			break
-// 		}
+		// 		if searchdepth >= 2 && count > MAXSEARCHDEPTH-searchdepth {
+		// 			break
+		// 		}
 		count++
 
 		MakeMove(move, p)
 		score := -negamaxab(-beta, -alpha, depth-1, p, &childpv, enterquiesce, searchdepth+1, srch)
+        // filter pseudo-legal moves here
 		UnMakeMove(move, p)
 
 		if score >= beta {
@@ -198,13 +198,12 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 
 			// update PV on stack
 			parentpv.moves[0] = bestmove
-            srch.Stats.Score = bestscore
+			srch.Stats.Score = bestscore
 			copy(parentpv.moves[1:], childpv.moves[:])
 			parentpv.count = childpv.count + 1
 			srch.Stats.AlphaRaised++
 			alpha = bestscore
 		}
-
 
 		// Check if we have been asked to stop...
 		if srch.StopSearch() {
@@ -259,7 +258,7 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int, srch *S
 	//
 	// 		}
 	// 	}
-    //squareControlledByOpponentPawnPenalty := 350;
+	//squareControlledByOpponentPawnPenalty := 350;
 	//capturedPieceValueMultiplier := 10;
 
 	// score them by Most Valuable Victim - Least Valuable Aggressor
@@ -269,12 +268,12 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int, srch *S
 
 	// And order descending to provoke cuts
 	sort.Slice(moves, func(i, j int) bool { return moves[i].score > moves[j].score }) // by score type descending
-    
-//     for i:=range moves {
-//      fmt.Printf("%vx%v(%v) ", p.Board[moves[i].from],p.Board[moves[i].to],moves[i].score  ) 
-//     }
-//     fmt.Println()
-//    
+
+	//     for i:=range moves {
+	//      fmt.Printf("%vx%v(%v) ", p.Board[moves[i].from],p.Board[moves[i].to],moves[i].score  )
+	//     }
+	//     fmt.Println()
+	//
 
 	// loop over all moves, searching deeper until no moves left and all is "quiet" - return this score...)
 	for _, m := range moves {
@@ -289,9 +288,9 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int, srch *S
 		//
 		// 		// badmoves - cut qnodes from 640,000 to 64,000
 		// 		// capture by pawn is ok so skip
- 		if PieceType(p.Board[m.from]) == PAWN && m.mtype != PROMOTE {
- 			continue
- 		}
+		if PieceType(p.Board[m.from]) == PAWN && m.mtype != PROMOTE {
+			continue
+		}
 
 		// search deeper until quiet
 		MakeMove(m, p)
@@ -299,17 +298,17 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int, srch *S
 		UnMakeMove(m, p)
 
 		// adjust window
-        if val > beta {
-				srch.Stats.BetaRaised++
-				srch.Stats.LowerCuts++
-				return beta
-			}
-		
+		if val > beta {
+			srch.Stats.BetaRaised++
+			srch.Stats.LowerCuts++
+			return beta
+		}
+
 		if val >= alpha {
 			srch.Stats.AlphaRaised++
 			alpha = val
 		}
-    }
+	}
 	srch.Stats.UpperCuts++
 	return alpha
 }
@@ -365,7 +364,7 @@ func OrderMoves(moves *[]Move, p *Pos, pv *PV) bool {
 		}
 
 		// TODO - this might be best ditched! boost by pst
-		(*moves)[i].score+=Pst[Gamestage(p)][(*moves)[i].piece][(*moves)[i].to]
+		(*moves)[i].score += Pst[Gamestage(p)][(*moves)[i].piece][(*moves)[i].to]
 		// cycle through pv to boost all moves in current move list to top
 		for _, m := range pv.moves {
 			if (*moves)[i].from == m.from && (*moves)[i].to == m.to { //&& (*moves)[i].extra == m.extra {
