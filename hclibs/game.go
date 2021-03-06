@@ -25,22 +25,24 @@ func GameInit() {
 //var pv PV
 
 type Statistics struct {
-	Score       int
-	Nodes       int
-	QNodes      int
-	TtHits      int
-	TtWrites    int
-	TtCulls     int
-	TtUpdates   int
-	UpperCuts   int
-	LowerCuts   int
-	AlphaRaised int
-	BetaRaised  int
-	HtWrite     int
-	HtHit       int
-	KiWrite     int
-	KiHit       int
-	TimeElapsed time.Duration
+	Score             int
+	Nodes             int
+	QNodes            int
+	MaxDepthSearched  int
+	MaxQDepthSearched int
+	TtHits            int
+	TtWrites          int
+	TtCulls           int
+	TtUpdates         int
+	UpperCuts         int
+	LowerCuts         int
+	AlphaRaised       int
+	BetaRaised        int
+	HtWrite           int
+	HtHit             int
+	KiWrite           int
+	KiHit             int
+	TimeElapsed       time.Duration
 }
 
 type Search struct {
@@ -58,8 +60,6 @@ type Search struct {
 	Result           string
 	Info             string
 	PV               *PV
-	ParentPV         *PV
-	ChildPV          *PV
 	Score            int
 	BestMove         Move
 	Stop             bool
@@ -105,13 +105,18 @@ func NewSearch(FEN Fen) *Search {
 	s := Statistics{}
 	srch.Stats = &s
 	pv := PV{}
+	//pv.moves=[MAXSEARCHDEPTH][MAXSEARCHDEPTH]Move
 	srch.PV = &pv
 
 	return &srch
 }
 
 func (srch Search) Search(depth int) (completed bool) {
-	srch.MaxDepthToSearch = depth
+	if depth > MAXSEARCHDEPTH {
+		srch.MaxDepthToSearch = MAXSEARCHDEPTH
+	} else {
+		srch.MaxDepthToSearch = depth
+	}
 	//srch.StartSearch()
 	completed = !srch.Stop // flag is raised if we must stop or hit explosion limit
 	if srch.BestMove.mtype == UNINITIALISED {
@@ -134,8 +139,10 @@ func (stat Statistics) String() string {
 		ttpercent = 0
 	}
 	return fmt.Sprintf(
-		"\nscore %v\nnodes %v | qnodes %v (%v%%) | nps %v\nalpha cuts %v | beta cuts %v | alpha raised %v | beta raised %v\ntt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v\nHist write %v | Hist hit %v | Killer write %v | Killer hit %v\n",
+		"\nscore %v (max depth %v, qdepth %v)\nnodes %v | qnodes %v (%v%%) | nps %v\nalpha cuts %v | beta cuts %v | alpha raised %v | beta raised %v\ntt_hits %v (%v%%) | tt writes %v | tt updates %v | tt size %v | tt culls %v\nHist write %v | Hist hit %v | Killer write %v | Killer hit %v\n",
 		Comma(stat.Score),
+		stat.MaxDepthSearched,
+		stat.MaxQDepthSearched,
 		Comma(stat.Nodes),
 		Comma(stat.QNodes),
 		Comma(qnpercent),
@@ -160,6 +167,8 @@ func (stat Statistics) String() string {
 	)
 }
 
+// need some persistance? Gamestate that holds PV?
+
 func Go(p *Pos, eiChan chan EngineInfo) (res string, info string, srch *Search) {
 	var bookSuccess bool
 
@@ -170,27 +179,13 @@ func Go(p *Pos, eiChan chan EngineInfo) (res string, info string, srch *Search) 
 	srch.MaxDepthToSearch = 8
 	srch.EngineInfoChan = eiChan
 
-	// zero killer and history tables here...
-
 	srch.BestMove, bookSuccess = ChooseBookMove(p)
 	if bookSuccess == false {
-		// srch root
-		// adjust pv if filled
-// 		if srch.PV.count > 0 {
-// 			for srch.PV.ply < p.Ply && srch.PV.count > 0 {
-// 				srch.PV.ply++ // walking forward up plies
-// 				srch.PV.count--
-// 				copy(srch.PV.moves[0:], srch.PV.moves[1:]) // shift movelist up by one
-// 				info += fmt.Sprintf("pv chomp p.ply=%v, PV.ply=%v -- %v\n", p.Ply, srch.PV.ply, srch.PV)
-// 			}
-// 		}
-// 
-// 		if srch.PV.ply > p.Ply {
-// 			srch.PV.ply = p.Ply
-// 		}
 
+		// zero killer and history tables here...
+		// restore PV here...
 		srch.TimeStart = time.Now()
-        // start search from root
+		// start search from root
 		srch.BestMove, srch.Stats.Score = SearchRoot(p, srch)
 		srch.Stats.TimeElapsed = time.Since(srch.TimeStart)
 
@@ -201,9 +196,9 @@ func Go(p *Pos, eiChan chan EngineInfo) (res string, info string, srch *Search) 
 	MakeMove(srch.BestMove, p)
 
 	info += "fen: (" + BoardToFEN(p) + ")\n"
-    info += "PV=" + fmt.Sprintf("%v", srch.PV)  +"\n"
+	info += "PV=" + fmt.Sprintf("%v", srch.PV) + "\n"
 	info += result(p)
-	res = fmt.Sprintf("move %v #(%v)", MoveToAlg(srch.BestMove),MoveToSAN(srch.BestMove))
+	res = fmt.Sprintf("move %v #(%v)", MoveToAlg(srch.BestMove), MoveToSAN(srch.BestMove))
 	return
 }
 

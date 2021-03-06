@@ -80,7 +80,7 @@ const QS = 0
 const KS = 1
 
 const CHECKMATE = 200000 // 200_000
-const STALEMATE = 0  // 50000
+const STALEMATE = 0      // 50000
 const CHECK = 20000      // sign dictates who we award it to
 const NEGINF = -1000001  // -1_000_001
 const INF = -NEGINF

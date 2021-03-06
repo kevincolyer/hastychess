@@ -295,7 +295,7 @@ func BoardToStrColour(p *Pos) string {
 }
 
 func BoardToStrWide(p *Pos) string {
-    // see constants for definitions of why these are at these indexes
+	// see constants for definitions of why these are at these indexes
 	ptos := [...]string{".", "P", "-", "N", "R", "B", "K", "Q", "-", "p", "-", "n", "r", "b", "k", "q"}
 	var s string
 	for rank := 7; rank >= 0; rank-- { // reverse order

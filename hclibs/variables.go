@@ -64,20 +64,22 @@ var history [1024]History
 //////////////////////////////////////////////////////////////////////////
 //PV struct
 type PV struct { // PV array
-	moves [20]Move // too many perhaps depth x 2?
-	count int      // for whole list of moves
-	ply   int      // to syncronise the ply level
+	moves [MAXSEARCHDEPTH][MAXSEARCHDEPTH]Move // too many perhaps depth x 2?
+	max   int                                  // for whole list of moves
 
 }
 
 // pretty printer for PV struct
 func (pv PV) String() (res string) {
-	if pv.count < 1 {
-		res = fmt.Sprintf("%v", pv.moves[0])
+	if pv.max < 1 {
+		res = fmt.Sprintf("%v", pv.moves[0][0])
 	} else {
-        for i:=0;i<pv.count;i++ {
-		res += fmt.Sprintf("%v ", pv.moves[i])
-        }
+		for i := 0; i <= pv.max; i++ {
+			if pv.moves[0][i].mtype == UNINITIALISED {
+				break
+			} // don't read any junk
+			res += fmt.Sprintf("%v ", pv.moves[0][i]) // read down first colomn - as deepens we copy left
+		}
 	}
 	return
 }
@@ -110,33 +112,6 @@ var tt map[string]TtData
 // }
 
 var book map[string][]Move
-
-// for stat gathering
-// var StatNodes int
-// var StatQNodes int
-// var StatUpperCuts int
-// var StatLowerCuts int
-//
-// var StatTimeStart time.Time
-// var StatTimeElapsed int
-//
-// var StatTtHits int
-// var StatTtWrites int
-// var StatTtUpdates int
-// var StatTtCulls int
-// var TtAgeCounter int64
-
-// for game
-// var GameOver bool
-// var GmeDisplayOn bool
-// var GameDepthSearch int
-// var GameForce bool
-// var GameUseBook bool
-// var GameUseTt bool
-// var GameUseStats bool
-// var GamePostStats bool
-// var GameStopSearch bool
-// var GameDurationToSearch time.Duration
 
 type Proto int
 

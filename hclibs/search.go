@@ -39,7 +39,6 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 	// 2. give a rough order
 	srch.Info = fmt.Sprintf("moves to consider: %v\n", consider)
 	OrderMoves(&consider, p, srch.PV)
-	// 	srch.Info += fmt.Sprintf("moves sorted     : %v\n", consider)
 	srch.Info += fmt.Sprintf("moves sorted     : ")
 	for i := range consider {
 		srch.Info += fmt.Sprintf("%v(%v) ", consider[i], consider[i].score)
@@ -49,42 +48,41 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 	alpha := NEGINF
 	beta := POSINF
 	bestmove = consider[0]
-	//bestscore = bestmove.score
 
 	// reset pv
-	srch.PV.count = 1
-	srch.PV.moves[0] = bestmove
+	srch.PV.max = 1
+	srch.PV.moves[0][0] = bestmove
 
 	// 3a. if iterative deepening loop from depth 2 to max depth in turn, sorting best score descending
-	//depth := srch.MaxDepthToSearch
-	srch.PV.ply = p.Ply // syncronise new PV
+	PlyFromRoot := 0
 	searchdepth := 0
 	// 	for depth := 2; depth < srch.MaxDepthToSearch+1; depth++ {
 	for depth := 1; depth < srch.MaxDepthToSearch; depth++ {
 		enterquiesce := (depth > 4) //(depth == srch.MaxDepthToSearch)
-		// create new child PV
-		childpv := PV{ply: p.Ply + 1}
 		count := 0
 
 		for _, move := range consider {
 
 			MakeMove(move, p)
 			// need neg here as we switch sides in make move and evaluation happens relative to side
-			val := -negamaxab(-beta, -alpha, depth, p, &childpv, enterquiesce, searchdepth+1, srch)
+			val := -negamaxab(-beta, -alpha, depth, p, PlyFromRoot+1, enterquiesce, searchdepth+1, srch)
 			//fmt.Printf("# move %v scored %v\n", move, val)
-            // this is the point we could filter out illeagal moves (note then need count differently)
+			// this is the point we could filter out illeagal moves (note then need count differently)
 			UnMakeMove(move, p)
 			// update for next round of sorting when iterative deepening. Do after unmakemove as the move score change is recorded in history array
 			move.score = val
+
+			for i := 1; i < MAXSEARCHDEPTH; i++ {
+				srch.PV.moves[0][i] = srch.PV.moves[1][i]
+			}
 
 			if val > alpha {
 				bestmove = move // (and hence score too)
 				srch.Stats.AlphaRaised++
 				alpha = val
 				//update PV (stack based)
-				copy(srch.PV.moves[1:], childpv.moves[:])
-				srch.PV.count = childpv.count + 1
-				srch.PV.moves[0] = bestmove
+
+				srch.PV.moves[0][0] = bestmove
 				srch.Stats.Score = bestscore
 				// update PV with child PV
 
@@ -117,12 +115,13 @@ func SearchRoot(p *Pos, srch *Search) (bestmove Move, bestscore int) {
 }
 
 // negamaxab search: searches between window so prunes the search tree.
-func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, searchdepth int, srch *Search) int {
+func negamaxab(alpha, beta, depth int, p *Pos, PlyFromRoot int, enterquiesce bool, searchdepth int, srch *Search) int {
 	// Implimenting NegaMaxAB failsoft
 	//https://www.chessprogramming.org/Alpha-Beta
 
-	// create a new child pv to pass down
-	childpv := PV{ply: p.Ply + 1}
+	if srch.Stats.MaxDepthSearched < PlyFromRoot {
+		srch.Stats.MaxDepthSearched = PlyFromRoot
+	}
 	srch.Stats.Nodes++
 
 	if srch.Stats.Nodes > srch.ExplosionLimit || srch.StopSearch() {
@@ -130,12 +129,10 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 	}
 
 	if depth == 0 {
-		//parentpv.count = 0 // reset because we are at a leaf...
-
 		// Quiese?
 		if enterquiesce {
 			// enter q search at this level - not deeper so no need to invert.
-			return SearchQuiesce(p, alpha, beta, QUIESCEDEPTH, searchdepth, srch)
+			return SearchQuiesce(p, alpha, beta, 0, QUIESCEDEPTH, searchdepth, srch)
 		}
 		// return an exact score
 		return Eval(p, 0, Gamestage(p))
@@ -154,16 +151,18 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 	}
 
 	// give initial order for searching
-	OrderMoves(&consider, p, parentpv)
+	OrderMoves(&consider, p, srch.PV)
 
 	// choose the
 	bestmove := consider[0]
 	bestscore := alpha
 
-	//reset the PV
-	parentpv.moves[0] = bestmove // in case we don't find anything better set first move to return
-	childpv.count = 0
-	parentpv.count = 1
+	//adjust PV
+	srch.PV.moves[PlyFromRoot][PlyFromRoot] = bestmove
+	if srch.PV.max < PlyFromRoot {
+		srch.PV.max = PlyFromRoot
+	}
+
 	count := 0
 
 	// depth first search...
@@ -172,15 +171,19 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 		// prevent search explosion by reducing search width with increasing depth.
 		// search entire space to depth of 2, then go deeper
 		// May not be needed with iterative deepening...
-		// 		if searchdepth >= 2 && count > MAXSEARCHDEPTH-searchdepth {
-		// 			break
-		// 		}
+		if searchdepth >= 2 && count > MAXSEARCHDEPTH-searchdepth {
+			break
+		}
 		count++
 
 		MakeMove(move, p)
-		score := -negamaxab(-beta, -alpha, depth-1, p, &childpv, enterquiesce, searchdepth+1, srch)
-        // filter pseudo-legal moves here
+		score := -negamaxab(-beta, -alpha, depth-1, p, PlyFromRoot+1, enterquiesce, searchdepth+1, srch)
+		// filter pseudo-legal moves here
 		UnMakeMove(move, p)
+
+		//         			for i := PlyFromRoot + 1; i < MAXSEARCHDEPTH; i++ {
+		// 				srch.PV.moves[PlyFromRoot][i] = srch.PV.moves[PlyFromRoot+1][i]
+		// 			}
 
 		if score >= beta {
 			// set killers here
@@ -196,11 +199,13 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 			bestscore = score
 			bestmove = move
 
-			// update PV on stack
-			parentpv.moves[0] = bestmove
+			// update PV
+			srch.PV.moves[PlyFromRoot][PlyFromRoot] = bestmove
+
+			for i := PlyFromRoot + 1; i < MAXSEARCHDEPTH; i++ {
+				srch.PV.moves[PlyFromRoot][i] = srch.PV.moves[PlyFromRoot+1][i]
+			}
 			srch.Stats.Score = bestscore
-			copy(parentpv.moves[1:], childpv.moves[:])
-			parentpv.count = childpv.count + 1
 			srch.Stats.AlphaRaised++
 			alpha = bestscore
 		}
@@ -214,8 +219,12 @@ func negamaxab(alpha, beta, depth int, p *Pos, parentpv *PV, enterquiesce bool, 
 	return alpha
 }
 
-func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int, srch *Search) int {
+func SearchQuiesce(p *Pos, alpha, beta int, plys int, qdepth int, searchdepth int, srch *Search) int {
+
 	gamestage := Gamestage(p)
+	if srch.Stats.MaxQDepthSearched < plys {
+		srch.Stats.MaxQDepthSearched = plys
+	}
 	srch.Stats.QNodes++
 
 	// need a standpat score
@@ -294,7 +303,7 @@ func SearchQuiesce(p *Pos, alpha, beta int, qdepth int, searchdepth int, srch *S
 
 		// search deeper until quiet
 		MakeMove(m, p)
-		val = -SearchQuiesce(p, -beta, -alpha, qdepth-1, searchdepth+1, srch)
+		val = -SearchQuiesce(p, -beta, -alpha, plys+1, qdepth-1, searchdepth+1, srch)
 		UnMakeMove(m, p)
 
 		// adjust window
@@ -366,7 +375,7 @@ func OrderMoves(moves *[]Move, p *Pos, pv *PV) bool {
 		// TODO - this might be best ditched! boost by pst
 		(*moves)[i].score += Pst[Gamestage(p)][(*moves)[i].piece][(*moves)[i].to]
 		// cycle through pv to boost all moves in current move list to top
-		for _, m := range pv.moves {
+		for _, m := range pv.moves[0] {
 			if (*moves)[i].from == m.from && (*moves)[i].to == m.to { //&& (*moves)[i].extra == m.extra {
 				(*moves)[i].score += PVBONUS
 			}
