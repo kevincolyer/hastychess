@@ -246,7 +246,7 @@ func SearchQuiesce(p *Pos, alpha, beta int, plys int, qdepth int, searchdepth in
 	// to prevent search explosion while testing TODO remove!
 	// when at end of search
 	// someone signals we should stop
-	if qdepth == 0 || srch.StopSearch() || srch.Stats.QNodes > srch.ExplosionLimit/4 {
+	if  srch.StopSearch() || qdepth == 0 || srch.Stats.QNodes > srch.ExplosionLimit/4 {
 		// 		fmt.Println("# Qnode explosion - bottling!")
 		srch.Stats.UpperCuts++
 		return alpha

@@ -373,7 +373,8 @@ func AlgToDec(alg string) int {
 }
 
 func DecToAlg(dec int) string {
-	return string((dec&7)+97) + string((dec>>4)+48+1)
+    const abc = "abcdefgh12345678"
+    return string(abc[dec&7])+string(abc[dec>>4 + 8])
 }
 
 // func Xside(p Pos) int {

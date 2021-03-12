@@ -292,8 +292,8 @@ func (srch Search) StopSearch() bool {
 	if srch.Stop {
 		return true
 	} // yes
-	// otherwise only check every 8192 nodes
-	if (srch.Stats.Nodes+srch.Stats.QNodes)&0x7fff != 0 {
+	// otherwise only check every 2K nodes
+	if (srch.Stats.Nodes+srch.Stats.QNodes)&0x1fff != 0 {
 		return false
 	}
 	// send statistics (note will block if no listener!)

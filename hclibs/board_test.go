@@ -9,23 +9,20 @@ func TestDecToAlg(t *testing.T) {
 		t.Error("top square is not 0x77 != 119")
 	}
 	if DecToAlg(H8) != "h8" {
-		t.Error("0x77 = top square != h8")
+		t.Errorf("0x77 = top square != h8 -> [%v]",DecToAlg(H8))
 	}
 	if AlgToDec("f5") != F5 {
 		t.Error("square is 0xf5 != 69")
 	}
 	if DecToAlg(F5) != "f5" {
-		t.Error("square is 69 != f5")
+		t.Errorf("square is 69 != f5 -> [%v]",DecToAlg(F5))
 	}
-	// if  AlgToDec("g9") {t.Error( "dies ok with invalid input")}
-	// if  AlgToDec("8a") {t.Error( "Dies ok with invalid input")}
-	// if  AlgToDec("8") {t.Error( "Dies ok with invalid input")}
-	// if  AlgToDec("a") {t.Error( "Dies ok with invalid input")}
+
 	if AlgToDec("a1") != A1 {
 		t.Error("bottom square if a1 = 0")
 	}
 	if DecToAlg(A1) != "a1" {
-		t.Error("0x77 = bottom square 0 is a1")
+		t.Errorf("0x77 = bottom square 0 is a1 -> [%v]",DecToAlg(A1))
 	}
 	if DecToAlg(AlgToDec("d4")) != "d4" {
 		t.Error("d4 round trip ok")

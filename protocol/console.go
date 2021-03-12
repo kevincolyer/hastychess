@@ -189,7 +189,7 @@ func (proto *Console) MainLoop(myEngine *engine.Engine) {
 				ui.proto.o(ui.Cmdline)
 			}
 
-			time.Sleep(time.Millisecond * 100)
+			time.Sleep(time.Millisecond * 50)
 			ui.spinner = spinners[spincounter]
 			spincounter++
 			spincounter %= 4
@@ -206,7 +206,7 @@ func (proto *Console) MainLoop(myEngine *engine.Engine) {
 	quit := false
 
 	// 	Channel to pass EngineInfo to ui.
-	engineInfo := make(chan hclibs.EngineInfo, 1)
+	engineInfo := make(chan hclibs.EngineInfo)//, 1)
 	go func(ei chan hclibs.EngineInfo) {
 		// block until we have data...
 		for {
