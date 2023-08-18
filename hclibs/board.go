@@ -263,7 +263,7 @@ func BoardToStrColour(p *Pos) string {
 	// see constants for definitions of why these are at these indexes
 	ptos := [...]string{" ", "P", "-", "N", "R", "B", "K", "Q", "-", "p", "-", "n", "r", "b", "k", "q"}
 	var s string
-	tog := false // true==black square
+	tog := true // true==black square
 	whitepc := color.New(color.FgHiWhite).SprintFunc()
 	whitesq := color.New(color.BgBlue).SprintFunc()
 	blackpc := color.New(color.FgRed).SprintFunc()
